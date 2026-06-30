@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SuRaksha AI — CGD Safety, Trust & Compliance Intelligence</title>
+<meta name="description" content="The AI layer that catches what humans miss across emergency response, customer trust, revenue protection and regulatory compliance for City Gas Distribution." />
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+<!-- Tailwind (Play CDN) -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui'] },
+        colors: {
+          brand: {
+            50:'#ecfdf5',100:'#d1fae5',200:'#a7f3d0',300:'#6ee7b7',400:'#34d399',
+            500:'#10b981',600:'#059669',700:'#047857',800:'#065f46',900:'#064e3b'
+          },
+          ink: {
+            50:'#f8fafc',100:'#f1f5f9',200:'#e2e8f0',300:'#cbd5e1',400:'#94a3b8',
+            500:'#64748b',600:'#475569',700:'#334155',800:'#1e293b',900:'#0f172a',950:'#020617'
+          }
+        },
+        boxShadow: { soft: '0 1px 2px rgba(15,23,42,.04), 0 8px 24px -8px rgba(15,23,42,.12)' }
+      }
+    }
+  }
+</script>
+
+<!-- Charts + Icons -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<style>
+  html{scroll-behavior:smooth}
+  body{background:#f6f8fb}
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:9999px;border:2px solid #f6f8fb}
+  ::-webkit-scrollbar-thumb:hover{background:#94a3b8}
+  .glass{background:rgba(255,255,255,.7);backdrop-filter:blur(12px)}
+  .nav-item.active{background:rgba(16,185,129,.14);color:#34d399}
+  .nav-item.active .ic{color:#34d399}
+  .view{display:none;animation:fade .35s ease}
+  .view.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .pulse-ring{box-shadow:0 0 0 0 rgba(239,68,68,.6);animation:ring 1.4s infinite}
+  @keyframes ring{0%{box-shadow:0 0 0 0 rgba(239,68,68,.55)}70%{box-shadow:0 0 0 16px rgba(239,68,68,0)}100%{box-shadow:0 0 0 0 rgba(239,68,68,0)}}
+  .typing::after{content:'▌';animation:blink 1s steps(1) infinite;color:#10b981}
+  @keyframes blink{50%{opacity:0}}
+  .feed-enter{animation:slideIn .4s ease}
+  @keyframes slideIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
+  .dropzone.drag{border-color:#10b981;background:#ecfdf5}
+  .countup{font-variant-numeric:tabular-nums}
+</style>
+</head>
+
+<body class="font-sans text-ink-800">
+
+<div class="flex min-h-screen">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="hidden lg:flex w-64 shrink-0 flex-col bg-ink-950 text-ink-300 fixed h-screen z-30">
+    <div class="px-5 py-5 flex items-center gap-3 border-b border-white/5">
+      <div class="h-10 w-10 rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 grid place-items-center shadow-lg">
+        <i data-lucide="shield-check" class="w-5 h-5 text-white"></i>
+      </div>
+      <div>
+        <div class="text-white font-extrabold tracking-tight leading-none">SuRaksha<span class="text-brand-400"> AI</span></div>
+        <div class="text-[10px] uppercase tracking-widest text-ink-500 mt-1">CGD Intelligence</div>
+      </div>
+    </div>
+
+    <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-1 text-sm">
+      <p class="px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-widest text-ink-600">Overview</p>
+      <button data-nav="dashboard" class="nav-item active w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 transition">
+        <i data-lucide="layout-dashboard" class="ic w-[18px] h-[18px]"></i> Command Center</button>
+
+      <p class="px-3 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-widest text-ink-600">Safety</p>
+      <button data-nav="gasguard" class="nav-item w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-white/5 transition">
+        <span class="flex items-center gap-3"><i data-lucide="phone-call" class="ic w-[18px] h-[18px]"></i> GasGuard</span>
+        <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-300 font-semibold">LIVE</span></button>
+      <button data-nav="inspectai" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 transition">
+        <i data-lucide="scan-eye" class="ic w-[18px] h-[18px]"></i> InspectAI</button>
+
+      <p class="px-3 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-widest text-ink-600">Customer</p>
+      <button data-nav="whymybill" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 transition">
+        <i data-lucide="receipt-text" class="ic w-[18px] h-[18px]"></i> WhyMyBill</button>
+      <button data-nav="autonotify" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 transition">
+        <i data-lucide="megaphone" class="ic w-[18px] h-[18px]"></i> AutoNotify</button>
+
+      <p class="px-3 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-widest text-ink-600">Business &amp; Compliance</p>
+      <button data-nav="revguard" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 transition">
+        <i data-lucide="shield-alert" class="ic w-[18px] h-[18px]"></i> RevGuard</button>
+      <button data-nav="sla" class="nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 transition">
+        <i data-lucide="timer" class="ic w-[18px] h-[18px]"></i> SLA Sentinel</button>
+    </nav>
+
+    <div class="p-3 border-t border-white/5">
+      <div class="rounded-xl bg-white/5 p-3 text-xs">
+        <div class="flex items-center gap-2 text-brand-300 font-semibold"><i data-lucide="sparkles" class="w-4 h-4"></i> PNGRB-aligned</div>
+        <p class="text-ink-500 mt-1 leading-relaxed">Built for Consumer Protection Regulations, 2025.</p>
+      </div>
+      <p class="text-[10px] text-ink-600 text-center mt-3">Torrent Gas • Spark Tank 2026</p>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <div class="flex-1 lg:ml-64 min-w-0">
+
+    <!-- Topbar -->
+    <header class="sticky top-0 z-20 glass border-b border-ink-200/70">
+      <div class="px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3 min-w-0">
+          <button id="mobileNav" class="lg:hidden p-2 -ml-2 rounded-lg hover:bg-ink-100"><i data-lucide="menu" class="w-5 h-5"></i></button>
+          <div class="min-w-0">
+            <h1 id="pageTitle" class="text-lg font-bold text-ink-900 truncate">Command Center</h1>
+            <p id="pageSub" class="text-xs text-ink-500 truncate">Real-time overview across safety, trust, revenue &amp; compliance</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 sm:gap-3">
+          <span class="hidden sm:flex items-center gap-2 text-xs font-medium text-brand-700 bg-brand-50 px-3 py-1.5 rounded-full border border-brand-200">
+            <span class="relative flex h-2 w-2"><span class="animate-ping absolute h-2 w-2 rounded-full bg-brand-400 opacity-75"></span><span class="relative rounded-full h-2 w-2 bg-brand-500"></span></span>
+            Systems live
+          </span>
+          <button class="relative p-2 rounded-lg hover:bg-ink-100"><i data-lucide="bell" class="w-5 h-5 text-ink-600"></i>
+            <span class="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500"></span></button>
+          <div class="flex items-center gap-2 pl-1">
+            <div class="h-9 w-9 rounded-full bg-gradient-to-br from-ink-700 to-ink-900 grid place-items-center text-white text-sm font-semibold">HS</div>
+            <div class="hidden sm:block leading-tight"><div class="text-sm font-semibold text-ink-800">IT — Ops</div><div class="text-[11px] text-ink-500">Control Room</div></div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="px-4 sm:px-6 lg:px-8 py-6 max-w-[1400px] mx-auto">
+
+      <!-- ================= DASHBOARD ================= -->
+      <section id="dashboard" class="view active">
+        <!-- Hero -->
+        <div class="rounded-2xl bg-gradient-to-br from-ink-900 via-ink-900 to-brand-900 text-white p-6 sm:p-7 mb-6 relative overflow-hidden shadow-soft">
+          <div class="absolute -right-10 -top-10 w-56 h-56 bg-brand-500/20 rounded-full blur-3xl"></div>
+          <div class="relative">
+            <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-brand-300 bg-white/10 px-2.5 py-1 rounded-full">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> One platform • Six AI agents</span>
+            <h2 class="text-2xl sm:text-3xl font-extrabold mt-3 leading-tight">The AI layer that catches<br class="hidden sm:block"> what humans miss.</h2>
+            <p class="text-ink-300 mt-2 max-w-2xl text-sm">SuRaksha AI unifies emergency response, customer trust, revenue protection and PNGRB compliance into a single intelligence console for City Gas Distribution.</p>
+          </div>
+        </div>
+
+        <!-- KPI cards -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div class="bg-white rounded-2xl p-5 shadow-soft border border-ink-100">
+            <div class="flex items-center justify-between"><span class="text-xs font-medium text-ink-500">Emergencies handled (24h)</span><i data-lucide="siren" class="w-4 h-4 text-red-500"></i></div>
+            <div class="mt-2 text-3xl font-extrabold text-ink-900 countup" data-target="38">0</div>
+            <div class="text-xs text-brand-600 mt-1 font-medium">Avg AI pickup 1.2s</div>
+          </div>
+          <div class="bg-white rounded-2xl p-5 shadow-soft border border-ink-100">
+            <div class="flex items-center justify-between"><span class="text-xs font-medium text-ink-500">Compensation avoided</span><i data-lucide="indian-rupee" class="w-4 h-4 text-brand-600"></i></div>
+            <div class="mt-2 text-3xl font-extrabold text-ink-900">₹<span class="countup" data-target="4.8">0</span>L</div>
+            <div class="text-xs text-brand-600 mt-1 font-medium">SLA breaches prevented</div>
+          </div>
+          <div class="bg-white rounded-2xl p-5 shadow-soft border border-ink-100">
+            <div class="flex items-center justify-between"><span class="text-xs font-medium text-ink-500">Revenue recovered (MTD)</span><i data-lucide="trending-up" class="w-4 h-4 text-brand-600"></i></div>
+            <div class="mt-2 text-3xl font-extrabold text-ink-900">₹<span class="countup" data-target="27.3">0</span>L</div>
+            <div class="text-xs text-brand-600 mt-1 font-medium">142 tamper cases flagged</div>
+          </div>
+          <div class="bg-white rounded-2xl p-5 shadow-soft border border-ink-100">
+            <div class="flex items-center justify-between"><span class="text-xs font-medium text-ink-500">SLA compliance</span><i data-lucide="badge-check" class="w-4 h-4 text-brand-600"></i></div>
+            <div class="mt-2 text-3xl font-extrabold text-ink-900 countup" data-target="99.2" data-suffix="%">0</div>
+            <div class="text-xs text-brand-600 mt-1 font-medium">vs 87% baseline</div>
+          </div>
+        </div>
+
+        <!-- Charts + feed -->
+        <div class="grid lg:grid-cols-3 gap-4 mb-6">
+          <div class="lg:col-span-2 bg-white rounded-2xl p-5 shadow-soft border border-ink-100">
+            <div class="flex items-center justify-between mb-3"><h3 class="font-bold text-ink-900">Alerts &amp; resolutions — last 7 days</h3>
+              <span class="text-xs text-ink-500">Auto-refreshing</span></div>
+            <div class="relative h-[260px]"><canvas id="trendChart"></canvas></div>
+          </div>
+          <div class="bg-white rounded-2xl p-5 shadow-soft border border-ink-100">
+            <h3 class="font-bold text-ink-900 mb-3">Workload by agent</h3>
+            <div class="relative h-[240px]"><canvas id="donutChart"></canvas></div>
+          </div>
+        </div>
+
+        <div class="grid lg:grid-cols-3 gap-4">
+          <!-- live feed -->
+          <div class="lg:col-span-2 bg-white rounded-2xl p-5 shadow-soft border border-ink-100">
+            <div class="flex items-center justify-between mb-3"><h3 class="font-bold text-ink-900">Live activity feed</h3>
+              <span class="flex items-center gap-1.5 text-xs text-brand-600 font-medium"><span class="h-2 w-2 rounded-full bg-brand-500 animate-pulse"></span>streaming</span></div>
+            <ul id="liveFeed" class="space-y-2 max-h-72 overflow-y-auto pr-1"></ul>
+          </div>
+          <!-- quick launch -->
+          <div class="bg-white rounded-2xl p-5 shadow-soft border border-ink-100">
+            <h3 class="font-bold text-ink-900 mb-3">Jump to an agent</h3>
+            <div class="grid grid-cols-2 gap-2">
+              <button data-nav="gasguard" class="qa group rounded-xl border border-ink-100 p-3 text-left hover:border-brand-300 hover:bg-brand-50 transition"><i data-lucide="phone-call" class="w-5 h-5 text-red-500 mb-2"></i><div class="text-sm font-semibold text-ink-800">GasGuard</div><div class="text-[11px] text-ink-500">Emergency voice</div></button>
+              <button data-nav="whymybill" class="qa rounded-xl border border-ink-100 p-3 text-left hover:border-brand-300 hover:bg-brand-50 transition"><i data-lucide="receipt-text" class="w-5 h-5 text-brand-600 mb-2"></i><div class="text-sm font-semibold text-ink-800">WhyMyBill</div><div class="text-[11px] text-ink-500">Bill + leak</div></button>
+              <button data-nav="revguard" class="qa rounded-xl border border-ink-100 p-3 text-left hover:border-brand-300 hover:bg-brand-50 transition"><i data-lucide="shield-alert" class="w-5 h-5 text-amber-500 mb-2"></i><div class="text-sm font-semibold text-ink-800">RevGuard</div><div class="text-[11px] text-ink-500">Anomalies</div></button>
+              <button data-nav="sla" class="qa rounded-xl border border-ink-100 p-3 text-left hover:border-brand-300 hover:bg-brand-50 transition"><i data-lucide="timer" class="w-5 h-5 text-indigo-500 mb-2"></i><div class="text-sm font-semibold text-ink-800">SLA Sentinel</div><div class="text-[11px] text-ink-500">Deadlines</div></button>
+              <button data-nav="autonotify" class="qa rounded-xl border border-ink-100 p-3 text-left hover:border-brand-300 hover:bg-brand-50 transition"><i data-lucide="megaphone" class="w-5 h-5 text-sky-500 mb-2"></i><div class="text-sm font-semibold text-ink-800">AutoNotify</div><div class="text-[11px] text-ink-500">48h notice</div></button>
+              <button data-nav="inspectai" class="qa rounded-xl border border-ink-100 p-3 text-left hover:border-brand-300 hover:bg-brand-50 transition"><i data-lucide="scan-eye" class="w-5 h-5 text-violet-500 mb-2"></i><div class="text-sm font-semibold text-ink-800">InspectAI</div><div class="text-[11px] text-ink-500">Photo check</div></button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= GASGUARD ================= -->
+      <section id="gasguard" class="view">
+        <div class="grid lg:grid-cols-2 gap-5">
+          <!-- Call panel -->
+          <div class="bg-white rounded-2xl shadow-soft border border-ink-100 overflow-hidden">
+            <div class="bg-ink-950 text-white p-5 flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div id="ggAvatar" class="h-11 w-11 rounded-full bg-red-500/20 grid place-items-center pulse-ring"><i data-lucide="phone-incoming" class="w-5 h-5 text-red-300"></i></div>
+                <div><div id="ggCaller" class="font-semibold">Incoming emergency call</div><div id="ggNumber" class="text-xs text-ink-400">+91 98••• ••231 • Sector 12, Ahmedabad</div></div>
+              </div>
+              <div id="ggTimer" class="text-sm font-mono text-ink-300">00:00</div>
+            </div>
+            <div id="ggTranscript" class="p-5 space-y-3 h-80 overflow-y-auto bg-ink-50/40 text-sm">
+              <p class="text-center text-xs text-ink-400 py-20">Press <b>Simulate emergency call</b> to see the AI voice agent in action.</p>
+            </div>
+            <div class="p-4 border-t border-ink-100 flex gap-2">
+              <button id="ggStart" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl py-2.5 flex items-center justify-center gap-2 transition"><i data-lucide="phone-call" class="w-4 h-4"></i> Simulate emergency call</button>
+              <button id="ggReset" class="px-4 rounded-xl border border-ink-200 hover:bg-ink-100 text-ink-600"><i data-lucide="rotate-ccw" class="w-4 h-4"></i></button>
+            </div>
+          </div>
+
+          <!-- Live action panel -->
+          <div class="space-y-5">
+            <div class="bg-white rounded-2xl p-5 shadow-soft border border-ink-100">
+              <h3 class="font-bold text-ink-900 mb-3 flex items-center gap-2"><i data-lucide="list-checks" class="w-4 h-4 text-brand-600"></i> Life-saving steps (auto-guided)</h3>
+              <ul id="ggSteps" class="space-y-2 text-sm"></ul>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="bg-white rounded-2xl p-5 shadow-soft border border-ink-100">
+                <div class="text-xs text-ink-500 mb-1">Severity (AI assessed)</div>
+                <div id="ggSeverity" class="text-2xl font-extrabold text-ink-400">—</div>
+                <div id="ggSevBar" class="mt-2 h-2 rounded-full bg-ink-100 overflow-hidden"><div class="h-full w-0 bg-red-500 transition-all duration-700"></div></div>
+              </div>
+              <div class="bg-white rounded-2xl p-5 shadow-soft border border-ink-100">
+                <div class="text-xs text-ink-500 mb-1">Nearest crew dispatch</div>
+                <div id="ggDispatch" class="text-sm font-semibold text-ink-400">Awaiting…</div>
+                <div id="ggEta" class="text-xs text-ink-500 mt-1"></div>
+              </div>
+            </div>
+            <div id="ggBrief" class="bg-ink-950 text-ink-200 rounded-2xl p-5 shadow-soft hidden">
+              <div class="flex items-center gap-2 text-brand-300 font-semibold text-sm mb-2"><i data-lucide="file-text" class="w-4 h-4"></i> Responder brief (auto-generated)</div>
+              <pre id="ggBriefBody" class="text-xs whitespace-pre-wrap font-mono leading-relaxed"></pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= WHYMYBILL ================= -->
+      <section id="whymybill" class="view">
+        <div class="grid lg:grid-cols-3 gap-5">
+          <div class="bg-white rounded-2xl p-5 shadow-soft border border-ink-100">
+            <h3 class="font-bold text-ink-900 mb-3">Select a customer</h3>
+            <select id="wmbSelect" class="w-full rounded-xl border border-ink-200 px-3 py-2.5 text-sm focus:ring-2 focus:ring-brand-400 outline-none"></select>
+            <div id="wmbMeta" class="mt-4 space-y-2 text-sm"></div>
+          </div>
+          <div class="lg:col-span-2 bg-white rounded-2xl p-5 shadow-soft border border-ink-100">
+            <h3 class="font-bold text-ink-900 mb-3">Consumption history</h3>
+            <div class="relative h-[260px]"><canvas id="wmbChart"></canvas></div>
+          </div>
+        </div>
+        <div class="grid lg:grid-cols-3 gap-5 mt-5">
+          <div class="lg:col-span-2 bg-white rounded-2xl p-5 shadow-soft border border-ink-100">
+            <h3 class="font-bold text-ink-900 mb-3 flex items-center gap-2"><i data-lucide="message-square-text" class="w-4 h-4 text-brand-600"></i> Plain-language explanation</h3>
+            <div id="wmbExplain" class="text-sm text-ink-700 leading-relaxed bg-brand-50 border border-brand-100 rounded-xl p-4"></div>
+            <button id="wmbSend" class="mt-3 text-sm font-semibold text-brand-700 hover:text-brand-800 flex items-center gap-1.5"><i data-lucide="send" class="w-4 h-4"></i> Send explanation to customer</button>
+          </div>
+          <div id="wmbLeak" class="rounded-2xl p-5 shadow-soft border"></div>
+        </div>
+      </section>
+
+      <!-- ================= REVGUARD ================= -->
+      <section id="revguard" class="view">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+          <div class="bg-white rounded-2xl p-5 shadow-soft border border-ink-100"><div class="text-xs text-ink-500">Accounts scanned</div><div class="text-2xl font-extrabold text-ink-900 mt-1">2,41,860</div></div>
+          <div class="bg-white rounded-2xl p-5 shadow-soft border border-ink-100"><div class="text-xs text-ink-500">High-risk flagged</div><div class="text-2xl font-extrabold text-red-600 mt-1">142</div></div>
+          <div class="bg-white rounded-2xl p-5 shadow-soft border border-ink-100"><div class="text-xs text-ink-500">Est. revenue at risk</div><div class="text-2xl font-extrabold text-ink-900 mt-1">₹27.3L</div></div>
+          <div class="bg-white rounded-2xl p-5 shadow-soft border border-ink-100"><div class="text-xs text-ink-500">Model precision</div><div class="text-2xl font-extrabold text-brand-600 mt-1">91%</div></div>
+        </div>
+        <div class="grid lg:grid-cols-5 gap-5">
+          <div class="lg:col-span-3 bg-white rounded-2xl shadow-soft border border-ink-100 overflow-hidden">
+            <div class="p-5 border-b border-ink-100 flex items-center justify-between"><h3 class="font-bold text-ink-900">Investigate-first queue</h3><span class="text-xs text-ink-500">Ranked by anomaly score</span></div>
+            <div class="overflow-x-auto"><table class="w-full text-sm">
+              <thead class="bg-ink-50 text-ink-500 text-xs uppercase tracking-wide"><tr>
+                <th class="text-left font-semibold px-5 py-3">Account</th><th class="text-left font-semibold px-3 py-3">Area</th>
+                <th class="text-left font-semibold px-3 py-3">Pattern</th><th class="text-right font-semibold px-3 py-3">At risk</th>
+                <th class="text-right font-semibold px-5 py-3">Score</th></tr></thead>
+              <tbody id="rgRows" class="divide-y divide-ink-100"></tbody>
+            </table></div>
+          </div>
+          <div class="lg:col-span-2 bg-white rounded-2xl p-5 shadow-soft border border-ink-100">
+            <h3 class="font-bold text-ink-900 mb-1" id="rgDetailTitle">Consumption fingerprint</h3>
+            <p class="text-xs text-ink-500 mb-3" id="rgDetailSub">Select an account to inspect its pattern</p>
+            <div class="relative h-[240px]"><canvas id="rgChart"></canvas></div>
+            <button id="rgDispatch" class="mt-4 w-full bg-ink-900 hover:bg-ink-800 text-white text-sm font-semibold rounded-xl py-2.5 flex items-center justify-center gap-2"><i data-lucide="map-pin" class="w-4 h-4"></i> Dispatch field inspection</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= SLA SENTINEL ================= -->
+      <section id="sla" class="view">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+          <div class="bg-white rounded-2xl p-5 shadow-soft border border-ink-100"><div class="text-xs text-ink-500">Open complaints</div><div class="text-2xl font-extrabold text-ink-900 mt-1" id="slaOpen">—</div></div>
+          <div class="bg-white rounded-2xl p-5 shadow-soft border border-ink-100"><div class="text-xs text-ink-500">At breach-risk</div><div class="text-2xl font-extrabold text-amber-600 mt-1" id="slaRisk">—</div></div>
+          <div class="bg-white rounded-2xl p-5 shadow-soft border border-ink-100"><div class="text-xs text-ink-500">Breaches prevented (MTD)</div><div class="text-2xl font-extrabold text-brand-600 mt-1">63</div></div>
+          <div class="bg-white rounded-2xl p-5 shadow-soft border border-ink-100"><div class="text-xs text-ink-500">Compensation avoided</div><div class="text-2xl font-extrabold text-ink-900 mt-1">₹4.8L</div></div>
+        </div>
+        <div class="bg-white rounded-2xl shadow-soft border border-ink-100 overflow-hidden">
+          <div class="p-5 border-b border-ink-100 flex items-center justify-between flex-wrap gap-2">
+            <h3 class="font-bold text-ink-900">Live SLA queue</h3>
+            <div class="flex items-center gap-2 text-xs">
+              <span class="px-2 py-1 rounded-full bg-red-100 text-red-700 font-semibold">24h emergency</span>
+              <span class="px-2 py-1 rounded-full bg-amber-100 text-amber-700 font-semibold">7-day service</span>
+              <span class="px-2 py-1 rounded-full bg-sky-100 text-sky-700 font-semibold">15-day routine</span>
+            </div>
+          </div>
+          <div class="overflow-x-auto"><table class="w-full text-sm">
+            <thead class="bg-ink-50 text-ink-500 text-xs uppercase tracking-wide"><tr>
+              <th class="text-left font-semibold px-5 py-3">Ticket</th><th class="text-left font-semibold px-3 py-3">Category</th>
+              <th class="text-left font-semibold px-3 py-3">Time left</th><th class="text-left font-semibold px-3 py-3">Breach risk</th>
+              <th class="text-right font-semibold px-5 py-3">Action</th></tr></thead>
+            <tbody id="slaRows" class="divide-y divide-ink-100"></tbody>
+          </table></div>
+        </div>
+      </section>
+
+      <!-- ================= AUTONOTIFY ================= -->
+      <section id="autonotify" class="view">
+        <div class="grid lg:grid-cols-2 gap-5">
+          <div class="bg-white rounded-2xl p-5 shadow-soft border border-ink-100">
+            <h3 class="font-bold text-ink-900 mb-4">Plan a supply interruption</h3>
+            <label class="text-xs font-medium text-ink-500">Affected zone</label>
+            <select id="anZone" class="w-full rounded-xl border border-ink-200 px-3 py-2.5 text-sm mt-1 mb-3 focus:ring-2 focus:ring-brand-400 outline-none">
+              <option value="0">Ward 7 — Maninagar (1,284 customers)</option>
+              <option value="1">Sector 21 — Gandhinagar (842 customers)</option>
+              <option value="2">Vesu Ring Road — Surat (2,109 customers)</option>
+            </select>
+            <div class="grid grid-cols-2 gap-3 mb-3">
+              <div><label class="text-xs font-medium text-ink-500">Work start</label><input id="anStart" type="datetime-local" class="w-full rounded-xl border border-ink-200 px-3 py-2.5 text-sm mt-1 outline-none focus:ring-2 focus:ring-brand-400"></div>
+              <div><label class="text-xs font-medium text-ink-500">Duration</label><input id="anDur" type="text" value="4 hours" class="w-full rounded-xl border border-ink-200 px-3 py-2.5 text-sm mt-1 outline-none focus:ring-2 focus:ring-brand-400"></div>
+            </div>
+            <div id="anCompliance" class="text-xs rounded-lg px-3 py-2 mb-3"></div>
+            <label class="text-xs font-medium text-ink-500">Notice (PNGRB-compliant template, editable)</label>
+            <textarea id="anMsg" rows="4" class="w-full rounded-xl border border-ink-200 px-3 py-2.5 text-sm mt-1 outline-none focus:ring-2 focus:ring-brand-400"></textarea>
+            <div class="flex items-center gap-4 mt-3 text-sm">
+              <label class="flex items-center gap-2"><input type="checkbox" checked class="rounded text-brand-600 anch"> SMS</label>
+              <label class="flex items-center gap-2"><input type="checkbox" checked class="rounded text-brand-600 anch"> WhatsApp</label>
+              <label class="flex items-center gap-2"><input type="checkbox" class="rounded text-brand-600 anch"> App push</label>
+            </div>
+            <button id="anSend" class="mt-4 w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-xl py-2.5 flex items-center justify-center gap-2"><i data-lucide="megaphone" class="w-4 h-4"></i> Send compliant notices</button>
+          </div>
+          <div class="bg-white rounded-2xl p-5 shadow-soft border border-ink-100">
+            <div class="flex items-center justify-between mb-3"><h3 class="font-bold text-ink-900">Delivery log &amp; proof</h3><span id="anProgress" class="text-xs text-ink-500"></span></div>
+            <div class="h-2 rounded-full bg-ink-100 overflow-hidden mb-4"><div id="anBar" class="h-full w-0 bg-brand-500 transition-all duration-300"></div></div>
+            <div id="anGrid" class="grid grid-cols-10 gap-1.5 mb-4"></div>
+            <ul id="anLog" class="space-y-2 text-sm max-h-56 overflow-y-auto"></ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= INSPECTAI ================= -->
+      <section id="inspectai" class="view">
+        <div class="grid lg:grid-cols-2 gap-5">
+          <div class="bg-white rounded-2xl p-5 shadow-soft border border-ink-100">
+            <h3 class="font-bold text-ink-900 mb-3">Upload installation photo</h3>
+            <div id="iaDrop" class="dropzone border-2 border-dashed border-ink-200 rounded-2xl p-8 text-center cursor-pointer transition">
+              <input id="iaFile" type="file" accept="image/*" class="hidden">
+              <img id="iaPreview" class="hidden mx-auto max-h-56 rounded-xl mb-3 object-contain">
+              <div id="iaPlaceholder">
+                <i data-lucide="image-up" class="w-10 h-10 text-ink-300 mx-auto mb-2"></i>
+                <p class="text-sm text-ink-500">Drag &amp; drop a photo, or click to browse</p>
+                <p class="text-xs text-ink-400 mt-1">No photo handy? Use a sample below.</p>
+              </div>
+            </div>
+            <div class="flex gap-2 mt-3">
+              <button data-sample="pass" class="iaSample flex-1 text-xs font-medium border border-ink-200 rounded-lg py-2 hover:bg-ink-50">Sample: compliant install</button>
+              <button data-sample="fail" class="iaSample flex-1 text-xs font-medium border border-ink-200 rounded-lg py-2 hover:bg-ink-50">Sample: risky install</button>
+            </div>
+            <button id="iaRun" class="mt-3 w-full bg-violet-600 hover:bg-violet-700 text-white font-semibold rounded-xl py-2.5 flex items-center justify-center gap-2 disabled:opacity-40" disabled><i data-lucide="scan-eye" class="w-4 h-4"></i> Run AI safety analysis</button>
+          </div>
+          <div class="bg-white rounded-2xl p-5 shadow-soft border border-ink-100">
+            <div class="flex items-center justify-between mb-3"><h3 class="font-bold text-ink-900">AI inspection result</h3><span id="iaVerdict" class="text-xs px-2.5 py-1 rounded-full bg-ink-100 text-ink-500 font-semibold">Awaiting scan</span></div>
+            <ul id="iaChecks" class="space-y-2 text-sm"></ul>
+            <div id="iaReport" class="hidden mt-4 border-t border-ink-100 pt-4">
+              <div class="flex items-center gap-2 text-brand-700 font-semibold text-sm mb-2"><i data-lucide="file-check-2" class="w-4 h-4"></i> Compliance record generated</div>
+              <div id="iaReportBody" class="text-xs text-ink-600 font-mono bg-ink-50 rounded-xl p-3 leading-relaxed"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+    <footer class="px-8 py-6 text-center text-xs text-ink-400">SuRaksha AI — prototype for Spark Tank 2026 · all figures illustrative · PNGRB (Consumer Protection) Regulations, 2025 aligned</footer>
+  </div>
+</div>
+
+<script>
+/* ============================ NAV ============================ */
+const titles = {
+  dashboard:['Command Center','Real-time overview across safety, trust, revenue & compliance'],
+  gasguard:['GasGuard — Emergency Voice Agent','24/7 AI co-pilot for the gas-leak hotline'],
+  whymybill:['WhyMyBill — Bill Explainer + Leak Catcher','Turns the #1 complaint into trust and a safety net'],
+  revguard:['RevGuard — Revenue & Tampering Intelligence','Finds hidden money in data you already have'],
+  sla:['SLA Sentinel — Compliance Guardian','Predict & prevent PNGRB compensation payouts'],
+  autonotify:['AutoNotify — 48-hour Interruption Notices','Mandatory advance notice, automated & audited'],
+  inspectai:['InspectAI — Photo-verified Safety Inspections','Mandated inspections, made consistent']
+};
+function go(id){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.nav===id));
+  document.getElementById('pageTitle').textContent=titles[id][0];
+  document.getElementById('pageSub').textContent=titles[id][1];
+  window.scrollTo({top:0,behavior:'smooth'});
+  if(id==='whymybill') renderBill();
+  if(id==='gasguard') initGasGuardSteps();
+}
+document.querySelectorAll('[data-nav]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.nav)));
+
+/* ============================ COUNT-UP ============================ */
+function countUp(el){
+  const target=parseFloat(el.dataset.target), suf=el.dataset.suffix||'', dec=(target%1!==0)?1:0;
+  let cur=0; const step=target/40;
+  const t=setInterval(()=>{cur+=step; if(cur>=target){cur=target;clearInterval(t);} el.textContent=cur.toFixed(dec)+suf;},20);
+}
+/* ============================ DASHBOARD CHARTS ============================ */
+let trendC, donutC;
+function initDashCharts(){
+  const ctx=document.getElementById('trendChart');
+  if(trendC) return;
+  trendC=new Chart(ctx,{type:'line',data:{labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+    datasets:[
+      {label:'Alerts',data:[42,38,55,47,61,58,49],borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.08)',fill:true,tension:.4,pointRadius:0,borderWidth:2},
+      {label:'Resolved',data:[40,37,53,46,60,57,49],borderColor:'#10b981',backgroundColor:'rgba(16,185,129,.08)',fill:true,tension:.4,pointRadius:0,borderWidth:2}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{usePointStyle:true,boxWidth:8}}},scales:{y:{grid:{color:'#eef2f6'}},x:{grid:{display:false}}}}});
+  donutC=new Chart(document.getElementById('donutChart'),{type:'doughnut',data:{labels:['GasGuard','SLA Sentinel','RevGuard','WhyMyBill','AutoNotify','InspectAI'],
+    datasets:[{data:[24,31,18,12,9,6],backgroundColor:['#ef4444','#6366f1','#f59e0b','#10b981','#0ea5e9','#8b5cf6'],borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'bottom',labels:{usePointStyle:true,boxWidth:8,font:{size:10}}}}}});
+}
+/* ============================ LIVE FEED ============================ */
+const feedItems=[
+  ['phone-call','red','GasGuard auto-answered a leak call in Maninagar — crew dispatched (ETA 6m)'],
+  ['shield-alert','amber','RevGuard flagged account #GJ-118402 — flatline usage pattern, ₹18k/yr at risk'],
+  ['timer','indigo','SLA Sentinel escalated ticket T-7741 — 2h to 24h emergency deadline'],
+  ['receipt-text','emerald','WhyMyBill explained a high bill for #GJ-559210 — winter heating, no leak'],
+  ['scan-eye','violet','InspectAI rejected an install photo — inadequate ventilation detected'],
+  ['megaphone','sky','AutoNotify sent 1,284 compliant 48h notices for Ward 7 shutdown'],
+  ['receipt-text','emerald','WhyMyBill detected an unusual usage spike for #GJ-330118 — leak check advised'],
+  ['shield-alert','amber','RevGuard: meter under-registration suspected at #GJ-880142']
+];
+const colorMap={red:'text-red-500 bg-red-50',amber:'text-amber-500 bg-amber-50',indigo:'text-indigo-500 bg-indigo-50',emerald:'text-brand-600 bg-brand-50',violet:'text-violet-500 bg-violet-50',sky:'text-sky-500 bg-sky-50'};
+let feedIdx=0;
+function pushFeed(){
+  const ul=document.getElementById('liveFeed'); if(!ul) return;
+  const [ic,col,txt]=feedItems[feedIdx%feedItems.length]; feedIdx++;
+  const li=document.createElement('li');
+  li.className='feed-enter flex items-start gap-3 p-2.5 rounded-xl hover:bg-ink-50';
+  li.innerHTML=`<span class="shrink-0 h-8 w-8 rounded-lg grid place-items-center ${colorMap[col]}"><i data-lucide="${ic}" class="w-4 h-4"></i></span>
+    <div class="min-w-0"><p class="text-sm text-ink-700 leading-snug">${txt}</p><p class="text-[11px] text-ink-400 mt-0.5">just now</p></div>`;
+  ul.prepend(li); while(ul.children.length>8) ul.removeChild(ul.lastChild);
+  lucide.createIcons();
+}
+
+/* ============================ GASGUARD ============================ */
+const ggScript=[
+  ['caller','Hello?? I think there is a gas leak in my kitchen, I can smell it strongly!'],
+  ['ai','I\'m here with you and help is on the way. First — do NOT switch on or off any lights or electrical switches. Can you do that for me?'],
+  ['caller','O-okay, I won\'t touch anything.'],
+  ['ai','Good. Now gently open the nearest windows and door to let air in. Are there windows close to you?'],
+  ['caller','Yes, opening them now.'],
+  ['ai','Well done. Next, locate the gas meter valve and turn it clockwise to shut it off, only if it is safe to reach. Avoid the kitchen if the smell is strong.'],
+  ['caller','I turned the valve near the door.'],
+  ['ai','Excellent. Please step outside now and move everyone away from the building. A trained crew is already on the way to you.'],
+  ['ai','Stay on the line with me until they arrive. You are doing everything right.']
+];
+const ggStepDefs=[
+  'Do not operate any electrical switches',
+  'Open windows & doors for ventilation',
+  'Shut the gas meter valve (if safe)',
+  'Evacuate & move everyone to safety',
+  'Nearest crew auto-dispatched'
+];
+let ggTimerInt, ggSec=0, ggRunning=false;
+function initGasGuardSteps(){
+  const ul=document.getElementById('ggSteps');
+  if(ul.children.length) return;
+  ggStepDefs.forEach((s,i)=>{
+    const li=document.createElement('li');
+    li.className='flex items-center gap-3 text-ink-400';
+    li.innerHTML=`<span class="gg-dot shrink-0 h-6 w-6 rounded-full border-2 border-ink-200 grid place-items-center"><i data-lucide="circle" class="w-3 h-3"></i></span><span>${s}</span>`;
+    li.id='ggStep'+i; ul.appendChild(li);
+  });
+  lucide.createIcons();
+}
+function ggCheck(i){
+  const li=document.getElementById('ggStep'+i); if(!li) return;
+  li.className='flex items-center gap-3 text-ink-800 font-medium';
+  li.querySelector('.gg-dot').className='gg-dot shrink-0 h-6 w-6 rounded-full bg-brand-500 grid place-items-center text-white';
+  li.querySelector('.gg-dot').innerHTML='<i data-lucide="check" class="w-3.5 h-3.5"></i>';
+  lucide.createIcons();
+}
+function ggBubble(role,txt){
+  const box=document.getElementById('ggTranscript');
+  const wrap=document.createElement('div');
+  wrap.className='flex '+(role==='ai'?'justify-start':'justify-end');
+  const b=document.createElement('div');
+  b.className=(role==='ai'
+    ?'bg-brand-600 text-white rounded-2xl rounded-tl-sm'
+    :'bg-white border border-ink-200 text-ink-800 rounded-2xl rounded-tr-sm')+' px-3.5 py-2 max-w-[80%] text-sm shadow-sm';
+  b.innerHTML=(role==='ai'?'<span class="text-[10px] uppercase tracking-wider opacity-70 block mb-0.5">SuRaksha AI</span>':'')+txt;
+  wrap.appendChild(b); box.appendChild(wrap); box.scrollTop=box.scrollHeight;
+}
+function runGasGuard(){
+  if(ggRunning) return; ggRunning=true;
+  document.getElementById('ggTranscript').innerHTML='';
+  document.getElementById('ggCaller').textContent='Connected — AI agent speaking';
+  document.getElementById('ggAvatar').classList.remove('pulse-ring');
+  document.getElementById('ggSeverity').textContent='Assessing…';
+  // timer
+  ggSec=0; clearInterval(ggTimerInt);
+  ggTimerInt=setInterval(()=>{ggSec++;document.getElementById('ggTimer').textContent=String(Math.floor(ggSec/60)).padStart(2,'0')+':'+String(ggSec%60).padStart(2,'0');},1000);
+  let i=0;
+  const next=()=>{
+    if(i>=ggScript.length){ finishGasGuard(); return; }
+    const [role,txt]=ggScript[i];
+    ggBubble(role,txt);
+    // tie checklist to AI guidance
+    if(i===1) ggCheck(0);
+    if(i===3) ggCheck(1);
+    if(i===5) { ggCheck(2); setSeverity(); }
+    if(i===7) { ggCheck(3); ggCheck(4); dispatchCrew(); }
+    i++;
+    setTimeout(next, role==='ai'?1700:1100);
+  };
+  next();
+}
+function setSeverity(){
+  document.getElementById('ggSeverity').textContent='HIGH';
+  document.getElementById('ggSeverity').className='text-2xl font-extrabold text-red-600';
+  document.querySelector('#ggSevBar > div').style.width='86%';
+}
+function dispatchCrew(){
+  document.getElementById('ggDispatch').textContent='Crew Unit GA-4 assigned';
+  document.getElementById('ggDispatch').className='text-sm font-semibold text-brand-700';
+  document.getElementById('ggEta').textContent='ETA 6 min • 2.3 km away';
+}
+function finishGasGuard(){
+  clearInterval(ggTimerInt); ggRunning=false;
+  const brief=document.getElementById('ggBrief'); brief.classList.remove('hidden');
+  document.getElementById('ggBriefBody').textContent=
+`INCIDENT: Suspected domestic gas leak (kitchen)
+LOCATION: Sector 12, Maninagar, Ahmedabad — 23.0011, 72.6009
+CALLER STATE: Calm, compliant; followed all safety steps
+SEVERITY: HIGH (strong odour, enclosed kitchen)
+ACTIONS DONE: Electrical untouched · ventilated · valve shut · evacuated
+DISPATCH: Unit GA-4 · ETA 6 min
+LANGUAGE: English (auto-detected) · call recorded`;
+  brief.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function resetGasGuard(){
+  clearInterval(ggTimerInt); ggRunning=false; ggSec=0;
+  document.getElementById('ggTimer').textContent='00:00';
+  document.getElementById('ggTranscript').innerHTML='<p class="text-center text-xs text-ink-400 py-20">Press <b>Simulate emergency call</b> to see the AI voice agent in action.</p>';
+  document.getElementById('ggCaller').textContent='Incoming emergency call';
+  document.getElementById('ggAvatar').classList.add('pulse-ring');
+  document.getElementById('ggSeverity').textContent='—'; document.getElementById('ggSeverity').className='text-2xl font-extrabold text-ink-400';
+  document.querySelector('#ggSevBar > div').style.width='0';
+  document.getElementById('ggDispatch').textContent='Awaiting…'; document.getElementById('ggDispatch').className='text-sm font-semibold text-ink-400';
+  document.getElementById('ggEta').textContent='';
+  document.getElementById('ggBrief').classList.add('hidden');
+  document.getElementById('ggSteps').innerHTML=''; initGasGuardSteps();
+}
+document.getElementById('ggStart').addEventListener('click',runGasGuard);
+document.getElementById('ggReset').addEventListener('click',resetGasGuard);
+
+/* ============================ WHYMYBILL ============================ */
+const customers=[
+  {id:'GJ-559210',name:'R. Mehta — Maninagar',type:'Domestic',hist:[412,395,430,408,402,815],amt:1980,
+    verdict:'normal',reason:'Your latest bill is higher mainly because of <b>winter heating</b> — water-heater usage typically rises 70–90% in Dec–Jan. Your meter readings are consistent with previous winters and there is <b>no sign of a leak</b>. This is expected seasonal usage.'},
+  {id:'GJ-330118',name:'A. Shah — Vastrapur',type:'Domestic',hist:[300,310,295,305,300,690],amt:1710,
+    verdict:'leak',reason:'Your usage <b>more than doubled</b> with no seasonal or behavioural reason, and consumption stayed high even overnight when appliances are usually off. This pattern can indicate an <b>in-premise leak</b>. We recommend a free safety check.'},
+  {id:'GJ-880142',name:'Patel Foods — Naroda (Comm.)',type:'Commercial',hist:[2100,2050,2080,2120,2090,1380],amt:6240,
+    verdict:'under',reason:'Your billed usage <b>dropped sharply</b> despite normal operations. This can indicate a <b>meter under-registration or fault</b>. We have scheduled a meter verification so you are billed accurately and fairly.'}
+];
+let wmbChart;
+function renderBill(){
+  const sel=document.getElementById('wmbSelect');
+  if(!sel.options.length){ customers.forEach((c,i)=>{const o=document.createElement('option');o.value=i;o.textContent=`${c.id} • ${c.name}`;sel.appendChild(o);}); }
+  const c=customers[sel.value||0];
+  document.getElementById('wmbMeta').innerHTML=
+    `<div class="flex justify-between"><span class="text-ink-500">Account</span><span class="font-semibold">${c.id}</span></div>
+     <div class="flex justify-between"><span class="text-ink-500">Type</span><span class="font-semibold">${c.type}</span></div>
+     <div class="flex justify-between"><span class="text-ink-500">Current bill</span><span class="font-semibold">₹${c.amt.toLocaleString('en-IN')}</span></div>
+     <div class="flex justify-between"><span class="text-ink-500">Cycle</span><span class="font-semibold">Bi-monthly</span></div>`;
+  document.getElementById('wmbExplain').innerHTML=c.reason;
+  const labels=['C1','C2','C3','C4','C5','Now'];
+  const colors=c.hist.map((v,i)=>i===5?(c.verdict==='under'?'#0ea5e9':c.verdict==='leak'?'#ef4444':'#10b981'):'#cbd5e1');
+  if(wmbChart) wmbChart.destroy();
+  wmbChart=new Chart(document.getElementById('wmbChart'),{type:'bar',data:{labels,datasets:[{label:'Units (SCM)',data:c.hist,backgroundColor:colors,borderRadius:6}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:'#eef2f6'}},x:{grid:{display:false}}}}});
+  const leak=document.getElementById('wmbLeak');
+  if(c.verdict==='normal'){
+    leak.className='rounded-2xl p-5 shadow-soft border border-brand-200 bg-brand-50';
+    leak.innerHTML=`<div class="flex items-center gap-2 text-brand-700 font-bold"><i data-lucide="shield-check" class="w-5 h-5"></i> Safe — no leak signal</div><p class="text-sm text-ink-600 mt-2">Usage pattern matches seasonal norms. No anomaly detected.</p>`;
+  }else if(c.verdict==='leak'){
+    leak.className='rounded-2xl p-5 shadow-soft border border-red-200 bg-red-50';
+    leak.innerHTML=`<div class="flex items-center gap-2 text-red-700 font-bold"><i data-lucide="alert-triangle" class="w-5 h-5"></i> Possible in-premise leak</div><p class="text-sm text-ink-600 mt-2">Abnormal continuous usage. Free safety inspection auto-offered to customer.</p><button class="mt-3 text-sm font-semibold text-red-700">Book safety check →</button>`;
+  }else{
+    leak.className='rounded-2xl p-5 shadow-soft border border-sky-200 bg-sky-50';
+    leak.innerHTML=`<div class="flex items-center gap-2 text-sky-700 font-bold"><i data-lucide="gauge" class="w-5 h-5"></i> Meter check advised</div><p class="text-sm text-ink-600 mt-2">Possible under-registration. Routed to RevGuard for verification.</p>`;
+  }
+  lucide.createIcons();
+}
+document.getElementById('wmbSelect').addEventListener('change',renderBill);
+document.getElementById('wmbSend').addEventListener('click',function(){this.innerHTML='<i data-lucide="check" class="w-4 h-4"></i> Sent to customer';lucide.createIcons();});
+
+/* ============================ REVGUARD ============================ */
+const rgData=[
+  {id:'GJ-118402',area:'Naroda',pattern:'Flatline (tamper)',risk:'₹18k/yr',score:97,normal:[210,205,212,208,209,211],actual:[210,205,90,40,38,39]},
+  {id:'GJ-880142',area:'Vastral',pattern:'Sudden drop',risk:'₹42k/yr',score:93,normal:[2100,2050,2080,2120,2090,2080],actual:[2100,2050,2080,2120,1380,1360]},
+  {id:'GJ-220915',area:'Odhav',pattern:'Night spikes',risk:'₹11k/yr',score:88,normal:[180,176,182,179,181,178],actual:[180,176,182,260,255,268]},
+  {id:'GJ-501277',area:'Vatva',pattern:'Bypass signature',risk:'₹26k/yr',score:84,normal:[420,415,418,421,419,417],actual:[420,415,418,210,205,208]},
+  {id:'GJ-339810',area:'Ghatlodia',pattern:'Reverse anomaly',risk:'₹9k/yr',score:79,normal:[150,148,152,149,151,150],actual:[150,148,152,149,95,92]}
+];
+let rgChart;
+function renderRev(){
+  const tb=document.getElementById('rgRows'); if(tb.children.length) {return;}
+  rgData.forEach((d,i)=>{
+    const tr=document.createElement('tr');
+    tr.className='hover:bg-brand-50/40 cursor-pointer transition'; tr.dataset.i=i;
+    const sc=d.score>=90?'bg-red-100 text-red-700':d.score>=83?'bg-amber-100 text-amber-700':'bg-sky-100 text-sky-700';
+    tr.innerHTML=`<td class="px-5 py-3 font-semibold text-ink-800">${d.id}</td><td class="px-3 py-3 text-ink-600">${d.area}</td>
+      <td class="px-3 py-3 text-ink-600">${d.pattern}</td><td class="px-3 py-3 text-right font-medium">${d.risk}</td>
+      <td class="px-5 py-3 text-right"><span class="px-2 py-1 rounded-full text-xs font-bold ${sc}">${d.score}</span></td>`;
+    tr.addEventListener('click',()=>showRev(i,tr));
+    tb.appendChild(tr);
+  });
+  showRev(0);
+}
+function showRev(i,tr){
+  document.querySelectorAll('#rgRows tr').forEach(r=>r.classList.remove('bg-brand-50'));
+  (tr||document.querySelector('#rgRows tr')).classList.add('bg-brand-50');
+  const d=rgData[i];
+  document.getElementById('rgDetailTitle').textContent=`${d.id} — ${d.pattern}`;
+  document.getElementById('rgDetailSub').textContent=`${d.area} • anomaly score ${d.score} • ${d.risk} at risk`;
+  if(rgChart) rgChart.destroy();
+  rgChart=new Chart(document.getElementById('rgChart'),{type:'line',data:{labels:['M1','M2','M3','M4','M5','M6'],
+    datasets:[
+      {label:'Expected',data:d.normal,borderColor:'#cbd5e1',borderDash:[5,4],fill:false,tension:.3,pointRadius:0,borderWidth:2},
+      {label:'Actual',data:d.actual,borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.08)',fill:true,tension:.3,pointRadius:3,borderWidth:2}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{usePointStyle:true,boxWidth:8}}},scales:{y:{grid:{color:'#eef2f6'}},x:{grid:{display:false}}}}});
+}
+document.getElementById('rgDispatch').addEventListener('click',function(){this.innerHTML='<i data-lucide="check" class="w-4 h-4"></i> Inspection dispatched';lucide.createIcons();setTimeout(()=>{this.innerHTML='<i data-lucide="map-pin" class="w-4 h-4"></i> Dispatch field inspection';lucide.createIcons();},2000);});
+
+/* ============================ SLA SENTINEL ============================ */
+const slaSeed=[
+  {id:'T-7741',cat:'24h',label:'Gas leak — Maninagar',left:2*3600+540,risk:78},
+  {id:'T-7738',cat:'7d',label:'Pressure low — Vastral',left:9*3600,risk:64},
+  {id:'T-7720',cat:'24h',label:'Smell complaint — Odhav',left:55*60,risk:91},
+  {id:'T-7702',cat:'15d',label:'Billing dispute — Naroda',left:3*24*3600,risk:22},
+  {id:'T-7699',cat:'7d',label:'Meter relocation — Vatva',left:31*3600,risk:48},
+  {id:'T-7681',cat:'24h',label:'Regulator fault — Ghatlodia',left:3*3600+1200,risk:70}
+];
+const catStyle={'24h':'bg-red-100 text-red-700','7d':'bg-amber-100 text-amber-700','15d':'bg-sky-100 text-sky-700'};
+let slaInt;
+function fmtLeft(s){if(s<=0)return'BREACHED';const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;return h>0?`${h}h ${m}m`:`${m}m ${sec}s`;}
+function renderSla(){
+  const tb=document.getElementById('slaRows');
+  tb.innerHTML='';
+  const sorted=[...slaSeed].sort((a,b)=>a.left-b.left);
+  sorted.forEach(t=>{
+    const danger=t.left<3600, warn=t.left<6*3600;
+    const tr=document.createElement('tr');
+    tr.className=danger?'bg-red-50/60':warn?'bg-amber-50/40':'';
+    const riskColor=t.risk>=75?'text-red-600':t.risk>=50?'text-amber-600':'text-brand-600';
+    tr.innerHTML=`<td class="px-5 py-3"><div class="font-semibold text-ink-800">${t.id}</div><div class="text-xs text-ink-500">${t.label}</div></td>
+      <td class="px-3 py-3"><span class="px-2 py-1 rounded-full text-xs font-semibold ${catStyle[t.cat]}">${t.cat}</span></td>
+      <td class="px-3 py-3 font-mono ${danger?'text-red-600 font-bold':'text-ink-700'}">${fmtLeft(t.left)}</td>
+      <td class="px-3 py-3"><div class="flex items-center gap-2"><div class="w-16 h-1.5 rounded-full bg-ink-100 overflow-hidden"><div class="h-full ${t.risk>=75?'bg-red-500':t.risk>=50?'bg-amber-500':'bg-brand-500'}" style="width:${t.risk}%"></div></div><span class="text-xs font-semibold ${riskColor}">${t.risk}%</span></div></td>
+      <td class="px-5 py-3 text-right">${danger?'<button class="text-xs font-semibold text-white bg-red-600 px-3 py-1.5 rounded-lg hover:bg-red-700">Escalate now</button>':'<button class="text-xs font-semibold text-ink-600 border border-ink-200 px-3 py-1.5 rounded-lg hover:bg-ink-50">Monitor</button>'}</td>`;
+    tb.appendChild(tr);
+  });
+  document.getElementById('slaOpen').textContent=slaSeed.length;
+  document.getElementById('slaRisk').textContent=slaSeed.filter(t=>t.risk>=50).length;
+}
+function tickSla(){ slaSeed.forEach(t=>{ if(t.left>0) t.left-=1; }); renderSla(); }
+
+/* ============================ AUTONOTIFY ============================ */
+const anZones=[{n:1284,name:'Ward 7 — Maninagar'},{n:842,name:'Sector 21 — Gandhinagar'},{n:2109,name:'Vesu Ring Road — Surat'}];
+function anTemplate(){
+  const z=anZones[document.getElementById('anZone').value];
+  const start=document.getElementById('anStart').value;
+  const dur=document.getElementById('anDur').value;
+  const when=start?new Date(start).toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'}):'[set date]';
+  document.getElementById('anMsg').value=
+`Dear Customer, your PNG supply in ${z.name} will be temporarily interrupted on ${when} for approx. ${dur} due to planned network maintenance. We regret the inconvenience. — Torrent Gas`;
+  checkAnCompliance();
+}
+function checkAnCompliance(){
+  const el=document.getElementById('anCompliance');
+  const start=document.getElementById('anStart').value;
+  if(!start){el.className='text-xs rounded-lg px-3 py-2 mb-3 bg-ink-100 text-ink-500';el.innerHTML='Set a work start time to verify the 48-hour rule.';return;}
+  const hrs=(new Date(start)-new Date())/36e5;
+  if(hrs>=48){el.className='text-xs rounded-lg px-3 py-2 mb-3 bg-brand-50 text-brand-700 border border-brand-200';el.innerHTML='✓ Compliant — '+Math.floor(hrs)+'h advance notice (≥48h required by PNGRB 2025).';}
+  else{el.className='text-xs rounded-lg px-3 py-2 mb-3 bg-red-50 text-red-700 border border-red-200';el.innerHTML='⚠ Only '+Math.max(0,Math.floor(hrs))+'h notice — below the mandatory 48h. Reschedule to stay compliant.';}
+}
+function sendNotices(){
+  const z=anZones[document.getElementById('anZone').value];
+  const channels=[...document.querySelectorAll('.anch')].filter(c=>c.checked).length;
+  if(!channels){alert('Select at least one channel');return;}
+  const total=z.n; let sent=0;
+  const grid=document.getElementById('anGrid'); grid.innerHTML='';
+  const dots=100; for(let i=0;i<dots;i++){const d=document.createElement('div');d.className='h-3 rounded-sm bg-ink-100 transition-colors';grid.appendChild(d);}
+  const log=document.getElementById('anLog'); log.innerHTML='';
+  const bar=document.getElementById('anBar');
+  const names=['SMS → +91 98•••231','WhatsApp → +91 99•••884','App push → device A41','SMS → +91 97•••552','WhatsApp → +91 96•••093'];
+  const int=setInterval(()=>{
+    sent+=Math.ceil(total/40);
+    if(sent>=total) sent=total;
+    const pct=Math.round(sent/total*100);
+    bar.style.width=pct+'%';
+    document.getElementById('anProgress').textContent=`${sent.toLocaleString('en-IN')} / ${total.toLocaleString('en-IN')} delivered`;
+    grid.querySelectorAll('div').forEach((d,i)=>{ if(i<pct) d.className='h-3 rounded-sm bg-brand-500 transition-colors'; });
+    if(log.children.length<6){
+      const li=document.createElement('li');li.className='feed-enter flex items-center gap-2 text-ink-600';
+      li.innerHTML=`<i data-lucide="check-circle-2" class="w-4 h-4 text-brand-600"></i> ${names[log.children.length%names.length]} <span class="text-[11px] text-ink-400 ml-auto">delivered ✓ proof logged</span>`;
+      log.appendChild(li);lucide.createIcons();
+    }
+    if(sent>=total){clearInterval(int);
+      const li=document.createElement('li');li.className='font-semibold text-brand-700 pt-2';li.textContent=`All ${total.toLocaleString('en-IN')} customers notified — audit log saved.`;log.appendChild(li);}
+  },120);
+}
+document.getElementById('anZone').addEventListener('change',anTemplate);
+document.getElementById('anStart').addEventListener('change',anTemplate);
+document.getElementById('anDur').addEventListener('input',anTemplate);
+document.getElementById('anSend').addEventListener('click',sendNotices);
+
+/* ============================ INSPECTAI ============================ */
+const iaPass=[['Adequate ventilation / open space',true,98],['Safe clearance from electrical points',true,95],['Correct pipe routing & support',true,93],['Regulator in good condition',true,96],['No combustible material nearby',true,90]];
+const iaFail=[['Adequate ventilation / open space',false,92],['Safe clearance from electrical points',false,88],['Correct pipe routing & support',true,84],['Regulator in good condition',true,91],['No combustible material nearby',false,79]];
+let iaCurrent=null;
+function iaEnable(){document.getElementById('iaRun').disabled=false;}
+function iaShowImg(src){
+  const img=document.getElementById('iaPreview');img.src=src;img.classList.remove('hidden');
+  document.getElementById('iaPlaceholder').classList.add('hidden');iaEnable();
+}
+document.getElementById('iaDrop').addEventListener('click',()=>document.getElementById('iaFile').click());
+document.getElementById('iaFile').addEventListener('change',e=>{const f=e.target.files[0];if(f){iaCurrent='pass';iaShowImg(URL.createObjectURL(f));}});
+['dragover','dragenter'].forEach(ev=>document.getElementById('iaDrop').addEventListener(ev,e=>{e.preventDefault();document.getElementById('iaDrop').classList.add('drag');}));
+['dragleave','drop'].forEach(ev=>document.getElementById('iaDrop').addEventListener(ev,e=>{e.preventDefault();document.getElementById('iaDrop').classList.remove('drag');}));
+document.getElementById('iaDrop').addEventListener('drop',e=>{const f=e.dataTransfer.files[0];if(f){iaCurrent='pass';iaShowImg(URL.createObjectURL(f));}});
+document.querySelectorAll('.iaSample').forEach(b=>b.addEventListener('click',()=>{
+  iaCurrent=b.dataset.sample;
+  const svg=b.dataset.sample==='pass'
+    ?'data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="320" height="200"><rect width="320" height="200" fill="#ecfdf5"/><rect x="40" y="60" width="240" height="90" rx="8" fill="#a7f3d0"/><text x="160" y="115" font-family="Inter" font-size="16" fill="#065f46" text-anchor="middle">Compliant install (sample)</text></svg>')
+    :'data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="320" height="200"><rect width="320" height="200" fill="#fef2f2"/><rect x="40" y="60" width="240" height="90" rx="8" fill="#fecaca"/><text x="160" y="115" font-family="Inter" font-size="16" fill="#991b1b" text-anchor="middle">Risky install (sample)</text></svg>');
+  iaShowImg(svg);
+}));
+document.getElementById('iaRun').addEventListener('click',()=>{
+  const data=iaCurrent==='fail'?iaFail:iaPass;
+  const ul=document.getElementById('iaChecks');ul.innerHTML='';
+  const fails=data.filter(d=>!d[1]).length;
+  let i=0;
+  const reveal=()=>{
+    if(i>=data.length){iaFinish(fails);return;}
+    const [label,ok,conf]=data[i];
+    const li=document.createElement('li');li.className='feed-enter flex items-center gap-3 p-2.5 rounded-xl '+(ok?'bg-brand-50':'bg-red-50');
+    li.innerHTML=`<span class="shrink-0 h-7 w-7 rounded-full grid place-items-center ${ok?'bg-brand-500':'bg-red-500'} text-white"><i data-lucide="${ok?'check':'x'}" class="w-4 h-4"></i></span>
+      <span class="text-ink-800 flex-1">${label}</span><span class="text-xs font-mono ${ok?'text-brand-600':'text-red-600'}">${conf}%</span>`;
+    ul.appendChild(li);lucide.createIcons();i++;setTimeout(reveal,350);
+  };
+  reveal();
+});
+function iaFinish(fails){
+  const v=document.getElementById('iaVerdict');
+  if(fails>0){v.textContent='FAIL — '+fails+' issue(s)';v.className='text-xs px-2.5 py-1 rounded-full bg-red-100 text-red-700 font-semibold';}
+  else{v.textContent='PASS — compliant';v.className='text-xs px-2.5 py-1 rounded-full bg-brand-100 text-brand-700 font-semibold';}
+  const rep=document.getElementById('iaReport');rep.classList.remove('hidden');
+  document.getElementById('iaReportBody').textContent=
+`INSPECTION ID : INS-${Math.floor(Math.random()*9000+1000)}
+TIMESTAMP     : ${new Date().toLocaleString('en-IN')}
+INSPECTOR     : Field Tech (geo-stamped)
+VERDICT       : ${fails>0?'FAILED — corrective action required':'PASSED — safe for activation'}
+PNGRB         : Consumer-installation safety inspection ✓ logged
+${fails>0?'NEXT STEP    : Block activation until ventilation/clearance fixed':'NEXT STEP    : Cleared for gas activation'}`;
+}
+
+/* ============================ BOOT ============================ */
+document.addEventListener('DOMContentLoaded',()=>{
+  lucide.createIcons();
+  document.querySelectorAll('.countup').forEach(countUp);
+  initDashCharts();
+  renderRev();
+  renderSla();
+  initGasGuardSteps();
+  anTemplate();
+  // streams
+  pushFeed(); setInterval(pushFeed,3500);
+  slaInt=setInterval(tickSla,1000);
+  // mobile nav (simple): reveal sidebar by toggling a class — basic
+  document.getElementById('mobileNav').addEventListener('click',()=>{
+    document.querySelector('aside').classList.toggle('hidden');
+    document.querySelector('aside').classList.toggle('flex');
+  });
+});
+</script>
+</body>
+</html>
