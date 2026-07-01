@@ -10,7 +10,7 @@ const catTone: Record<string, "red" | "amber" | "sky"> = { "24h": "red", "7d": "
 function fmt(s: number) {
   if (s <= 0) return "BREACHED";
   const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
-  return h > 0 ? `${h}h ${m}m` : `${m}m ${sec}s`;
+  return h > 0 ? `${h}h ${m}m` : `${m}m ${sec}s`; //He;;o
 }
 
 export default function SLA() {
