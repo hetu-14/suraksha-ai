@@ -1,0 +1,81 @@
+import Link from "next/link";
+import { Card, Kpi } from "@/components/ui";
+import { currentCustomer, inr } from "@/lib/data";
+import {
+  ShieldCheck, ReceiptText, ScanEye, ArrowRight, Phone, Flame, Droplets,
+} from "lucide-react";
+
+export default function UserHome() {
+  const due = currentCustomer.bills.find((b) => b.status === "Due");
+  return (
+    <div className="space-y-6">
+      {/* greeting */}
+      <div className="rounded-2xl bg-gradient-to-br from-ink-900 via-ink-900 to-brand-900 text-white p-6 sm:p-7 relative overflow-hidden shadow-soft">
+        <div className="absolute -right-10 -top-10 w-56 h-56 bg-brand-500/20 rounded-full blur-3xl" />
+        <div className="relative">
+          <p className="text-brand-300 text-sm font-medium">Namaste, {currentCustomer.name.split(" ")[0]} 👋</p>
+          <h1 className="text-2xl sm:text-3xl font-extrabold mt-1">Your home is safe & sound.</h1>
+          <p className="text-ink-300 mt-2 text-sm">
+            {currentCustomer.id} · {currentCustomer.area} · {currentCustomer.type} connection
+          </p>
+        </div>
+      </div>
+
+      {/* KPIs */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <Kpi label="Safety status" value="Safe" sub="All sensors nominal" icon={<ShieldCheck className="w-4 h-4" />} />
+        <Kpi label="Current bill" value={due ? inr(due.amount) : "—"} sub={due ? "Due this cycle" : "Nothing due"} accent="text-amber-600" icon={<ReceiptText className="w-4 h-4" />} />
+        <Kpi label="Leak risk" value="None" sub="No anomaly detected" icon={<Droplets className="w-4 h-4" />} />
+        <Kpi label="This cycle usage" value={`${due?.units ?? 0} SCM`} sub="Winter heating" icon={<Flame className="w-4 h-4" />} accent="text-orange-500" />
+      </div>
+
+      {/* quick actions */}
+      <div className="grid md:grid-cols-2 gap-4">
+        <Link href="/user/safezone">
+          <Card className="p-6 hover:border-brand-300 transition h-full">
+            <div className="flex items-center justify-between">
+              <div className="h-11 w-11 rounded-2xl bg-violet-100 grid place-items-center">
+                <ScanEye className="w-5 h-5 text-violet-600" />
+              </div>
+              <ArrowRight className="w-5 h-5 text-ink-300" />
+            </div>
+            <h3 className="font-bold text-ink-900 mt-4">SafeZone AI</h3>
+            <p className="text-sm text-ink-500 mt-1">
+              Live AI safety monitoring of your premises — gas, ventilation and hazard detection.
+            </p>
+          </Card>
+        </Link>
+        <Link href="/user/bills">
+          <Card className="p-6 hover:border-brand-300 transition h-full">
+            <div className="flex items-center justify-between">
+              <div className="h-11 w-11 rounded-2xl bg-brand-100 grid place-items-center">
+                <ReceiptText className="w-5 h-5 text-brand-600" />
+              </div>
+              <ArrowRight className="w-5 h-5 text-ink-300" />
+            </div>
+            <h3 className="font-bold text-ink-900 mt-4">WhyMyBill</h3>
+            <p className="text-sm text-ink-500 mt-1">
+              See all your past bills and get a plain-language reason for every charge.
+            </p>
+          </Card>
+        </Link>
+      </div>
+
+      {/* emergency banner */}
+      <Card className="p-5 border-red-200 bg-red-50">
+        <div className="flex items-center gap-4">
+          <div className="h-11 w-11 rounded-2xl bg-red-100 grid place-items-center shrink-0">
+            <Phone className="w-5 h-5 text-red-600" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-bold text-red-800">Smell gas? Act now.</h3>
+            <p className="text-sm text-red-700/80">Our AI emergency line answers instantly and guides you step-by-step.</p>
+          </div>
+          <a href="tel:1906" className="bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl px-4 py-2.5 text-sm">
+            Call 1906
+          </a>
+        </div>
+      </Card>
+    </div>
+  );
+}

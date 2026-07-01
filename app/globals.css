@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #f6f8fb;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: #1e293b;
+}
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; border: 2px solid #f6f8fb; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+.glass { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(12px); }
