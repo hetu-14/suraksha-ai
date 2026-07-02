@@ -1,25 +1,26 @@
 """
 SuRaksha AI · SafeZone detector
 --------------------------------
-Runs a YOLO model on a looping CNG-station video, detects safety violations,
-logs each case, (optionally) notifies the station over WhatsApp, and exposes:
+Runs YOLO on a CNG-station video (or your webcam), detects safety violations,
+logs each case, optionally notifies the station over WhatsApp, and serves:
 
-  GET /video   -> annotated MJPEG stream  (embed in the SafeZone admin page)
+  GET /video   -> annotated MJPEG stream  (embedded in the SafeZone admin page)
   GET /events  -> recent detection events as JSON (the page polls this)
   GET /health  -> liveness
 
-Detections out of the box (base COCO model, no extra weights):
-  • "Restricted area"  — a person inside the configured restricted polygon
-  • "Person detected"  — logged occasionally for demo visibility
+Detections:
+  • "No helmet"       — via an auto-downloaded hard-hat YOLO model (PPE)
+  • "Restricted area" — a person inside the configured restricted polygon
+  • people are boxed live on the stream
 
-Optional PPE / helmet detection: set HELMET_MODEL to a YOLO model whose classes
-include something like 'no-helmet' / 'head' / 'helmet' (many free ones exist on
-Roboflow / GitHub). Boxes classified as "no helmet"/"head" -> "No helmet" case.
-
-Run:
+Quick start (webcam — nothing to download but the models):
   pip install -r requirements.txt
-  # put your CNG footage here as footage.mp4 (or set FOOTAGE=/path/to/video.mp4)
+  FOOTAGE=0 python detect.py          # uses your webcam; walk in / out of frame
+
+Video file:
+  # put a clip as footage.mp4 (or set FOOTAGE=/path/clip.mp4), then:
   python detect.py
+
 Then set NEXT_PUBLIC_SAFEZONE_API=http://localhost:8000 in the web app's .env.local
 """
 
@@ -29,6 +30,7 @@ import time
 import threading
 import collections
 import datetime
+import urllib.request
 
 import numpy as np
 import cv2
@@ -37,37 +39,58 @@ from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 # ---------------- config ----------------
-FOOTAGE = os.getenv("FOOTAGE", "footage.mp4")
+FOOTAGE = os.getenv("FOOTAGE", "footage.mp4")          # path, or "0"/"webcam" for camera
 CAM_NAME = os.getenv("CAM_NAME", "CNG Station · Cam 1")
-YOLO_MODEL = os.getenv("YOLO_MODEL", "yolov8n.pt")
-HELMET_MODEL = os.getenv("HELMET_MODEL")  # optional PPE model path
-NOTIFY_WEBHOOK = os.getenv("NOTIFY_WEBHOOK")  # e.g. http://localhost:3000/api/notify
+YOLO_MODEL = os.getenv("YOLO_MODEL", "yolov8n.pt")     # person detector (COCO)
+NOTIFY_WEBHOOK = os.getenv("NOTIFY_WEBHOOK")           # e.g. http://localhost:3000/api/notify
 COOLDOWN_S = float(os.getenv("COOLDOWN_S", "8"))
-# restricted zone as relative [[x,y],...] (0..1). Default = right-hand strip.
 RESTRICTED = json.loads(os.getenv("RESTRICTED_ZONE", "[[0.60,0.30],[0.98,0.30],[0.98,0.97],[0.60,0.97]]"))
-
 LOG_FILE = os.getenv("LOG_FILE", "detections.log")
 
-# ---------------- model ----------------
+# hard-hat / PPE model (auto-downloaded unless HELMET_AUTODOWNLOAD=0)
+HELMET_MODEL = os.getenv("HELMET_MODEL")
+HELMET_AUTODOWNLOAD = os.getenv("HELMET_AUTODOWNLOAD", "1") != "0"
+HARDHAT_URL = os.getenv("HARDHAT_URL", "https://huggingface.co/keremberke/yolov8n-hard-hat-detection/resolve/main/best.pt")
+
+
+def _resolve_helmet_model():
+    if HELMET_MODEL:
+        return HELMET_MODEL
+    if not HELMET_AUTODOWNLOAD:
+        return None
+    os.makedirs("models", exist_ok=True)
+    dest = os.path.join("models", "hardhat.pt")
+    if not os.path.exists(dest):
+        try:
+            print(f"[SafeZone] downloading hard-hat model -> {dest} (once) ...")
+            urllib.request.urlretrieve(HARDHAT_URL, dest)
+        except Exception as e:  # pragma: no cover
+            print(f"[SafeZone] hard-hat model download failed ({e}); 'No helmet' disabled.")
+            return None
+    return dest
+
+
+# ---------------- models ----------------
 model = None
 helmet = None
 try:
     from ultralytics import YOLO
     model = YOLO(YOLO_MODEL)
-    if HELMET_MODEL:
-        helmet = YOLO(HELMET_MODEL)
-    print(f"[SafeZone] model loaded: {YOLO_MODEL}" + (f" + helmet {HELMET_MODEL}" if helmet else ""))
+    hp = _resolve_helmet_model()
+    if hp:
+        helmet = YOLO(hp)
+    print(f"[SafeZone] models ready: person={YOLO_MODEL}" + (f", helmet={hp}" if helmet else " (no helmet model)"))
 except Exception as e:  # pragma: no cover
     print(f"[SafeZone] WARNING: could not load YOLO ({e}). Streaming without detections.")
 
 # ---------------- shared state ----------------
 events = collections.deque(maxlen=60)
 _lock = threading.Lock()
-_frame = None  # latest annotated jpeg bytes
+_frame = None
 _cooldown = {}
 
 
-def _log_event(cat: str, conf: float):
+def _log_event(cat, conf):
     ev = {
         "id": int(time.time() * 1000) % 100_000_000,
         "cat": cat,
@@ -87,14 +110,15 @@ def _log_event(cat: str, conf: float):
         threading.Thread(target=_notify, args=(cat, ev["ts"]), daemon=True).start()
 
 
-def _notify(cat: str, ts: str):
+def _notify(cat, ts):
     try:
         import requests
-        requests.post(
+        r = requests.post(
             NOTIFY_WEBHOOK,
             json={"message": f"[SafeZone AI] {cat} detected at {CAM_NAME} ({ts}). Please take action."},
             timeout=6,
         )
+        print(f"[SafeZone] station notified ({cat}) -> {r.status_code}")
     except Exception as e:
         print(f"[SafeZone] notify failed: {e}")
 
@@ -112,7 +136,7 @@ def _point_in_poly(x, y, poly):
     return inside
 
 
-def _throttled(key: str) -> bool:
+def _throttled(key):
     now = time.time()
     if now - _cooldown.get(key, 0) > COOLDOWN_S:
         _cooldown[key] = now
@@ -120,65 +144,80 @@ def _throttled(key: str) -> bool:
     return False
 
 
+def _open_source():
+    src = str(FOOTAGE).strip().lower()
+    if src in ("0", "1", "2", "webcam", "cam"):
+        idx = int(src) if src.isdigit() else 0
+        print(f"[SafeZone] source: webcam #{idx}")
+        return cv2.VideoCapture(idx), True
+    print(f"[SafeZone] source: file '{FOOTAGE}'")
+    return cv2.VideoCapture(FOOTAGE), False
+
+
 def _process_loop():
     global _frame
     frame_i = 0
     while True:
-        cap = cv2.VideoCapture(FOOTAGE)
+        cap, is_webcam = _open_source()
         if not cap.isOpened():
-            print(f"[SafeZone] cannot open footage '{FOOTAGE}' — retrying in 3s")
+            print(f"[SafeZone] cannot open source '{FOOTAGE}' — retrying in 3s")
             time.sleep(3)
             continue
         while True:
             ok, frame = cap.read()
             if not ok:
-                break  # end of clip -> loop again
+                break  # file: end -> loop; webcam: transient -> reopen
             frame_i += 1
             h, w = frame.shape[:2]
             annotated = frame.copy()
 
-            # draw restricted polygon
             pts = np.array([[int(px * w), int(py * h)] for px, py in RESTRICTED], np.int32)
             cv2.polylines(annotated, [pts], True, (60, 60, 230), 2)
             cv2.putText(annotated, "RESTRICTED", (pts[0][0] + 4, pts[0][1] + 18),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (60, 60, 230), 1)
 
-            if model is not None and frame_i % 2 == 0:  # detect every other frame for speed
+            if model is not None and frame_i % 2 == 0:
                 try:
                     res = model(frame, verbose=False)[0]
                     for box in res.boxes:
-                        cls = int(box.cls[0])
+                        if int(box.cls[0]) != 0:
+                            continue
                         conf = float(box.conf[0])
-                        if cls == 0 and conf > 0.40:  # person (COCO id 0)
-                            x1, y1, x2, y2 = map(int, box.xyxy[0])
-                            cx, cy = (x1 + x2) / 2 / w, y2 / h
-                            color, label = (0, 200, 0), "person"
-                            if _point_in_poly(cx, cy, RESTRICTED):
-                                color, label = (0, 0, 255), "RESTRICTED AREA"
-                                if _throttled(f"restricted-{x1 // 60}"):
-                                    _log_event("Restricted area", conf)
-                            cv2.rectangle(annotated, (x1, y1), (x2, y2), color, 2)
-                            cv2.putText(annotated, f"{label} {conf:.2f}", (x1, y1 - 6),
-                                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+                        if conf <= 0.40:
+                            continue
+                        x1, y1, x2, y2 = map(int, box.xyxy[0])
+                        cx, cy = (x1 + x2) / 2 / w, y2 / h
+                        color, label = (0, 200, 0), "person"
+                        if _point_in_poly(cx, cy, RESTRICTED):
+                            color, label = (0, 0, 255), "RESTRICTED AREA"
+                            if _throttled(f"restricted-{x1 // 60}"):
+                                _log_event("Restricted area", conf)
+                        cv2.rectangle(annotated, (x1, y1), (x2, y2), color, 2)
+                        cv2.putText(annotated, f"{label} {conf:.2f}", (x1, y1 - 6),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
 
-                    # optional PPE / helmet model
                     if helmet is not None:
                         hres = helmet(frame, verbose=False)[0]
                         names = hres.names
                         for box in hres.boxes:
                             conf = float(box.conf[0])
+                            if conf < 0.45:
+                                continue
                             name = str(names.get(int(box.cls[0]), "")).lower()
-                            if conf > 0.45 and ("no" in name and "helmet" in name or name == "head"):
-                                x1, y1, x2, y2 = map(int, box.xyxy[0])
+                            x1, y1, x2, y2 = map(int, box.xyxy[0])
+                            no_helmet = (("no" in name) and ("helmet" in name or "hardhat" in name)) or name == "head"
+                            is_helmet = ("helmet" in name or "hardhat" in name) and "no" not in name
+                            if no_helmet:
                                 cv2.rectangle(annotated, (x1, y1), (x2, y2), (0, 0, 255), 2)
                                 cv2.putText(annotated, "NO HELMET", (x1, y1 - 6),
                                             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
                                 if _throttled(f"helmet-{x1 // 60}"):
                                     _log_event("No helmet", conf)
+                            elif is_helmet:
+                                cv2.rectangle(annotated, (x1, y1), (x2, y2), (0, 200, 0), 1)
                 except Exception as e:
                     print(f"[SafeZone] inference error: {e}")
 
-            # overlay banner
             cv2.rectangle(annotated, (0, 0), (w, 26), (17, 24, 39), -1)
             cv2.putText(annotated, f"SuRaksha AI  |  {CAM_NAME}", (8, 18),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.55, (52, 211, 153), 1)
@@ -187,8 +226,10 @@ def _process_loop():
             if ok2:
                 with _lock:
                     _frame = buf.tobytes()
-            time.sleep(0.03)  # ~30 fps cap
+            time.sleep(0.03)
         cap.release()
+        if is_webcam:
+            time.sleep(1)
 
 
 threading.Thread(target=_process_loop, daemon=True).start()
@@ -200,7 +241,7 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], all
 
 @app.get("/health")
 def health():
-    return {"ok": True, "model": bool(model), "cam": CAM_NAME}
+    return {"ok": True, "person_model": bool(model), "helmet_model": bool(helmet), "cam": CAM_NAME}
 
 
 @app.get("/events")
@@ -226,5 +267,5 @@ def video():
 if __name__ == "__main__":
     import uvicorn
     port = int(os.getenv("PORT", "8000"))
-    print(f"[SafeZone] serving on http://localhost:{port}  (video/events)")
+    print(f"[SafeZone] serving on http://localhost:{port}")
     uvicorn.run(app, host="0.0.0.0", port=port)

@@ -19,3 +19,11 @@ next-env.d.ts
 .DS_Store
 *.pem
 .env*
+
+# python detector runtime artifacts
+detector/models/
+detector/*.mp4
+detector/detections.log
+detector/.venv/
+__pycache__/
+*.pt
