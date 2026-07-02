@@ -23,6 +23,11 @@ next-env.d.ts
 # python detector runtime artifacts
 detector/models/
 detector/*.mp4
+detector/footage/*.mp4
+detector/footage/*.avi
+detector/footage/*.mov
+detector/footage/*.mkv
+detector/footage/*.webm
 detector/detections.log
 detector/.venv/
 __pycache__/
