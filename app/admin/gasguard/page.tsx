@@ -1,183 +1,144 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { Card, SectionTitle } from "@/components/ui";
-import {
-  PhoneIncoming, PhoneCall, RotateCcw, Check, Circle, ListChecks, FileText,
-} from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Card, SectionTitle, Kpi, Badge } from "@/components/ui";
+import { Siren, Timer, Truck, CheckCircle2, MapPin, PhoneCall, Bell } from "lucide-react";
 
-const script: [("caller" | "ai"), string][] = [
-  ["caller", "Hello?? I think there is a gas leak in my kitchen, I can smell it strongly!"],
-  ["ai", "I'm here with you and help is on the way. First — do NOT switch on or off any lights or electrical switches. Can you do that for me?"],
-  ["caller", "O-okay, I won't touch anything."],
-  ["ai", "Good. Now gently open the nearest windows and door to let air in. Are there windows close to you?"],
-  ["caller", "Yes, opening them now."],
-  ["ai", "Well done. Next, locate the gas meter valve and turn it clockwise to shut it off, only if it is safe to reach."],
-  ["caller", "I turned the valve near the door."],
-  ["ai", "Excellent. Please step outside now and move everyone away from the building. A trained crew is already on the way."],
-  ["ai", "Stay on the line with me until they arrive. You are doing everything right."],
+type Status = "AI guiding" | "Dispatched" | "Resolved";
+type Case = { id: string; area: string; severity: "High" | "Medium"; age: number; status: Status; crew?: string };
+
+const seed: Case[] = [
+  { id: "EMG-2231", area: "Maninagar · Sec 12", severity: "High", age: 42, status: "AI guiding" },
+  { id: "EMG-2229", area: "Vastral · Ward 4", severity: "Medium", age: 315, status: "Dispatched", crew: "GA-2" },
+  { id: "EMG-2225", area: "Odhav · Ring Rd", severity: "High", age: 548, status: "Dispatched", crew: "GA-4" },
+  { id: "EMG-2218", area: "Naroda · Zone 3", severity: "Medium", age: 1320, status: "Resolved", crew: "GA-1" },
 ];
 
-const stepDefs = [
-  "Do not operate any electrical switches",
-  "Open windows & doors for ventilation",
-  "Shut the gas meter valve (if safe)",
-  "Evacuate & move everyone to safety",
-  "Nearest crew auto-dispatched",
-];
+const newAreas = ["Bopal · Sec 2", "Nikol · Ward 9", "Chandkheda · Zone 1", "Ghatlodia · Sec 5"];
+const crews = ["GA-3", "GA-5", "GA-6", "GA-7"];
 
-export default function GasGuard() {
-  const [msgs, setMsgs] = useState<[string, string][]>([]);
-  const [steps, setSteps] = useState<boolean[]>([false, false, false, false, false]);
-  const [running, setRunning] = useState(false);
-  const [done, setDone] = useState(false);
-  const [sec, setSec] = useState(0);
-  const [severity, setSeverity] = useState<"idle" | "assessing" | "high">("idle");
-  const [dispatch, setDispatch] = useState(false);
-  const boxRef = useRef<HTMLDivElement>(null);
-  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+function ago(s: number) {
+  if (s < 60) return `${s}s ago`;
+  const m = Math.floor(s / 60);
+  return m < 60 ? `${m}m ago` : `${Math.floor(m / 60)}h ago`;
+}
+
+export default function GasGuardCases() {
+  const [cases, setCases] = useState<Case[]>(seed);
+  const [feed, setFeed] = useState<string[]>(["New SOS · EMG-2231 · Maninagar — AI answering"]);
+  const tick = useRef(0);
 
   useEffect(() => {
-    let t: ReturnType<typeof setInterval>;
-    if (running) t = setInterval(() => setSec((s) => s + 1), 1000);
+    const t = setInterval(() => {
+      tick.current += 1;
+      setCases((cs) => cs.map((c) => ({ ...c, age: c.age + 1 })));
+      // every ~16s spawn a new SOS
+      if (tick.current % 16 === 0) {
+        const id = "EMG-" + (2232 + Math.floor(tick.current / 16));
+        const area = newAreas[Math.floor(Math.random() * newAreas.length)];
+        const nc: Case = { id, area, severity: Math.random() > 0.5 ? "High" : "Medium", age: 0, status: "AI guiding" };
+        setCases((cs) => [nc, ...cs].slice(0, 8));
+        setFeed((f) => [`New SOS · ${id} · ${area} — AI answering`, ...f].slice(0, 6));
+      }
+      // auto-dispatch a guiding case after a while
+      if (tick.current % 9 === 0) {
+        setCases((cs) => {
+          const idx = cs.findIndex((c) => c.status === "AI guiding" && c.age > 6);
+          if (idx === -1) return cs;
+          const crew = crews[Math.floor(Math.random() * crews.length)];
+          setFeed((f) => [`Crew ${crew} dispatched · ${cs[idx].id}`, ...f].slice(0, 6));
+          return cs.map((c, i) => (i === idx ? { ...c, status: "Dispatched", crew } : c));
+        });
+      }
+    }, 1000);
     return () => clearInterval(t);
-  }, [running]);
+  }, []);
 
-  useEffect(() => {
-    boxRef.current?.scrollTo(0, boxRef.current.scrollHeight);
-  }, [msgs]);
-
-  useEffect(() => () => timers.current.forEach(clearTimeout), []);
-
-  function run() {
-    if (running) return;
-    reset();
-    setRunning(true);
-    setSeverity("assessing");
-    let delay = 0;
-    script.forEach((line, i) => {
-      delay += line[0] === "ai" ? 1700 : 1100;
-      timers.current.push(
-        setTimeout(() => {
-          setMsgs((m) => [...m, line]);
-          if (i === 1) check(0);
-          if (i === 3) check(1);
-          if (i === 5) { check(2); setSeverity("high"); }
-          if (i === 7) { check(3); check(4); setDispatch(true); }
-          if (i === script.length - 1) { setRunning(false); setDone(true); }
-        }, delay)
-      );
-    });
+  function assign(id: string) {
+    const crew = crews[Math.floor(Math.random() * crews.length)];
+    setCases((cs) => cs.map((c) => (c.id === id ? { ...c, status: "Dispatched", crew } : c)));
+    setFeed((f) => [`Crew ${crew} dispatched · ${id}`, ...f].slice(0, 6));
   }
-  function check(i: number) {
-    setSteps((s) => s.map((v, idx) => (idx === i ? true : v)));
-  }
-  function reset() {
-    timers.current.forEach(clearTimeout);
-    timers.current = [];
-    setMsgs([]); setSteps([false, false, false, false, false]);
-    setRunning(false); setDone(false); setSec(0); setSeverity("idle"); setDispatch(false);
+  function resolve(id: string) {
+    setCases((cs) => cs.map((c) => (c.id === id ? { ...c, status: "Resolved" } : c)));
+    setFeed((f) => [`Case ${id} resolved`, ...f].slice(0, 6));
   }
 
-  const mm = String(Math.floor(sec / 60)).padStart(2, "0");
-  const ss = String(sec % 60).padStart(2, "0");
+  const active = cases.filter((c) => c.status !== "Resolved").length;
+  const needAction = cases.filter((c) => c.status === "AI guiding").length;
 
   return (
     <div className="space-y-6">
-      <SectionTitle title="GasGuard — Emergency Voice Agent" sub="24/7 AI co-pilot for the gas-leak hotline" />
+      <SectionTitle title="GasGuard — Live Emergency Cases" sub="Every SOS from customers, triaged in real time" />
 
-      <div className="grid lg:grid-cols-2 gap-5">
-        {/* call */}
-        <Card className="overflow-hidden">
-          <div className="bg-ink-950 text-white p-5 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className={`h-11 w-11 rounded-full grid place-items-center ${running || done ? "bg-brand-500/20" : "bg-red-500/20 animate-ring"}`}>
-                <PhoneIncoming className={`w-5 h-5 ${running || done ? "text-brand-300" : "text-red-300"}`} />
-              </div>
-              <div>
-                <div className="font-semibold">{running || done ? "Connected — AI agent speaking" : "Incoming emergency call"}</div>
-                <div className="text-xs text-ink-400">+91 98••• ••231 · Sector 12, Ahmedabad</div>
-              </div>
-            </div>
-            <div className="text-sm font-mono text-ink-300">{mm}:{ss}</div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <Kpi label="Active emergencies" value={active} accent="text-red-600" icon={<Siren className="w-4 h-4" />} />
+        <Kpi label="Awaiting dispatch" value={needAction} accent="text-amber-600" icon={<Bell className="w-4 h-4" />} />
+        <Kpi label="Avg AI pickup" value="1.2s" icon={<Timer className="w-4 h-4" />} />
+        <Kpi label="Crews available" value={Math.max(0, 6 - cases.filter((c) => c.status === "Dispatched").length)} icon={<Truck className="w-4 h-4" />} />
+      </div>
+
+      <div className="grid lg:grid-cols-3 gap-5">
+        {/* cases */}
+        <Card className="lg:col-span-2 overflow-hidden">
+          <div className="p-5 border-b border-ink-100 flex items-center justify-between">
+            <h3 className="font-bold text-ink-900">Incoming cases</h3>
+            <span className="flex items-center gap-1.5 text-xs text-brand-600 font-medium"><span className="h-2 w-2 rounded-full bg-brand-500 animate-pulse" /> streaming</span>
           </div>
-
-          <div ref={boxRef} className="p-5 space-y-3 h-80 overflow-y-auto bg-ink-50/40 text-sm">
-            {msgs.length === 0 && (
-              <p className="text-center text-xs text-ink-400 py-24">
-                Press <b>Simulate emergency call</b> to see the AI voice agent in action.
-              </p>
-            )}
-            {msgs.map(([role, txt], i) => (
-              <div key={i} className={`flex ${role === "ai" ? "justify-start" : "justify-end"}`}>
-                <div className={`px-3.5 py-2 max-w-[80%] text-sm shadow-sm rounded-2xl ${
-                  role === "ai" ? "bg-brand-600 text-white rounded-tl-sm" : "bg-white border border-ink-200 text-ink-800 rounded-tr-sm"
-                }`}>
-                  {role === "ai" && <span className="text-[10px] uppercase tracking-wider opacity-70 block mb-0.5">SuRaksha AI</span>}
-                  {txt}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="p-4 border-t border-ink-100 flex gap-2">
-            <button onClick={run} disabled={running} className="flex-1 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-semibold rounded-xl py-2.5 flex items-center justify-center gap-2 transition">
-              <PhoneCall className="w-4 h-4" /> Simulate emergency call
-            </button>
-            <button onClick={reset} className="px-4 rounded-xl border border-ink-200 hover:bg-ink-100 text-ink-600">
-              <RotateCcw className="w-4 h-4" />
-            </button>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-ink-50 text-ink-500 text-xs uppercase tracking-wide">
+                <tr>
+                  <th className="text-left font-semibold px-5 py-3">Case</th>
+                  <th className="text-left font-semibold px-3 py-3">Severity</th>
+                  <th className="text-left font-semibold px-3 py-3">Status</th>
+                  <th className="text-right font-semibold px-5 py-3">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-ink-100">
+                {cases.map((c) => (
+                  <tr key={c.id} className={c.status === "AI guiding" ? "bg-red-50/50" : ""}>
+                    <td className="px-5 py-3">
+                      <div className="font-semibold text-ink-800">{c.id}</div>
+                      <div className="text-xs text-ink-500 flex items-center gap-1"><MapPin className="w-3 h-3" />{c.area} · {ago(c.age)}</div>
+                    </td>
+                    <td className="px-3 py-3"><Badge tone={c.severity === "High" ? "red" : "amber"}>{c.severity}</Badge></td>
+                    <td className="px-3 py-3">
+                      <span className={`inline-flex items-center gap-1.5 text-xs font-semibold ${c.status === "Resolved" ? "text-brand-600" : c.status === "Dispatched" ? "text-sky-600" : "text-red-600"}`}>
+                        {c.status === "AI guiding" && <PhoneCall className="w-3.5 h-3.5" />}
+                        {c.status === "Dispatched" && <Truck className="w-3.5 h-3.5" />}
+                        {c.status === "Resolved" && <CheckCircle2 className="w-3.5 h-3.5" />}
+                        {c.status}{c.crew ? ` · ${c.crew}` : ""}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3 text-right">
+                      {c.status === "AI guiding" ? (
+                        <button onClick={() => assign(c.id)} className="text-xs font-semibold text-white bg-red-600 px-3 py-1.5 rounded-lg hover:bg-red-700">Dispatch crew</button>
+                      ) : c.status === "Dispatched" ? (
+                        <button onClick={() => resolve(c.id)} className="text-xs font-semibold text-ink-600 border border-ink-200 px-3 py-1.5 rounded-lg hover:bg-ink-50">Mark resolved</button>
+                      ) : (
+                        <span className="text-xs text-ink-400">Closed</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </Card>
 
-        {/* action */}
-        <div className="space-y-5">
-          <Card className="p-5">
-            <h3 className="font-bold text-ink-900 mb-3 flex items-center gap-2"><ListChecks className="w-4 h-4 text-brand-600" /> Life-saving steps (auto-guided)</h3>
-            <ul className="space-y-2 text-sm">
-              {stepDefs.map((s, i) => (
-                <li key={i} className={`flex items-center gap-3 ${steps[i] ? "text-ink-800 font-medium" : "text-ink-400"}`}>
-                  <span className={`shrink-0 h-6 w-6 rounded-full grid place-items-center ${steps[i] ? "bg-brand-500 text-white" : "border-2 border-ink-200"}`}>
-                    {steps[i] ? <Check className="w-3.5 h-3.5" /> : <Circle className="w-3 h-3" />}
-                  </span>
-                  {s}
-                </li>
-              ))}
-            </ul>
-          </Card>
-
-          <div className="grid grid-cols-2 gap-4">
-            <Card className="p-5">
-              <div className="text-xs text-ink-500 mb-1">Severity (AI assessed)</div>
-              <div className={`text-2xl font-extrabold ${severity === "high" ? "text-red-600" : "text-ink-400"}`}>
-                {severity === "idle" ? "—" : severity === "assessing" ? "Assessing…" : "HIGH"}
-              </div>
-              <div className="mt-2 h-2 rounded-full bg-ink-100 overflow-hidden">
-                <div className="h-full bg-red-500 transition-all duration-700" style={{ width: severity === "high" ? "86%" : "0%" }} />
-              </div>
-            </Card>
-            <Card className="p-5">
-              <div className="text-xs text-ink-500 mb-1">Nearest crew dispatch</div>
-              <div className={`text-sm font-semibold ${dispatch ? "text-brand-700" : "text-ink-400"}`}>
-                {dispatch ? "Crew Unit GA-4 assigned" : "Awaiting…"}
-              </div>
-              {dispatch && <div className="text-xs text-ink-500 mt-1">ETA 6 min · 2.3 km away</div>}
-            </Card>
-          </div>
-
-          {done && (
-            <Card className="p-5 bg-ink-950 text-ink-200 border-ink-800">
-              <div className="flex items-center gap-2 text-brand-300 font-semibold text-sm mb-2"><FileText className="w-4 h-4" /> Responder brief (auto-generated)</div>
-              <pre className="text-xs whitespace-pre-wrap font-mono leading-relaxed">{`INCIDENT: Suspected domestic gas leak (kitchen)
-LOCATION: Sector 12, Maninagar, Ahmedabad — 23.0011, 72.6009
-CALLER STATE: Calm, compliant; followed all safety steps
-SEVERITY: HIGH (strong odour, enclosed kitchen)
-ACTIONS: Electrical untouched · ventilated · valve shut · evacuated
-DISPATCH: Unit GA-4 · ETA 6 min
-LANGUAGE: English (auto-detected) · call recorded`}</pre>
-            </Card>
-          )}
-        </div>
+        {/* feed */}
+        <Card className="p-5">
+          <h3 className="font-bold text-ink-900 mb-3">Live notifications</h3>
+          <ul className="space-y-2">
+            {feed.map((f, i) => (
+              <li key={i} className="flex items-start gap-2.5 p-2.5 rounded-xl bg-ink-50 animate-slideIn">
+                <Siren className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                <div className="text-sm text-ink-700">{f}</div>
+              </li>
+            ))}
+          </ul>
+        </Card>
       </div>
     </div>
   );

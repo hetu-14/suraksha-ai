@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Card, Kpi } from "@/components/ui";
 import { currentCustomer, inr } from "@/lib/data";
 import {
-  ShieldCheck, ReceiptText, ScanEye, ArrowRight, Phone, Flame, Droplets,
+  ShieldCheck, ReceiptText, Siren, ArrowRight, Phone, Flame, Droplets,
 } from "lucide-react";
 
 export default function UserHome() {
@@ -31,17 +31,17 @@ export default function UserHome() {
 
       {/* quick actions */}
       <div className="grid md:grid-cols-2 gap-4">
-        <Link href="/user/safezone">
-          <Card className="p-6 hover:border-brand-300 transition h-full">
+        <Link href="/user/gasguard">
+          <Card className="p-6 hover:border-red-300 transition h-full">
             <div className="flex items-center justify-between">
-              <div className="h-11 w-11 rounded-2xl bg-violet-100 grid place-items-center">
-                <ScanEye className="w-5 h-5 text-violet-600" />
+              <div className="h-11 w-11 rounded-2xl bg-red-100 grid place-items-center">
+                <Siren className="w-5 h-5 text-red-600" />
               </div>
               <ArrowRight className="w-5 h-5 text-ink-300" />
             </div>
-            <h3 className="font-bold text-ink-900 mt-4">SafeZone AI</h3>
+            <h3 className="font-bold text-ink-900 mt-4">Gas Emergency</h3>
             <p className="text-sm text-ink-500 mt-1">
-              Live AI safety monitoring of your premises — gas, ventilation and hazard detection.
+              Smell gas? Tap SOS to connect instantly — AI guides you and dispatches the nearest crew.
             </p>
           </Card>
         </Link>
@@ -71,9 +71,9 @@ export default function UserHome() {
             <h3 className="font-bold text-red-800">Smell gas? Act now.</h3>
             <p className="text-sm text-red-700/80">Our AI emergency line answers instantly and guides you step-by-step.</p>
           </div>
-          <a href="tel:1906" className="bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl px-4 py-2.5 text-sm">
-            Call 1906
-          </a>
+          <Link href="/user/gasguard" className="bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl px-4 py-2.5 text-sm whitespace-nowrap">
+            SOS
+          </Link>
         </div>
       </Card>
     </div>

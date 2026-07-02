@@ -2,7 +2,8 @@ import Shell, { NavItem } from "@/components/Shell";
 
 const nav: NavItem[] = [
   { href: "/admin", label: "Command Center", icon: "dashboard" },
-  { href: "/admin/gasguard", label: "GasGuard", icon: "phone", badge: "LIVE" },
+  { href: "/admin/safezone", label: "SafeZone AI", icon: "video", badge: "LIVE" },
+  { href: "/admin/gasguard", label: "GasGuard Cases", icon: "siren", badge: "LIVE" },
   { href: "/admin/autonotify", label: "AutoNotify", icon: "megaphone" },
   { href: "/admin/sla", label: "SLA Sentinel", icon: "timer" },
   { href: "/admin/revguard", label: "RevGuard", icon: "shieldAlert" },

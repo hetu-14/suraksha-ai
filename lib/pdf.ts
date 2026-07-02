@@ -1,141 +1,180 @@
-import { Bill, BillExplanation, Customer } from "./types";
+import { Bill, Customer } from "./types";
 import { inr } from "./billExplain";
 
-// Client-side PDF generation. jsPDF is imported dynamically so it never lands
-// in the server bundle.
-export async function downloadBillPdf(
-  customer: Customer,
-  bill: Bill,
-  explanation: BillExplanation
-) {
+// Clean customer-facing bill PDF — Torrent Gas branding, no AI analysis.
+// jsPDF is imported dynamically so it never lands in the server bundle.
+
+async function loadLogo(): Promise<string | null> {
+  try {
+    const res = await fetch("/torrent-gas-logo.png");
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    return await new Promise((resolve) => {
+      const r = new FileReader();
+      r.onloadend = () => resolve(r.result as string);
+      r.onerror = () => resolve(null);
+      r.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+}
+
+export async function downloadBillPdf(customer: Customer, bill: Bill) {
   const { jsPDF } = await import("jspdf");
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const W = doc.internal.pageSize.getWidth();
-  const M = 40;
-  let y = 48;
+  const H = doc.internal.pageSize.getHeight();
+  const M = 42;
 
-  const green: [number, number, number] = [5, 150, 105];
+  const navy: [number, number, number] = [22, 53, 126];
+  const green: [number, number, number] = [90, 168, 50];
   const ink: [number, number, number] = [30, 41, 59];
-  const slate: [number, number, number] = [100, 116, 139];
+  const slate: [number, number, number] = [110, 123, 145];
 
-  // Header band
-  doc.setFillColor(...green);
-  doc.rect(0, 0, W, 8, "F");
+  // Top accent
+  doc.setFillColor(...navy);
+  doc.rect(0, 0, W, 6, "F");
+
+  // Logo (or themed wordmark fallback)
+  const logo = await loadLogo();
+  if (logo) {
+    doc.addImage(logo, "PNG", M, 30, 90, 31); // 164x56 aspect
+  } else {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(20);
+    doc.setTextColor(...navy);
+    doc.text("TORRENT", M, 55);
+    const tw = doc.getTextWidth("TORRENT");
+    doc.setTextColor(...green);
+    doc.text("GAS", M + tw + 6, 55);
+  }
+
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(20);
+  doc.setFontSize(15);
   doc.setTextColor(...ink);
-  doc.text("SuRaksha AI", M, y);
+  doc.text("GAS BILL", W - M, 46, { align: "right" });
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
+  doc.setFontSize(8.5);
   doc.setTextColor(...slate);
-  doc.text("Torrent Gas · PNG Tax Invoice", M, y + 15);
-  doc.setFontSize(10);
-  doc.setTextColor(...ink);
-  doc.text(`Bill: ${bill.cycleLabel}`, W - M, y, { align: "right" });
-  doc.setTextColor(...slate);
-  doc.setFontSize(9);
-  doc.text(`Status: ${bill.status.toUpperCase()}`, W - M, y + 15, { align: "right" });
+  doc.text("PNG Tax Invoice", W - M, 60, { align: "right" });
+  doc.text(`Invoice: ${invoiceNo(customer, bill)}`, W - M, 72, { align: "right" });
 
-  y += 40;
-  doc.setDrawColor(226, 232, 240);
+  let y = 92;
+  doc.setDrawColor(...navy);
+  doc.setLineWidth(0.6);
   doc.line(M, y, W - M, y);
 
-  // Customer block
-  y += 24;
-  doc.setFontSize(9);
+  // Billed-to / connection
+  y += 22;
+  doc.setFontSize(8);
   doc.setTextColor(...slate);
   doc.text("BILLED TO", M, y);
-  doc.text("CONNECTION", W / 2, y);
-  y += 16;
+  doc.text("CONNECTION DETAILS", W / 2, y);
+  y += 15;
+  doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
   doc.setTextColor(...ink);
-  doc.setFont("helvetica", "bold");
   doc.text(customer.name, M, y);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(...slate);
-  doc.text(`A/C ${customer.accountNo}`, M, y + 14);
-  doc.text(customer.area, M, y + 27);
+  doc.text(`A/C: ${customer.accountNo}`, M, y + 14);
+  doc.text(customer.area, M, y + 27, { maxWidth: W / 2 - M - 10 });
 
-  doc.text(`Meter: ${customer.meterNo ?? "-"}`, W / 2, y);
-  doc.text(`Type: ${customer.type}`, W / 2, y + 14);
+  doc.text(`Meter no: ${customer.meterNo ?? "-"}`, W / 2, y);
+  doc.text(`Category: ${cap(customer.type)}`, W / 2, y + 14);
+  doc.text(`Billing cycle: ${bill.cycleLabel}`, W / 2, y + 27);
   doc.text(
-    `Period: ${fmtDate(bill.periodStart)} – ${fmtDate(bill.periodEnd)}`,
+    `Period: ${fmtDate(bill.periodStart)} to ${fmtDate(bill.periodEnd)}`,
     W / 2,
-    y + 27
+    y + 40
   );
 
+  // Meter reading summary
+  y += 66;
+  doc.setFillColor(244, 247, 251);
+  doc.roundedRect(M, y, W - 2 * M, 34, 4, 4, "F");
+  doc.setFontSize(8);
+  doc.setTextColor(...slate);
+  const cols = [M + 14, M + (W - 2 * M) * 0.32, M + (W - 2 * M) * 0.6, M + (W - 2 * M) * 0.82];
+  ["OPENING", "CLOSING", "CONSUMPTION", "RATE"].forEach((h, i) => doc.text(h, cols[i], y + 13));
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(...ink);
+  doc.text(`${bill.openingReading}`, cols[0], y + 27);
+  doc.text(`${bill.closingReading}`, cols[1], y + 27);
+  doc.text(`${bill.unitsScm} SCM`, cols[2], y + 27);
+  doc.text(`${inr(bill.ratePerScm)}/SCM`, cols[3], y + 27);
+  doc.setFont("helvetica", "normal");
+
   // Charges table
-  y += 58;
+  y += 54;
+  doc.setFillColor(...navy);
+  doc.rect(M, y, W - 2 * M, 24, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(9);
+  doc.text("DESCRIPTION", M + 12, y + 16);
+  doc.text("AMOUNT", W - M - 12, y + 16, { align: "right" });
+  y += 24;
+
   const rows: [string, string][] = [
-    [`Gas consumption (${bill.unitsScm} SCM @ ${inr(bill.ratePerScm)}/SCM)`, inr(bill.gasCharge)],
+    [`Gas consumption charge (${bill.unitsScm} SCM @ ${inr(bill.ratePerScm)}/SCM)`, inr(bill.gasCharge)],
     ["Fixed / service charge", inr(bill.fixedCharge)],
   ];
-  if (bill.tax) rows.push(["Taxes", inr(bill.tax)]);
+  if (bill.tax) rows.push(["Taxes & duties", inr(bill.tax)]);
   if (bill.arrears) rows.push(["Arrears carried forward", inr(bill.arrears)]);
-
-  doc.setFillColor(241, 245, 249);
-  doc.rect(M, y, W - 2 * M, 22, "F");
-  doc.setTextColor(...slate);
-  doc.setFontSize(9);
-  doc.text("DESCRIPTION", M + 10, y + 15);
-  doc.text("AMOUNT", W - M - 10, y + 15, { align: "right" });
-  y += 22;
 
   doc.setTextColor(...ink);
   doc.setFontSize(10);
   rows.forEach(([label, amt]) => {
-    y += 22;
-    doc.text(label, M + 10, y);
-    doc.text(amt, W - M - 10, y, { align: "right" });
-    doc.setDrawColor(241, 245, 249);
+    y += 24;
+    doc.text(label, M + 12, y);
+    doc.text(amt, W - M - 12, y, { align: "right" });
+    doc.setDrawColor(235, 240, 246);
     doc.line(M, y + 8, W - M, y + 8);
   });
 
-  y += 30;
+  // Total band
+  y += 28;
   doc.setFillColor(...green);
-  doc.rect(M, y, W - 2 * M, 30, "F");
+  doc.rect(M, y, W - 2 * M, 32, "F");
   doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
-  doc.text("TOTAL PAYABLE", M + 10, y + 20);
-  doc.text(inr(bill.amount), W - M - 10, y + 20, { align: "right" });
-  if (bill.dueDate) {
-    y += 44;
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.setTextColor(...slate);
-    doc.text(`Due date: ${fmtDate(bill.dueDate)}`, M, y);
+  doc.text("TOTAL PAYABLE", M + 12, y + 21);
+  doc.text(inr(bill.amount), W - M - 12, y + 21, { align: "right" });
+
+  // Status / due
+  y += 48;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9.5);
+  doc.setTextColor(...ink);
+  if (bill.status === "paid") {
+    doc.text(`Status: PAID${bill.paidOn ? ` on ${fmtDate(bill.paidOn)}` : ""}`, M, y);
+  } else {
+    doc.text(`Status: ${bill.status.toUpperCase()}`, M, y);
+    if (bill.dueDate) doc.text(`Due date: ${fmtDate(bill.dueDate)}`, W - M, y, { align: "right" });
   }
 
-  // AI explanation box
-  y += 30;
-  doc.setDrawColor(...green);
-  doc.setFillColor(236, 253, 245);
-  const boxH = 96;
-  doc.roundedRect(M, y, W - 2 * M, boxH, 8, 8, "FD");
-  doc.setTextColor(...green);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
-  doc.text("SuRaksha AI · Why this amount", M + 12, y + 20);
-  doc.setTextColor(...ink);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  const lines = doc.splitTextToSize(explanation.narrative, W - 2 * M - 24);
-  doc.text(lines, M + 12, y + 38);
-
   // Footer
+  doc.setDrawColor(...navy);
+  doc.line(M, H - 58, W - M, H - 58);
   doc.setFontSize(8);
   doc.setTextColor(...slate);
-  doc.text(
-    "Generated by SuRaksha AI · figures illustrative · not a legal tax document in this prototype.",
-    M,
-    doc.internal.pageSize.getHeight() - 30
-  );
+  doc.text("Torrent Gas · Piped Natural Gas", M, H - 42);
+  doc.text("Customer care: 1906 (24x7 emergency)", M, H - 30);
+  doc.text("This is a computer-generated invoice.", W - M, H - 30, { align: "right" });
 
-  doc.save(`${customer.accountNo}-${bill.cycleLabel.replace(/\s+/g, "_")}.pdf`);
+  doc.save(`TorrentGas_${customer.accountNo}_${bill.cycleLabel.replace(/[^\w]+/g, "_")}.pdf`);
 }
 
+function invoiceNo(c: Customer, b: Bill) {
+  return `${c.accountNo}/${b.periodEnd.slice(0, 7).replace("-", "")}`;
+}
+function cap(s: string) {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 }

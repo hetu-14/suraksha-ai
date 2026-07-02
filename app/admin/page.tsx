@@ -3,7 +3,7 @@ import { Card, Kpi } from "@/components/ui";
 import { TrendChart, DonutChart } from "@/components/Charts";
 import { trend, workload } from "@/lib/data";
 import {
-  Siren, IndianRupee, TrendingUp, BadgeCheck, PhoneCall, Megaphone, Timer, ShieldAlert, ArrowRight,
+  Siren, IndianRupee, TrendingUp, BadgeCheck, Megaphone, Timer, ShieldAlert, ArrowRight, Video,
 } from "lucide-react";
 
 export default function AdminHome() {
@@ -39,7 +39,8 @@ export default function AdminHome() {
       </div>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Tile href="/admin/gasguard" icon={<PhoneCall className="w-5 h-5 text-red-500" />} title="GasGuard" sub="Emergency voice" />
+        <Tile href="/admin/safezone" icon={<Video className="w-5 h-5 text-violet-500" />} title="SafeZone AI" sub="CCTV safety" />
+        <Tile href="/admin/gasguard" icon={<Siren className="w-5 h-5 text-red-500" />} title="GasGuard Cases" sub="Live emergencies" />
         <Tile href="/admin/autonotify" icon={<Megaphone className="w-5 h-5 text-sky-500" />} title="AutoNotify" sub="48h notices" />
         <Tile href="/admin/sla" icon={<Timer className="w-5 h-5 text-indigo-500" />} title="SLA Sentinel" sub="Deadlines" />
         <Tile href="/admin/revguard" icon={<ShieldAlert className="w-5 h-5 text-amber-500" />} title="RevGuard" sub="Anomalies" />

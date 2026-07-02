@@ -31,15 +31,10 @@ function useCountUp(target: number, key: string | number) {
 }
 
 export default function BillsView({ customers, live }: { customers: CustomerWithBills[]; live: boolean }) {
-  const [custId, setCustId] = useState(customers[0]?.id);
-  const customer = customers.find((c) => c.id === custId) ?? customers[0];
+  // A logged-in customer only ever sees their own account.
+  const customer = customers[0];
   const bills = customer.bills;
   const [billId, setBillId] = useState(bills[bills.length - 1]?.id);
-
-  // keep a valid bill selected when switching customers
-  useEffect(() => {
-    setBillId(customer.bills[customer.bills.length - 1]?.id);
-  }, [custId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const bill = bills.find((b) => b.id === billId) ?? bills[bills.length - 1];
   const explanation = useMemo(
@@ -73,20 +68,16 @@ export default function BillsView({ customers, live }: { customers: CustomerWith
         </span>
       </div>
 
-      {/* account chips */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-xs text-ink-400 mr-1">Account:</span>
-        {customers.map((c) => (
-          <button
-            key={c.id}
-            onClick={() => setCustId(c.id)}
-            className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition ${
-              c.id === custId ? "bg-ink-900 text-white border-ink-900" : "bg-white text-ink-600 border-ink-200 hover:border-ink-300"
-            }`}
-          >
-            {c.accountNo} · {c.name.split(" ")[0]}
-          </button>
-        ))}
+      {/* logged-in account summary */}
+      <div className="bg-white rounded-2xl shadow-soft border border-ink-100 p-4 flex items-center gap-3">
+        <div className="h-10 w-10 rounded-xl bg-brand-100 grid place-items-center text-brand-700 font-bold">
+          {customer.name.split(" ").map((w) => w[0]).slice(0, 2).join("")}
+        </div>
+        <div className="min-w-0">
+          <div className="text-sm font-bold text-ink-900 truncate">{customer.name}</div>
+          <div className="text-xs text-ink-500 truncate">A/C {customer.accountNo} · {customer.area}</div>
+        </div>
+        <span className="ml-auto text-[11px] font-semibold px-2.5 py-1 rounded-full bg-ink-100 text-ink-600 capitalize">{customer.type}</span>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-5">
@@ -134,7 +125,7 @@ export default function BillsView({ customers, live }: { customers: CustomerWith
                 </div>
               </div>
               <button
-                onClick={() => downloadBillPdf(customer, bill, explanation)}
+                onClick={() => downloadBillPdf(customer, bill)}
                 className="flex items-center gap-2 text-sm font-semibold bg-white/10 hover:bg-white/20 border border-white/15 rounded-xl px-4 py-2.5 transition"
               >
                 <Download className="w-4 h-4" /> Download PDF

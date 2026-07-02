@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState, ReactNode } from "react";
 import {
   ShieldCheck, LayoutDashboard, PhoneCall, Megaphone, Timer, ShieldAlert,
-  ScanEye, ReceiptText, Menu, Bell, LogOut, ChevronRight,
+  ScanEye, ReceiptText, Menu, Bell, LogOut, ChevronRight, Video, Siren,
 } from "lucide-react";
 
 export type NavItem = { href: string; label: string; icon: keyof typeof ICONS; badge?: string };
@@ -18,6 +18,8 @@ const ICONS = {
   shieldAlert: ShieldAlert,
   scan: ScanEye,
   receipt: ReceiptText,
+  video: Video,
+  siren: Siren,
 };
 
 export default function Shell({
