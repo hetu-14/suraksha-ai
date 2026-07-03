@@ -5,181 +5,230 @@ import { Card } from "@/components/ui";
 import { Bot, Send, Mic, Volume2, VolumeX, ShieldPlus, AlertCircle, Phone, PhoneCall, Flame, Ambulance, X } from "lucide-react";
 
 /* ==================================================================
- *  Gas-leak safety brain — grounded in official guidance (AGA / MoPNG).
- *  Emergency numbers (India): 1906 gas helpline · 101 fire · 108 ambulance.
+ *  Multilingual gas-emergency assistant (English / हिंदी / ગુજરાતી).
+ *  Grounded in AGA + MoPNG guidance. India numbers: 1906 gas · 101 fire · 108 amb.
+ *  Gas LEAK (smell/hiss, no flame) and gas FIRE (active flame) are separate flows.
  * ================================================================== */
 
-type CallInfo = { service: string; number: string };
+type Lang = "en" | "hi" | "gu";
+type L<T> = Record<Lang, T>;
+type CallNo = "1906" | "101" | "108";
 
-const NUM = {
-  gas: { service: "Gas Emergency Helpline", number: "1906" },
-  fire: { service: "Fire Brigade", number: "101" },
-  ambulance: { service: "Ambulance", number: "108" },
+const LANGS: { code: Lang; label: string; stt: string }[] = [
+  { code: "en", label: "EN", stt: "en-IN" },
+  { code: "hi", label: "हिं", stt: "hi-IN" },
+  { code: "gu", label: "ગુ", stt: "gu-IN" },
+];
+
+const SERVICE: Record<CallNo, L<string>> = {
+  "1906": { en: "Gas Emergency Helpline", hi: "गैस इमरजेंसी हेल्पलाइन", gu: "ગેસ ઇમરજન્સી હેલ્પલાઇન" },
+  "101": { en: "Fire Brigade", hi: "फायर ब्रिगेड", gu: "ફાયર બ્રિગેડ" },
+  "108": { en: "Ambulance", hi: "एम्बुलेंस", gu: "એમ્બ્યુલન્સ" },
 };
 
-const FULL_STEPS =
-  "Here is the complete checklist, in order. " +
-  "One, do not touch any electrical switch, plug, appliance or the doorbell, and do not use your phone indoors — any of these can spark. " +
-  "Two, do not light a match or lighter, and do not smoke. " +
-  "Three, get everyone moving toward the exit, opening doors and windows as you pass to let the gas vent. " +
-  "Four, if the gas meter valve is safely on your way out, turn it clockwise to shut off the supply. " +
-  "Five, get children, elderly people and pets out first. " +
-  "Six, move everyone to open air, well away from the building. " +
-  "Seven, warn your neighbours as you leave. " +
-  "Eight, once you are safely outside, call the gas emergency helpline on 1906. " +
-  "Nine, do not go back inside for any reason until the emergency crew says it is safe.";
+const GREET: L<string> = {
+  en: "I'm your SuRaksha AI safety assistant — stay calm, help is on the way. First tell me: is there a flame or fire, or just a gas smell? Meanwhile, do not touch any switch, plug or phone indoors and do not light anything. Move everyone toward the door, open windows as you go, and get outside. Pick your language on top; you can type or tap the mic to speak.",
+  hi: "मैं आपका SuRaksha AI सुरक्षा सहायक हूँ — शांत रहें, मदद आ रही है। पहले बताइए: कहीं आग या लपट है, या सिर्फ़ गैस की गंध? तब तक किसी भी स्विच, प्लग या फ़ोन को अंदर न छुएँ और कुछ भी न जलाएँ। सबको दरवाज़े की ओर ले जाएँ, रास्ते में खिड़कियाँ खोलते जाएँ और बाहर निकलें। ऊपर से भाषा चुनें; टाइप करें या माइक दबाकर बोलें।",
+  gu: "હું તમારો SuRaksha AI સલામતી સહાયક છું — શાંત રહો, મદદ આવી રહી છે. પહેલા કહો: ક્યાંય આગ કે જ્યોત છે, કે માત્ર ગેસની વાસ? ત્યાં સુધી અંદર કોઈ સ્વિચ, પ્લગ કે ફોનને અડશો નહીં અને કંઈ સળગાવશો નહીં. બધાને દરવાજા તરફ લઈ જાઓ, રસ્તામાં બારીઓ ખોલતા જાઓ અને બહાર નીકળો. ઉપરથી ભાષા પસંદ કરો; ટાઈપ કરો કે માઇક દબાવીને બોલો.",
+};
 
-type Intent = { id: string; keys: string[]; weight?: number; replies: string[]; call?: CallInfo };
+const FULL_STEPS: L<string> = {
+  en: "Here is the full checklist, in order. One, do not touch any switch, plug, appliance or doorbell, and do not use your phone indoors — any can spark. Two, do not light a match or lighter, and do not smoke. Three, get everyone moving to the exit, opening doors and windows as you pass to vent the gas. Four, if the meter valve is safely on your way out, turn it clockwise to shut the supply. Five, get children, elderly and pets out first. Six, move everyone to open air, away from the building. Seven, warn your neighbours as you leave. Eight, once safely outside, call the gas emergency helpline 1906. Nine, do not go back inside until the crew says it is safe.",
+  hi: "पूरी सूची, क्रम में। एक, अंदर किसी भी स्विच, प्लग, उपकरण या डोरबेल को न छुएँ और फ़ोन का इस्तेमाल न करें — इनसे चिंगारी बन सकती है। दो, माचिस या लाइटर न जलाएँ, धूम्रपान न करें। तीन, सबको बाहर की ओर ले जाएँ और रास्ते में खिड़कियाँ-दरवाज़े खोलते जाएँ ताकि गैस निकल जाए। चार, अगर मीटर वाल्व सुरक्षित रूप से रास्ते में हो तो उसे दक्षिणावर्त घुमाकर बंद करें। पाँच, बच्चों, बुज़ुर्गों और पालतू जानवरों को पहले निकालें। छह, सबको खुली हवा में इमारत से दूर ले जाएँ। सात, बाहर निकलते समय पड़ोसियों को सचेत करें। आठ, सुरक्षित बाहर पहुँचकर गैस इमरजेंसी हेल्पलाइन 1906 पर कॉल करें। नौ, जब तक टीम सुरक्षित न कहे, अंदर वापस न जाएँ।",
+  gu: "પૂરી યાદી, ક્રમમાં. એક, અંદર કોઈ સ્વિચ, પ્લગ, ઉપકરણ કે ડોરબેલને અડશો નહીં અને ફોન વાપરશો નહીં — આનાથી તણખો થઈ શકે. બે, દીવાસળી કે લાઇટર સળગાવશો નહીં, ધૂમ્રપાન કરશો નહીં. ત્રણ, બધાને બહાર તરફ લઈ જાઓ અને રસ્તામાં બારી-બારણાં ખોલતા જાઓ જેથી ગેસ નીકળી જાય. ચાર, જો મીટર વાલ્વ સલામત રીતે રસ્તામાં હોય તો ઘડિયાળની દિશામાં ફેરવીને બંધ કરો. પાંચ, બાળકો, વૃદ્ધો અને પાળતુ પ્રાણીઓને પહેલા કાઢો. છ, બધાને ખુલ્લી હવામાં બિલ્ડિંગથી દૂર લઈ જાઓ. સાત, બહાર નીકળતી વખતે પડોશીઓને ચેતવો. આઠ, સલામત બહાર પહોંચીને ગેસ ઇમરજન્સી હેલ્પલાઇન 1906 પર કૉલ કરો. નવ, જ્યાં સુધી ટીમ સલામત ન કહે ત્યાં સુધી અંદર પાછા ન જાઓ.",
+};
+
+const FALLBACKS: L<string[]> = {
+  en: [
+    "I'm here and ready to guide you. Is there a flame, just a gas smell, or a hissing sound? Tell me and I'll give the exact step. Meanwhile: stay away from switches and get fresh air.",
+    "Tell me a little more — is anyone unwell, and can you safely reach the gas valve? While you answer, move toward a door and don't touch any switch.",
+  ],
+  hi: [
+    "मैं यहाँ हूँ और मदद के लिए तैयार हूँ। क्या आग है, सिर्फ़ गैस की गंध है, या सूँ-सूँ आवाज़? बताइए, मैं सटीक कदम बताऊँगा। तब तक स्विच से दूर रहें और ताज़ी हवा लें।",
+    "थोड़ा और बताइए — क्या कोई अस्वस्थ है, और क्या आप वाल्व सुरक्षित रूप से बंद कर सकते हैं? जवाब देते हुए दरवाज़े की ओर बढ़ें और कोई स्विच न छुएँ।",
+  ],
+  gu: [
+    "હું અહીં છું અને મદદ માટે તૈયાર છું. શું આગ છે, માત્ર ગેસની વાસ છે, કે સિસકારો? જણાવો, હું ચોક્કસ પગલું આપીશ. ત્યાં સુધી સ્વિચથી દૂર રહો અને તાજી હવા લો.",
+    "થોડું વધુ કહો — શું કોઈ અસ્વસ્થ છે, અને શું તમે વાલ્વ સલામત રીતે બંધ કરી શકો? જવાબ આપતાં દરવાજા તરફ આગળ વધો અને કોઈ સ્વિચ ન અડો.",
+  ],
+};
+
+const QUICK: L<string[]> = {
+  en: ["I smell gas, no fire", "There's a flame / fire", "I'm panicking", "Call fire brigade", "Someone feels dizzy", "All safety steps"],
+  hi: ["गैस की गंध है, आग नहीं", "आग / लपट है", "मैं घबरा रहा हूँ", "फायर ब्रिगेड बुलाएँ", "किसी को चक्कर आ रहा है", "सभी सुरक्षा कदम"],
+  gu: ["ગેસની વાસ છે, આગ નહીં", "આગ / જ્યોત છે", "હું ગભરાઉં છું", "ફાયર બ્રિગેડ બોલાવો", "કોઈને ચક્કર આવે છે", "બધા સલામતી પગલાં"],
+};
+
+const UI: L<{ voiceOn: string; voiceOff: string; listening: string; placeholder: string; assistant: string; guidance: string; calling: string; cancel: string; callNow: string; callbar: [CallNo, string][] }> = {
+  en: { voiceOn: "voice on", voiceOff: "voice off", listening: "Listening… speak now", placeholder: "Type or tap the mic to speak…", assistant: "Assistant", guidance: "Guidance only · a crew has been dispatched", calling: "Calling", cancel: "Cancel", callNow: "Call now", callbar: [["1906", "Gas 1906"], ["101", "Fire 101"], ["108", "Ambulance 108"]] },
+  hi: { voiceOn: "आवाज़ चालू", voiceOff: "आवाज़ बंद", listening: "सुन रहा हूँ… अब बोलें", placeholder: "टाइप करें या माइक दबाकर बोलें…", assistant: "सहायक", guidance: "केवल मार्गदर्शन · टीम भेज दी गई है", calling: "कॉल हो रहा है", cancel: "रद्द करें", callNow: "अभी कॉल करें", callbar: [["1906", "गैस 1906"], ["101", "फायर 101"], ["108", "एम्बुलेंस 108"]] },
+  gu: { voiceOn: "અવાજ ચાલુ", voiceOff: "અવાજ બંધ", listening: "સાંભળું છું… હવે બોલો", placeholder: "ટાઈપ કરો કે માઇક દબાવીને બોલો…", assistant: "સહાયક", guidance: "માત્ર માર્ગદર્શન · ટીમ મોકલી છે", calling: "કૉલ થઈ રહ્યો છે", cancel: "રદ કરો", callNow: "હમણાં કૉલ કરો", callbar: [["1906", "ગેસ 1906"], ["101", "ફાયર 101"], ["108", "એમ્બ્યુલન્સ 108"]] },
+};
+
+type Intent = { id: string; keys: string[]; weight?: number; call?: CallNo; replies: L<string[]> };
 
 const INTENTS: Intent[] = [
   {
     id: "panic", weight: 1.3,
-    keys: ["panic", "panicking", "scared", "afraid", "fear", "nervous", "worried", "shaking", "help me", "terrified", "anxious", "freaking", "crying"],
-    replies: [
-      "Take a slow breath with me — in through your nose, and out through your mouth. You are going to be okay and you are not alone. Help is already on the way. Let's just do the next small thing: don't touch any switch, and walk toward a door or window for fresh air.",
-      "I've got you. One slow breath. You did the right thing reaching out. Nothing bad happens while we stay calm and follow the steps together. First, move toward fresh air, away from any switches or flames.",
-      "Stay with me — you're safe as long as we keep moving calmly. Breathe in… and out. Good. Now guide everyone toward the exit and step outside into the open air.",
-    ],
+    keys: ["panic", "scared", "afraid", "fear", "nervous", "worried", "shaking", "terrified", "freaking", "घबरा", "डर", "डरा", "घबराहट", "ગભરા", "બીક", "ડર"],
+    replies: {
+      en: [
+        "Take a slow breath with me — in through your nose, out through your mouth. You'll be okay and you're not alone; help is on the way. Next small step: don't touch any switch, and move toward a door or window for fresh air.",
+        "I've got you. One slow breath. You did right by reaching out. We'll get through this calmly, step by step. First, head to fresh air, away from switches and flames.",
+      ],
+      hi: [
+        "मेरे साथ एक गहरी साँस लें — नाक से अंदर, मुँह से बाहर। आप ठीक रहेंगे और अकेले नहीं हैं, मदद आ रही है। अगला छोटा कदम: किसी स्विच को न छुएँ और दरवाज़े या खिड़की की ओर बढ़ें।",
+        "मैं आपके साथ हूँ। एक धीमी साँस लें। घबराएँ नहीं — शांत रहकर हम हर कदम पूरा करेंगे। पहले ताज़ी हवा की ओर बढ़ें, स्विच और आग से दूर।",
+      ],
+      gu: [
+        "મારી સાથે એક ઊંડો શ્વાસ લો — નાકથી અંદર, મોંથી બહાર. તમે ઠીક રહેશો અને એકલા નથી, મદદ આવી રહી છે. આગળનું નાનું પગલું: કોઈ સ્વિચને અડશો નહીં અને દરવાજા કે બારી તરફ આગળ વધો.",
+        "હું તમારી સાથે છું. ધીમો શ્વાસ લો. ગભરાશો નહીં — શાંત રહીને આપણે દરેક પગલું પૂરું કરીશું. પહેલા તાજી હવા તરફ જાઓ, સ્વિચ અને આગથી દૂર.",
+      ],
+    },
   },
   {
-    id: "medical", weight: 1.7,
-    keys: ["dizzy", "faint", "fainted", "unconscious", "can't breathe", "cant breathe", "breathing", "suffocat", "choking", "nausea", "vomit", "vomiting", "headache", "collapse", "collapsed", "drowsy", "passed out", "not breathing"],
-    replies: [
-      "This is urgent — move yourself and anyone affected into fresh, open air right now, and do not re-enter a room where the smell is strong. If someone is unconscious or struggling to breathe, get them outside and call an ambulance on 108 immediately. I'm opening the dialer for you.",
-      "Get to fresh air first — gas causes dizziness fast. If a person has fainted, move them outdoors, lay them on their side, and call 108 now. Don't go back into the gassy area to fetch anything.",
-    ],
-    call: NUM.ambulance,
+    id: "medical", weight: 1.7, call: "108",
+    keys: ["dizzy", "faint", "unconscious", "breathe", "breathing", "suffocat", "choking", "nausea", "vomit", "headache", "collapse", "drowsy", "passed out", "चक्कर", "बेहोश", "साँस", "दम घुट", "उल्टी", "ચક્કર", "બેભાન", "શ્વાસ", "ઉલટી"],
+    replies: {
+      en: ["This is urgent — move yourself and anyone affected into fresh open air now, and don't re-enter a strong-smelling room. If someone is unconscious or can't breathe, get them outside and call an ambulance on 108. Opening the dialer."],
+      hi: ["यह ज़रूरी है — खुद को और प्रभावित व्यक्ति को तुरंत ताज़ी खुली हवा में ले जाएँ, तेज़ गंध वाले कमरे में दोबारा न जाएँ। कोई बेहोश हो या साँस न ले पा रहा हो तो उसे बाहर ले जाकर 108 पर एम्बुलेंस बुलाएँ। डायलर खोल रहा हूँ।"],
+      gu: ["આ તાકીદનું છે — તમારી જાત અને અસરગ્રસ્ત વ્યક્તિને તરત તાજી ખુલ્લી હવામાં લઈ જાઓ, તીવ્ર વાસવાળા રૂમમાં ફરી ન જાઓ. કોઈ બેભાન હોય કે શ્વાસ ન લઈ શકે તો બહાર લઈ જઈને 108 પર એમ્બ્યુલન્સ બોલાવો. ડાયલર ખોલું છું."],
+    },
   },
   {
-    id: "fire", weight: 1.7,
-    keys: ["fire", "flame", "flames", "burning", "spark", "sparked", "lit", "ignite", "blaze", "caught fire", "fire brigade", "call fire", "smoke"],
-    replies: [
-      "There's fire involved, so getting out is the priority. Evacuate everyone immediately and call the fire brigade on 101 — I'm opening the dialer now. Do NOT throw water on a gas fire. Only if a small flame is right by the valve and safe to reach, shut it clockwise on your way out.",
-      "Fire changes everything — leave now and take everyone with you. Call 101 for the fire brigade. Don't fight a gas fire with water, and don't stop for belongings.",
-    ],
-    call: NUM.fire,
+    id: "fire", weight: 1.8, call: "101",
+    keys: ["fire", "flame", "flames", "burning", "blaze", "caught fire", "fire brigade", "call fire", "आग", "लपट", "ज्वाला", "जल रहा", "भड़क", "આગ", "જ્યોત", "સળગ", "ભભૂક"],
+    replies: {
+      en: [
+        "There's an active FIRE — this is different from a leak, getting out comes first. Evacuate everyone immediately and call the fire brigade on 101; I'm opening the dialer. Do NOT throw water on a gas fire. Only if a small flame is right by the valve and safe, shut it clockwise on your way out.",
+        "Fire changes everything — leave now with everyone. Call 101 for the fire brigade. Don't fight a gas fire with water and don't stop for belongings.",
+      ],
+      hi: [
+        "यह जलती हुई आग है — यह रिसाव से अलग है, पहले बाहर निकलना ज़रूरी है। सबको तुरंत निकालें और फायर ब्रिगेड को 101 पर कॉल करें; डायलर खोल रहा हूँ। गैस की आग पर पानी न डालें। सिर्फ़ अगर छोटी लपट वाल्व के पास और सुरक्षित हो तो बाहर निकलते समय वाल्व बंद करें।",
+        "आग सब बदल देती है — अभी सबके साथ बाहर निकलें। 101 पर फायर ब्रिगेड बुलाएँ। गैस की आग पर पानी न डालें और सामान के लिए न रुकें।",
+      ],
+      gu: [
+        "આ સળગતી આગ છે — તે લીકથી અલગ છે, પહેલા બહાર નીકળવું જરૂરી છે. બધાને તરત કાઢો અને ફાયર બ્રિગેડને 101 પર કૉલ કરો; ડાયલર ખોલું છું. ગેસની આગ પર પાણી ન નાખો. માત્ર જો નાની જ્યોત વાલ્વ પાસે અને સલામત હોય તો બહાર નીકળતી વખતે વાલ્વ બંધ કરો.",
+        "આગ બધું બદલી નાખે — હમણાં જ બધા સાથે બહાર નીકળો. 101 પર ફાયર બ્રિગેડ બોલાવો. ગેસની આગ પર પાણી ન નાખો અને સામાન માટે રોકાશો નહીં.",
+      ],
+    },
   },
   {
-    id: "call", weight: 1.4,
-    keys: ["call", "phone number", "who to call", "helpline", "emergency number", "1906", "report it", "report the leak", "contact", "number to call"],
-    replies: [
-      "Call the 24×7 gas emergency helpline on 1906 — it's free, works across India, and in many languages. Make the call from OUTSIDE in open air, not indoors. I'm opening the dialer for you now.",
-      "The number you want is 1906, the national gas emergency helpline, open round the clock. Step outside first, then call. Opening the dialer now.",
-    ],
-    call: NUM.gas,
+    id: "leak", weight: 1.2, call: "1906",
+    keys: ["smell", "leak", "leaking", "gas", "odour", "odor", "stink", "no fire", "गंध", "बदबू", "रिसाव", "लीक", "गैस", "आग नहीं", "વાસ", "ગંધ", "લીક", "ગેસ", "આગ નહીં"],
+    replies: {
+      en: [
+        "A gas LEAK with no flame — good, this is handled calmly. Keep away from every switch and flame, get everyone outside while opening windows to vent, shut the gas valve clockwise if it's safe, and call 1906 once you're out. No fire means no water and no panic — just ventilate and evacuate.",
+        "Understood — a smell, not a fire. Priorities: no sparks or switches, evacuate while venting, cut the valve if reachable, then call 1906 from outside. Tell me where in the house you are.",
+      ],
+      hi: [
+        "बिना लपट के गैस रिसाव — अच्छा, इसे शांति से संभालेंगे। हर स्विच और आग से दूर रहें, खिड़कियाँ खोलते हुए सबको बाहर निकालें, सुरक्षित हो तो वाल्व दक्षिणावर्त बंद करें, और बाहर पहुँचकर 1906 पर कॉल करें। आग नहीं है तो पानी नहीं, घबराना नहीं — बस हवादार करें और बाहर निकलें।",
+        "समझ गया — गंध है, आग नहीं। प्राथमिकताएँ: कोई चिंगारी या स्विच नहीं, हवादार करते हुए बाहर निकलें, वाल्व पहुँच में हो तो बंद करें, फिर बाहर से 1906 पर कॉल करें। बताइए आप घर में कहाँ हैं।",
+      ],
+      gu: [
+        "જ્યોત વગરનો ગેસ લીક — સારું, આને શાંતિથી સંભાળીશું. દરેક સ્વિચ અને આગથી દૂર રહો, બારીઓ ખોલતાં બધાને બહાર કાઢો, સલામત હોય તો વાલ્વ ઘડિયાળ દિશામાં બંધ કરો, અને બહાર જઈને 1906 પર કૉલ કરો. આગ નથી તો પાણી નહીં, ગભરાટ નહીં — બસ હવા આપો અને બહાર નીકળો.",
+        "સમજ્યો — વાસ છે, આગ નહીં. પ્રાથમિકતા: કોઈ તણખો કે સ્વિચ નહીં, હવા આપતાં બહાર નીકળો, વાલ્વ પહોંચમાં હોય તો બંધ કરો, પછી બહારથી 1906 પર કૉલ કરો. કહો તમે ઘરમાં ક્યાં છો.",
+      ],
+    },
+  },
+  {
+    id: "call", weight: 1.4, call: "1906",
+    keys: ["call", "phone number", "who to call", "helpline", "emergency number", "1906", "report", "contact", "फ़ोन", "कॉल", "नंबर", "हेल्पलाइन", "ફોન", "કૉલ", "નંબર", "હેલ્પલાઇન"],
+    replies: {
+      en: ["Call the 24×7 gas emergency helpline 1906 — free and in many languages. Make the call from OUTSIDE in open air, not indoors. Opening the dialer now."],
+      hi: ["24×7 गैस इमरजेंसी हेल्पलाइन 1906 पर कॉल करें — यह मुफ़्त है और कई भाषाओं में उपलब्ध है। कॉल हमेशा बाहर खुली हवा से करें, अंदर से नहीं। डायलर खोल रहा हूँ।"],
+      gu: ["24×7 ગેસ ઇમરજન્સી હેલ્પલાઇન 1906 પર કૉલ કરો — તે મફત છે અને ઘણી ભાષાઓમાં ઉપલબ્ધ છે. કૉલ હંમેશા બહાર ખુલ્લી હવામાંથી કરો, અંદરથી નહીં. ડાયલર ખોલું છું."],
+    },
   },
   {
     id: "valve",
-    keys: ["valve", "meter", "turn off", "shut off", "shut the gas", "stopcock", "regulator", "main tap", "where is the valve", "how to close", "isolate"],
-    replies: [
-      "The main shut-off is at the gas meter — often just outside or at the kitchen entry. Turn it CLOCKWISE, to the right, until it stops; that isolates the supply. If you have a piped cylinder, also close the round regulator knob on top. Only do this if you can reach it without walking through a strong smell.",
-      "Find the meter — the shut-off is right beside it. Rotate it clockwise all the way to cut the gas. Can't reach it safely? Skip it, get outside, and the crew will isolate it.",
-    ],
+    keys: ["valve", "meter", "turn off", "shut off", "regulator", "stopcock", "वाल्व", "मीटर", "बंद", "रेगुलेटर", "વાલ્વ", "મીટર", "બંધ", "રેગ્યુલેટર"],
+    replies: {
+      en: ["The main shut-off is at the gas meter — often outside or at the kitchen entry. Turn it CLOCKWISE until it stops. For a piped cylinder, also close the regulator knob on top. Only if you can reach it without passing through a strong smell."],
+      hi: ["मुख्य वाल्व गैस मीटर के पास होता है — अक्सर बाहर या रसोई के प्रवेश पर। इसे दक्षिणावर्त घुमाकर बंद करें। पाइप सिलेंडर हो तो ऊपर का रेगुलेटर नॉब भी बंद करें। यह तभी करें जब तेज़ गंध से गुज़रे बिना पहुँच सकें।"],
+      gu: ["મુખ્ય વાલ્વ ગેસ મીટર પાસે હોય છે — ઘણીવાર બહાર કે રસોડાના પ્રવેશ પર. તેને ઘડિયાળની દિશામાં ફેરવીને બંધ કરો. પાઇપ સિલિન્ડર હોય તો ઉપરનો રેગ્યુલેટર નૉબ પણ બંધ કરો. આ ત્યારે જ કરો જ્યારે તીવ્ર વાસમાંથી પસાર થયા વગર પહોંચી શકો."],
+    },
   },
   {
     id: "electrical",
-    keys: ["switch", "light", "lights", "fan", "ac", "plug", "appliance", "doorbell", "socket", "button", "electric", "electrical", "geyser", "exhaust", "chimney"],
-    replies: [
-      "Leave everything electrical exactly as it is — no lights, fans, switches, plugs, AC, geyser, chimney or doorbell. Turning something on OR off creates a spark that can ignite gas. Just move to fresh air.",
-      "Hands off every switch and gadget — even flipping one off can spark. Don't touch the exhaust fan either. The airflow you want comes from open doors and windows, not fans.",
-    ],
-  },
-  {
-    id: "phone",
-    keys: ["phone inside", "mobile", "landline", "call inside", "use phone"],
-    replies: [
-      "Don't make or take calls indoors — a phone can spark too. Step outside into open air first, then call 1906. You can keep this session open; a crew is already alerted.",
-      "Use the phone only once you're outdoors. Inside, keep it in your pocket and focus on getting everyone out.",
-    ],
+    keys: ["switch", "light", "fan", "plug", "appliance", "doorbell", "socket", "electric", "geyser", "स्विच", "लाइट", "बत्ती", "पंखा", "बिजली", "સ્વિચ", "લાઇટ", "પંખો", "વીજ"],
+    replies: {
+      en: ["Leave everything electrical exactly as it is — no lights, fans, switches, plugs, AC, geyser or doorbell. Turning something on OR off makes a spark. Just move to fresh air."],
+      hi: ["बिजली से जुड़ी हर चीज़ वैसी ही रहने दें — कोई लाइट, पंखा, स्विच, प्लग, एसी, गीज़र या डोरबेल नहीं। चालू या बंद करने से चिंगारी बनती है। बस ताज़ी हवा की ओर बढ़ें।"],
+      gu: ["વીજળી સાથે જોડાયેલી દરેક વસ્તુ એમ જ રહેવા દો — કોઈ લાઇટ, પંખો, સ્વિચ, પ્લગ, એસી, ગીઝર કે ડોરબેલ નહીં. ચાલુ કે બંધ કરવાથી તણખો થાય. બસ તાજી હવા તરફ જાઓ."],
+    },
   },
   {
     id: "children",
-    keys: ["child", "children", "kid", "kids", "baby", "elder", "elderly", "old", "senior", "grandmother", "grandfather", "pet", "pets", "dog", "cat", "family"],
-    replies: [
-      "Get children, elderly family and pets out FIRST — they're most vulnerable to gas. Guide them calmly to open air, away from the building, and stay together there.",
-      "Little ones, older folks and pets go out ahead of everything else. Walk them to fresh air first, then step back to the doorway only if there's something safe left to do.",
-    ],
+    keys: ["child", "kid", "baby", "elder", "elderly", "senior", "pet", "dog", "cat", "family", "बच्चा", "बच्चे", "बुज़ुर्ग", "पालतू", "બાળક", "વૃદ્ધ", "પાળતુ"],
+    replies: {
+      en: ["Get children, elderly and pets out FIRST — they're most vulnerable to gas. Guide them calmly to open air, away from the building, and stay together."],
+      hi: ["बच्चों, बुज़ुर्गों और पालतू जानवरों को सबसे पहले निकालें — वे गैस से सबसे ज़्यादा प्रभावित होते हैं। उन्हें शांति से खुली हवा में, इमारत से दूर ले जाएँ।"],
+      gu: ["બાળકો, વૃદ્ધો અને પાળતુ પ્રાણીઓને સૌથી પહેલા કાઢો — તેઓ ગેસથી સૌથી વધુ અસર પામે છે. તેમને શાંતિથી ખુલ્લી હવામાં, બિલ્ડિંગથી દૂર લઈ જાઓ."],
+    },
   },
   {
     id: "stove",
-    keys: ["stove", "burner", "cook", "cooking", "cylinder", "lpg", "kitchen", "chulha", "gas ki", "hob"],
-    replies: [
-      "If the stove is on and safely reachable, turn every burner knob to OFF and close the cylinder regulator. Don't relight anything, and never test for gas with a flame. Then open the kitchen window and step out.",
-      "Shut all burner knobs and the cylinder valve — but only if you can do it without passing through heavy fumes. No lighting a match to 'check', that's the biggest danger.",
-    ],
+    keys: ["stove", "burner", "cook", "cylinder", "lpg", "kitchen", "hob", "चूल्हा", "बर्नर", "सिलेंडर", "रसोई", "ચૂલો", "બર્નર", "સિલિન્ડર", "રસોડું"],
+    replies: {
+      en: ["If the stove is on and safely reachable, turn every burner knob OFF and close the cylinder regulator. Don't relight anything and never test for gas with a flame. Then open the kitchen window and step out."],
+      hi: ["अगर चूल्हा चालू है और सुरक्षित पहुँच में है तो सभी बर्नर नॉब बंद करें और सिलेंडर रेगुलेटर बंद करें। कुछ भी दोबारा न जलाएँ और आग से गैस की जाँच कभी न करें। फिर खिड़की खोलकर बाहर निकलें।"],
+      gu: ["જો ચૂલો ચાલુ હોય અને સલામત પહોંચમાં હોય તો બધા બર્નર નૉબ બંધ કરો અને સિલિન્ડર રેગ્યુલેટર બંધ કરો. કંઈ ફરી સળગાવશો નહીં અને આગથી ગેસ ચકાસશો નહીં. પછી બારી ખોલીને બહાર નીકળો."],
+    },
   },
   {
     id: "vent",
-    keys: ["window", "windows", "ventilat", "air", "open door", "fresh air", "smell going", "clear the gas", "breeze"],
-    replies: [
-      "Yes — as you leave, open the doors and windows you can safely reach so the gas vents outside. Skip the exhaust fan though; that's electrical. Natural cross-ventilation is exactly right.",
-      "Good instinct — open windows and doors on your way out to let it air out. Don't switch on any fan to help; just let it flow naturally while you get everyone outside.",
-    ],
+    keys: ["window", "ventilat", "air", "open door", "fresh air", "breeze", "खिड़की", "हवा", "दरवाज़ा", "બારી", "હવા", "બારણું"],
+    replies: {
+      en: ["Yes — as you leave, open the doors and windows you can safely reach so the gas vents outside. Skip the exhaust fan; that's electrical. Natural cross-ventilation is exactly right."],
+      hi: ["हाँ — बाहर निकलते समय जो दरवाज़े और खिड़कियाँ सुरक्षित रूप से खोल सकें, खोल दें ताकि गैस निकल जाए। एग्ज़ॉस्ट फैन न चलाएँ, वह बिजली का है। प्राकृतिक हवा ही सही है।"],
+      gu: ["હા — બહાર નીકળતી વખતે જે બારી-બારણાં સલામત રીતે ખોલી શકો તે ખોલી દો જેથી ગેસ નીકળે. એક્ઝોસ્ટ ફેન ચલાવશો નહીં, તે વીજળીનો છે. કુદરતી હવા જ યોગ્ય છે."],
+    },
   },
   {
     id: "sound",
-    keys: ["hiss", "hissing", "sound", "noise", "whistle", "no smell", "cant smell", "can't smell", "not sure", "faint smell", "rotten egg", "sulphur", "sulfur"],
-    replies: [
-      "That rotten-egg smell, or a hiss or whistle near a pipe or appliance, is a real warning even if it's faint. Treat it as a confirmed leak: no switches, get everyone out venting as you go, shut the valve if safe, and call 1906 from outside.",
-      "A hissing sound alone is enough — you don't need a strong smell to act. Follow the steps as if the leak is confirmed; better safe than sorry.",
-    ],
+    keys: ["hiss", "whistle", "noise", "sound", "rotten egg", "sulphur", "सूँ", "फुफ", "सीटी", "आवाज़", "सड़े अंडे", "સિસ", "સીટી", "અવાજ", "સડેલા ઈંડા"],
+    replies: {
+      en: ["A rotten-egg smell, or a hiss or whistle near a pipe, is a real warning even if faint. Treat it as a confirmed leak: no switches, evacuate while venting, shut the valve if safe, and call 1906 from outside."],
+      hi: ["सड़े अंडे जैसी गंध, या पाइप के पास सूँ-सूँ या सीटी की आवाज़ हल्की हो तो भी असली चेतावनी है। इसे पक्का रिसाव मानें: कोई स्विच नहीं, हवादार करते हुए बाहर निकलें, सुरक्षित हो तो वाल्व बंद करें, और बाहर से 1906 पर कॉल करें।"],
+      gu: ["સડેલા ઈંડા જેવી વાસ, કે પાઇપ પાસે સિસકારો કે સીટીનો અવાજ ધીમો હોય તોય સાચી ચેતવણી છે. તેને પાકો લીક ગણો: કોઈ સ્વિચ નહીં, હવા આપતાં બહાર નીકળો, સલામત હોય તો વાલ્વ બંધ કરો, અને બહારથી 1906 પર કૉલ કરો."],
+    },
   },
   {
     id: "cng",
-    keys: ["car", "vehicle", "cng", "auto", "rickshaw", "engine", "station", "pump", "bus", "taxi"],
-    replies: [
-      "For a CNG vehicle or station: switch the engine off immediately, don't touch any electricals or lights, and absolutely no smoking or flames nearby. Move people away to a safe distance and alert the station staff.",
-      "Kill the engine first, then step away from the vehicle. No phone-on-charge, no cigarettes, no sparks. Tell the station attendant so they can isolate the pump.",
-    ],
-  },
-  {
-    id: "neighbor",
-    keys: ["neighbor", "neighbour", "neighbours", "others", "building", "society", "apartment", "flat", "warn", "upstairs", "security guard"],
-    replies: [
-      "As you leave, knock and warn your neighbours and building security so they evacuate too — but don't ring electric doorbells. Get everyone out and gather in open air at a safe distance.",
-      "Alert neighbours by knocking or calling out, not the doorbell. Help the building empty and regroup outside, away from the walls.",
-    ],
+    keys: ["car", "vehicle", "cng", "auto", "rickshaw", "engine", "station", "pump", "गाड़ी", "कार", "इंजन", "ગાડી", "કાર", "એન્જિન"],
+    replies: {
+      en: ["For a CNG vehicle or station: switch the engine off immediately, don't touch any electricals or lights, and no smoking or flames nearby. Move people to a safe distance and alert the station staff."],
+      hi: ["सीएनजी वाहन या स्टेशन के लिए: तुरंत इंजन बंद करें, किसी बिजली उपकरण या लाइट को न छुएँ, और पास में धूम्रपान या आग बिल्कुल नहीं। लोगों को सुरक्षित दूरी पर ले जाएँ और स्टेशन स्टाफ़ को बताएँ।"],
+      gu: ["સીએનજી વાહન કે સ્ટેશન માટે: તરત એન્જિન બંધ કરો, કોઈ વીજ ઉપકરણ કે લાઇટને અડશો નહીં, અને પાસે ધૂમ્રપાન કે આગ બિલકુલ નહીં. લોકોને સલામત અંતરે લઈ જાઓ અને સ્ટેશન સ્ટાફને જણાવો."],
+    },
   },
   {
     id: "next",
-    keys: ["what next", "now what", "after", "evacuated", "outside now", "i'm out", "im out", "waiting", "how long", "when will", "eta", "crew", "then what", "did it", "i am safe"],
-    replies: [
-      "You've done the right things. Stay outside in open air, well away from the building, and keep everyone together. Do NOT go back in for belongings until the crew clears it. Have you called 1906 yet? If not, do it now — I'll open the dialer.",
-      "Perfect. Hold your position outside, count heads to be sure everyone's out, and wait for the crew. Don't re-enter until they say it's safe.",
-    ],
+    keys: ["what next", "now what", "outside now", "evacuated", "how long", "eta", "waiting", "अब क्या", "बाहर", "कितनी देर", "હવે શું", "બહાર", "કેટલી વાર"],
+    replies: {
+      en: ["You've done the right things. Stay outside in open air, away from the building, everyone together. Don't go back in for belongings until the crew clears it. Have you called 1906? If not, do it now — opening the dialer.", "Good. Hold your position outside, count heads, and wait for the crew. Don't re-enter until they say it's safe."],
+      hi: ["आपने सही किया। बाहर खुली हवा में, इमारत से दूर, सबके साथ रहें। जब तक टीम सुरक्षित न कहे, सामान के लिए अंदर न जाएँ। क्या आपने 1906 पर कॉल किया? नहीं तो अभी करें — डायलर खोल रहा हूँ।", "बढ़िया। बाहर रुके रहें, सबको गिन लें, और टीम का इंतज़ार करें। सुरक्षित कहने तक अंदर न जाएँ।"],
+      gu: ["તમે સાચું કર્યું. બહાર ખુલ્લી હવામાં, બિલ્ડિંગથી દૂર, બધા સાથે રહો. જ્યાં સુધી ટીમ સલામત ન કહે ત્યાં સુધી સામાન માટે અંદર ન જાઓ. શું તમે 1906 પર કૉલ કર્યો? નહીં તો હમણાં કરો — ડાયલર ખોલું છું.", "સરસ. બહાર રહો, બધાને ગણી લો, અને ટીમની રાહ જુઓ. સલામત કહે ત્યાં સુધી અંદર ન જાઓ."],
+    },
   },
   {
     id: "thanks",
-    keys: ["thank", "thanks", "okay", "ok", "done", "got it", "alright", "understood", "will do", "yes"],
-    replies: [
-      "You're doing really well. Keep following the steps, stay in fresh air, and stay with me — tell me anything you see or feel.",
-      "Great. I'm right here. Describe what's around you and I'll guide the next move.",
-      "Good work. Stay calm and stay outside; ask me anything at all.",
-    ],
-  },
-  {
-    id: "leak",
-    keys: ["smell", "smelling", "leak", "leaking", "gas", "odour", "odor", "stink", "lpg smell", "png smell"],
-    replies: [
-      "Okay — treat this as a real gas leak. Right now: keep away from every switch and flame, get everyone moving outside while opening windows to vent, shut the gas valve clockwise if it's safe, and call 1906 once you're out. I'll walk you through each step.",
-      "Understood, that smell means gas. Priorities: no sparks or switches, evacuate while venting, cut the valve if reachable, then call 1906 from outside. Tell me where in the house you are and I'll tailor the steps.",
-    ],
+    keys: ["thank", "thanks", "okay", "ok", "done", "got it", "alright", "yes", "धन्यवाद", "ठीक", "ओके", "आभार", "આભાર", "ઠીક", "ઓકે"],
+    replies: {
+      en: ["You're doing really well. Keep following the steps, stay in fresh air, and stay with me — tell me anything you see or feel.", "Great. I'm right here. Describe what's around you and I'll guide the next move."],
+      hi: ["आप बहुत अच्छा कर रहे हैं। कदमों का पालन करते रहें, ताज़ी हवा में रहें और मेरे साथ बने रहें — जो भी दिखे या महसूस हो, बताएँ।", "बढ़िया। मैं यहीं हूँ। बताइए आस-पास क्या है, मैं अगला कदम बताऊँगा।"],
+      gu: ["તમે ખૂબ સારું કરી રહ્યા છો. પગલાં અનુસરતા રહો, તાજી હવામાં રહો અને મારી સાથે રહો — જે પણ દેખાય કે અનુભવાય, જણાવો.", "સરસ. હું અહીં જ છું. કહો આસપાસ શું છે, હું આગળનું પગલું આપીશ."],
+    },
   },
 ];
 
-const FALLBACKS = [
-  "I'm here and ready to guide you. Are you smelling gas, hearing a hiss, or seeing a flame? Tell me what's happening and I'll give the exact step. Meanwhile: keep away from switches and get some fresh air.",
-  "Tell me a little more — is anyone feeling unwell, and can you safely reach the gas valve? While you answer, start moving toward a door and don't touch any switch.",
-  "I want to give you the right step. Describe what you see or smell. If in doubt, the safe default is: no flames or switches, get everyone outside venting as you go, and call 1906.",
-];
+const norm = (s: string) => " " + s.toLowerCase().replace(/[.,!?;:()"]/g, " ").replace(/\s+/g, " ").trim() + " ";
 
-function normalize(s: string) {
-  return " " + s.toLowerCase().replace(/[^a-z0-9\s']/g, " ").replace(/\s+/g, " ") + " ";
-}
-
-type Msg = { role: "bot" | "user"; text: string; call?: CallInfo };
+type Msg = { role: "bot" | "user"; text: string; call?: CallNo };
 
 export default function EmergencyChat() {
+  const [lang, setLang] = useState<Lang>("en");
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [muted, setMuted] = useState(false);
@@ -188,28 +237,26 @@ export default function EmergencyChat() {
   const [micMsg, setMicMsg] = useState<string | null>(null);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [voiceName, setVoiceName] = useState("");
-  const [callPrompt, setCallPrompt] = useState<CallInfo | null>(null);
+  const [callPrompt, setCallPrompt] = useState<CallNo | null>(null);
 
   const boxRef = useRef<HTMLDivElement>(null);
   const recRef = useRef<any>(null);
   const mutedRef = useRef(false);
+  const langRef = useRef<Lang>("en");
   const voiceRef = useRef<SpeechSynthesisVoice | null>(null);
-  const lastVariant = useRef<Record<string, number>>({});
-  const lastReply = useRef<string>("");
+  const rot = useRef<Record<string, number>>({});
+  const lastReply = useRef("");
 
   useEffect(() => { mutedRef.current = muted; }, [muted]);
+  useEffect(() => { langRef.current = lang; }, [lang]);
 
-  /* ---- voice: prefer Daniel, then a good male English voice ---- */
-  const PREF: RegExp[] = [
-    /daniel/i, /google uk english male/i, /\b(george|arthur|ryan|guy|brian|james)\b/i,
-    /en[-_]?gb.*male/i, /male/i, /en[-_]?gb/i, /google.*english/i, /en[-_]?in/i, /^en/i,
-  ];
-  function pickVoice(list: SpeechSynthesisVoice[]) {
-    for (const re of PREF) {
-      const v = list.find((x) => re.test(x.name) || re.test(x.lang));
-      if (v) return v;
-    }
-    return list.find((x) => /^en/i.test(x.lang)) || list[0] || null;
+  const byLang = (list: SpeechSynthesisVoice[], code: string) => list.find((v) => v.lang.toLowerCase().startsWith(code));
+  function pickVoice(list: SpeechSynthesisVoice[], lg: Lang): SpeechSynthesisVoice | null {
+    if (lg === "hi") return byLang(list, "hi") || list.find((v) => /hindi|swara|hemant|madhur/i.test(v.name)) || byLang(list, "en") || list[0] || null;
+    if (lg === "gu") return byLang(list, "gu") || list.find((v) => /gujarati/i.test(v.name)) || byLang(list, "hi") || byLang(list, "en") || list[0] || null;
+    const pref = [/daniel/i, /google uk english male/i, /\b(george|arthur|ryan|guy|brian|james)\b/i, /en[-_]?gb/i, /^en/i];
+    for (const re of pref) { const v = list.find((x) => re.test(x.name) || re.test(x.lang)); if (v) return v; }
+    return byLang(list, "en") || list[0] || null;
   }
 
   useEffect(() => {
@@ -218,11 +265,7 @@ export default function EmergencyChat() {
       const vs = window.speechSynthesis.getVoices();
       if (!vs.length) return;
       setVoices(vs);
-      if (!voiceRef.current) {
-        const v = pickVoice(vs);
-        voiceRef.current = v;
-        if (v) setVoiceName(v.name);
-      }
+      if (!voiceRef.current) { const v = pickVoice(vs, langRef.current); voiceRef.current = v; if (v) setVoiceName(v.name); }
     };
     load();
     window.speechSynthesis.onvoiceschanged = load;
@@ -234,13 +277,14 @@ export default function EmergencyChat() {
     if (mutedRef.current || typeof window === "undefined" || !window.speechSynthesis) return;
     window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
-    u.rate = 0.97; u.pitch = 1;
-    if (voiceRef.current) { u.voice = voiceRef.current; u.lang = voiceRef.current.lang; } else u.lang = "en-GB";
+    u.rate = 0.96; u.pitch = 1;
+    if (voiceRef.current) { u.voice = voiceRef.current; u.lang = voiceRef.current.lang; }
+    else u.lang = langRef.current === "hi" ? "hi-IN" : langRef.current === "gu" ? "gu-IN" : "en-GB";
     window.speechSynthesis.speak(u);
     setTimeout(() => window.speechSynthesis.resume(), 250);
   }, []);
 
-  const pushBot = useCallback((text: string, call?: CallInfo) => {
+  const pushBot = useCallback((text: string, call?: CallNo) => {
     lastReply.current = text;
     setMsgs((m) => [...m, { role: "bot", text, call }]);
     speak(text);
@@ -250,15 +294,16 @@ export default function EmergencyChat() {
   const respondTo = useCallback((raw: string) => {
     const t = raw.trim();
     if (!t) return;
+    const lg = langRef.current;
     setMsgs((m) => [...m, { role: "user", text: t }]);
     setInput("");
 
-    if (/all safety|full checklist|all steps|everything/i.test(t)) {
-      setTimeout(() => pushBot(FULL_STEPS), 250);
+    if (/all safety|full checklist|all steps|everything|सभी सुरक्षा|सभी कदम|पूरी सूची|બધા સલામતી|બધા પગલાં|પૂરી યાદી/i.test(t)) {
+      setTimeout(() => pushBot(FULL_STEPS[lg]), 220);
       return;
     }
 
-    const msg = normalize(t);
+    const msg = norm(t);
     let best: Intent | null = null;
     let bestScore = 0;
     for (const it of INTENTS) {
@@ -268,43 +313,44 @@ export default function EmergencyChat() {
       if (score > bestScore) { bestScore = score; best = it; }
     }
 
-    // explicit "call X" always wins the dialer
-    let call: CallInfo | undefined = best?.call;
-    if (/fire brigade|call fire|fire department|fire engine/i.test(t)) call = NUM.fire;
-    else if (/ambulance|108|medical help/i.test(t)) call = NUM.ambulance;
-    else if (/1906|gas helpline|gas emergency|who.*call|helpline|emergency number/i.test(t)) call = NUM.gas;
+    let call: CallNo | undefined = best?.call;
+    if (/fire brigade|call fire|आग|फायर|આગ|ફાયર/i.test(t)) call = "101";
+    else if (/ambulance|108|एम्बुलेंस|એમ્બ્યુલન્સ|चक्कर|બેભાન/i.test(t)) call = "108";
+    else if (/1906|helpline|हेल्पलाइन|હેલ્પલાઇન|call|कॉल|કૉલ/i.test(t)) call = call ?? "1906";
 
     let reply: string;
     if (best && bestScore > 0) {
-      const prev = lastVariant.current[best.id] ?? -1;
-      let idx = (prev + 1) % best.replies.length;
-      if (best.replies.length > 1 && best.replies[idx] === lastReply.current) idx = (idx + 1) % best.replies.length;
-      lastVariant.current[best.id] = idx;
-      reply = best.replies[idx];
+      const arr = best.replies[lg];
+      const key = best.id + ":" + lg;
+      const prev = rot.current[key] ?? -1;
+      let idx = (prev + 1) % arr.length;
+      if (arr.length > 1 && arr[idx] === lastReply.current) idx = (idx + 1) % arr.length;
+      rot.current[key] = idx;
+      reply = arr[idx];
     } else {
-      const prev = lastVariant.current["_fb"] ?? -1;
-      const idx = (prev + 1) % FALLBACKS.length;
-      lastVariant.current["_fb"] = idx;
-      reply = FALLBACKS[idx];
+      const arr = FALLBACKS[lg];
+      const key = "_fb:" + lg;
+      const prev = rot.current[key] ?? -1;
+      const idx = (prev + 1) % arr.length;
+      rot.current[key] = idx;
+      reply = arr[idx];
     }
-    setTimeout(() => pushBot(reply, call), 280);
+    setTimeout(() => pushBot(reply, call), 260);
   }, [pushBot]);
 
   const respondRef = useRef(respondTo);
   useEffect(() => { respondRef.current = respondTo; }, [respondTo]);
 
-  /* ---- greeting + speech recognition ---- */
+  // greeting + STT
   useEffect(() => {
-    const greet =
-      "I'm your SuRaksha AI safety assistant — stay calm, I'll guide you through this and help is already on the way. Right now: do not touch any switch, plug or phone indoors, and do not light anything. Get everyone moving toward the door, opening windows as you go, and step outside into fresh air. If the gas valve is safely on your way out, turn it clockwise to shut it off. Once you're outside, call the gas emergency helpline on 1906. Tell me what's happening — you can type, or tap the microphone and speak.";
-    setMsgs([{ role: "bot", text: greet }]);
-    lastReply.current = greet;
-    setTimeout(() => speak(greet), 350);
+    setMsgs([{ role: "bot", text: GREET.en }]);
+    lastReply.current = GREET.en;
+    setTimeout(() => speak(GREET.en), 350);
 
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (SR) {
       const r = new SR();
-      r.lang = "en-IN"; r.continuous = false; r.interimResults = true; r.maxAlternatives = 1;
+      r.continuous = false; r.interimResults = true; r.maxAlternatives = 1; r.lang = "en-IN";
       r.onresult = (e: any) => {
         let interim = "", final = "";
         for (let i = e.resultIndex; i < e.results.length; i++) {
@@ -317,10 +363,10 @@ export default function EmergencyChat() {
       r.onerror = (e: any) => {
         setListening(false);
         const map: Record<string, string> = {
-          "not-allowed": "Microphone is blocked. Click the 🔒 in the address bar → allow Microphone, then try again.",
-          "service-not-allowed": "Microphone is blocked in your browser settings — allow it and retry.",
-          "no-speech": "I didn't catch that — tap the mic and speak again, a bit closer.",
-          "audio-capture": "No microphone found. Check your mic is connected.",
+          "not-allowed": "Microphone is blocked. Click 🔒 in the address bar → allow Microphone, then retry.",
+          "service-not-allowed": "Microphone is blocked in browser settings — allow it and retry.",
+          "no-speech": "I didn't catch that — tap the mic and speak again.",
+          "audio-capture": "No microphone found. Check it's connected.",
           "aborted": "",
         };
         setMicMsg(map[e.error] ?? `Voice input error: ${e.error}`);
@@ -334,63 +380,92 @@ export default function EmergencyChat() {
 
   useEffect(() => { boxRef.current?.scrollTo({ top: boxRef.current.scrollHeight, behavior: "smooth" }); }, [msgs]);
 
+  function changeLang(lg: Lang) {
+    setLang(lg);
+    langRef.current = lg;
+    const v = pickVoice(voices, lg);
+    voiceRef.current = v; if (v) setVoiceName(v.name);
+    if (recRef.current) recRef.current.lang = LANGS.find((x) => x.code === lg)!.stt;
+    setMsgs([{ role: "bot", text: GREET[lg] }]);
+    lastReply.current = GREET[lg];
+    rot.current = {};
+    setTimeout(() => speak(GREET[lg]), 150);
+  }
+
   async function toggleMic() {
     const r = recRef.current; if (!r) return; setMicMsg(null);
+    r.lang = LANGS.find((x) => x.code === langRef.current)!.stt;
     if (listening) { try { r.stop(); } catch {} setListening(false); return; }
     try { await navigator.mediaDevices?.getUserMedia({ audio: true }); }
-    catch { setMicMsg("Microphone is blocked. Allow mic access in your browser and try again."); return; }
+    catch { setMicMsg("Microphone is blocked. Allow mic access and try again."); return; }
     try { r.start(); setListening(true); } catch { setListening(true); }
   }
   function toggleMute() { setMuted((m) => { if (!m) window.speechSynthesis?.cancel(); return !m; }); }
   function changeVoice(name: string) {
     const v = voices.find((x) => x.name === name) || null;
     voiceRef.current = v; setVoiceName(name);
-    if (v && !mutedRef.current) speak("Okay, I'll use this voice.");
+    if (v && !mutedRef.current) speak(lang === "hi" ? "ठीक है, अब यही आवाज़।" : lang === "gu" ? "બરાબર, હવે આ અવાજ." : "Okay, using this voice.");
   }
 
-  const enVoices = voices.filter((v) => /^en/i.test(v.lang));
-  const QUICK = ["I'm panicking", "Call fire brigade", "Someone feels dizzy", "I can't find the valve", "I'm outside now, what next?", "All safety steps"];
+  const ui = UI[lang];
+  const langVoices = (() => {
+    const f = voices.filter((v) => v.lang.toLowerCase().startsWith(lang));
+    if (f.length) return f;
+    const en = voices.filter((v) => /^en/i.test(v.lang));
+    return en.length ? en : voices;
+  })();
 
   return (
     <>
-      <Card className="overflow-hidden flex flex-col h-[560px]">
-        <div className="bg-ink-950 text-white p-4 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="h-10 w-10 rounded-full bg-brand-500/20 grid place-items-center shrink-0"><Bot className="w-5 h-5 text-brand-300" /></div>
+      <Card className="overflow-hidden flex flex-col h-[600px]">
+        <div className="bg-ink-950 text-white p-3 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="h-9 w-9 rounded-full bg-brand-500/20 grid place-items-center shrink-0"><Bot className="w-4 h-4 text-brand-300" /></div>
             <div className="min-w-0">
               <div className="font-semibold text-sm truncate">SuRaksha AI · Safety Assistant</div>
-              <div className="text-xs text-ink-400 flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-brand-400 animate-pulse" /> {muted ? "voice off" : "voice on"}</div>
+              <div className="text-[11px] text-ink-400 flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-brand-400 animate-pulse" /> {muted ? ui.voiceOff : ui.voiceOn}</div>
             </div>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
-            {enVoices.length > 0 && (
-              <select value={voiceName} onChange={(e) => changeVoice(e.target.value)} title="Assistant voice"
-                className="max-w-[120px] text-[11px] bg-white/10 text-white rounded-lg px-2 py-1.5 outline-none border border-white/10">
-                {enVoices.map((v) => <option key={v.name} value={v.name} className="text-ink-900">{v.name.replace(/Microsoft |Google |Online.*|\(.*\)/g, "").trim() || v.name}</option>)}
-              </select>
-            )}
-            <button onClick={toggleMute} title={muted ? "Unmute" : "Mute"} className="p-2 rounded-lg hover:bg-white/10 text-ink-300">
+            <div className="flex rounded-lg overflow-hidden border border-white/15">
+              {LANGS.map((l) => (
+                <button key={l.code} onClick={() => changeLang(l.code)}
+                  className={`px-2 py-1 text-[11px] font-semibold ${lang === l.code ? "bg-brand-500 text-white" : "bg-white/5 text-ink-300 hover:bg-white/10"}`}>{l.label}</button>
+              ))}
+            </div>
+            <button onClick={toggleMute} title="mute" className="p-1.5 rounded-lg hover:bg-white/10 text-ink-300">
               {muted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5 text-brand-300" />}
             </button>
           </div>
         </div>
 
-        {/* always-visible emergency call bar */}
+        {langVoices.length > 0 && (
+          <div className="px-3 py-1.5 bg-ink-900/95 border-b border-white/5">
+            <select value={voiceName} onChange={(e) => changeVoice(e.target.value)} title="Assistant voice"
+              className="w-full text-[11px] bg-white/10 text-white rounded-lg px-2 py-1 outline-none border border-white/10">
+              {langVoices.map((v) => <option key={v.name} value={v.name} className="text-ink-900">{v.name.replace(/Microsoft |Google |Online.*|\(.*\)/g, "").trim() || v.name}</option>)}
+            </select>
+          </div>
+        )}
+
         <div className="flex items-stretch gap-1.5 px-3 py-2 bg-red-50 border-b border-red-100">
-          <CallBtn onClick={() => setCallPrompt(NUM.gas)} icon={<Phone className="w-3.5 h-3.5" />} label="Gas 1906" tone="red" />
-          <CallBtn onClick={() => setCallPrompt(NUM.fire)} icon={<Flame className="w-3.5 h-3.5" />} label="Fire 101" tone="orange" />
-          <CallBtn onClick={() => setCallPrompt(NUM.ambulance)} icon={<Ambulance className="w-3.5 h-3.5" />} label="Ambulance 108" tone="sky" />
+          {ui.callbar.map(([n, label]) => (
+            <button key={n} onClick={() => setCallPrompt(n)}
+              className={`flex-1 flex items-center justify-center gap-1 text-white rounded-lg py-1.5 text-[11px] font-semibold ${n === "1906" ? "bg-red-600 hover:bg-red-700" : n === "101" ? "bg-orange-500 hover:bg-orange-600" : "bg-sky-600 hover:bg-sky-700"}`}>
+              {n === "101" ? <Flame className="w-3.5 h-3.5" /> : n === "108" ? <Ambulance className="w-3.5 h-3.5" /> : <Phone className="w-3.5 h-3.5" />} {label}
+            </button>
+          ))}
         </div>
 
         <div ref={boxRef} className="flex-1 overflow-y-auto p-4 space-y-3 bg-ink-50/40">
           {msgs.map((m, i) => (
             <div key={i} className={`flex ${m.role === "bot" ? "justify-start" : "justify-end"}`}>
               <div className={`px-3.5 py-2 max-w-[85%] text-sm shadow-sm rounded-2xl ${m.role === "bot" ? "bg-white border border-ink-200 text-ink-800 rounded-tl-sm" : "bg-brand-600 text-white rounded-tr-sm"}`}>
-                {m.role === "bot" && <span className="text-[10px] uppercase tracking-wider text-brand-600 block mb-0.5">Assistant</span>}
+                {m.role === "bot" && <span className="text-[10px] uppercase tracking-wider text-brand-600 block mb-0.5">{ui.assistant}</span>}
                 {m.text}
                 {m.call && (
                   <button onClick={() => setCallPrompt(m.call!)} className="mt-2 flex items-center gap-2 text-white bg-red-600 hover:bg-red-700 rounded-lg px-3 py-1.5 text-xs font-semibold">
-                    <PhoneCall className="w-3.5 h-3.5" /> Call {m.call.service} · {m.call.number}
+                    <PhoneCall className="w-3.5 h-3.5" /> {SERVICE[m.call][lang]} · {m.call}
                   </button>
                 )}
               </div>
@@ -405,61 +480,47 @@ export default function EmergencyChat() {
         )}
 
         <div className="px-3 pt-2 flex gap-1.5 flex-wrap border-t border-ink-100">
-          {QUICK.map((q) => (
+          {QUICK[lang].map((q) => (
             <button key={q} onClick={() => respondTo(q)} className="text-[11px] font-medium px-2.5 py-1 rounded-full border border-ink-200 text-ink-600 hover:border-brand-300 hover:bg-brand-50 transition">{q}</button>
           ))}
         </div>
 
         <form onSubmit={(e) => { e.preventDefault(); respondTo(input); }} className="p-3 flex items-center gap-2">
           {sttOk && (
-            <button type="button" onClick={toggleMic} title="Tap and speak"
+            <button type="button" onClick={toggleMic} title="speak"
               className={`p-2.5 rounded-xl border transition ${listening ? "bg-red-600 border-red-600 text-white animate-pulse" : "border-ink-200 text-ink-600 hover:bg-ink-50"}`}>
               <Mic className="w-4 h-4" />
             </button>
           )}
-          <input value={input} onChange={(e) => setInput(e.target.value)}
-            placeholder={listening ? "Listening… speak now" : "Type or tap the mic to speak…"}
+          <input value={input} onChange={(e) => setInput(e.target.value)} placeholder={listening ? ui.listening : ui.placeholder}
             className="flex-1 rounded-xl border border-ink-200 px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand-400" />
           <button type="submit" className="p-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white"><Send className="w-4 h-4" /></button>
         </form>
         <div className="px-3 pb-2 -mt-1 flex items-center gap-1.5 text-[11px] text-ink-400">
-          <ShieldPlus className="w-3 h-3" /> Guidance only · a crew has been dispatched to your address
+          <ShieldPlus className="w-3 h-3" /> {ui.guidance}
         </div>
       </Card>
 
-      {/* dial popup */}
-      {callPrompt && <CallDialog info={callPrompt} onClose={() => setCallPrompt(null)} />}
+      {callPrompt && <CallDialog num={callPrompt} lang={lang} onClose={() => setCallPrompt(null)} />}
     </>
   );
 }
 
-function CallBtn({ onClick, icon, label, tone }: { onClick: () => void; icon: React.ReactNode; label: string; tone: "red" | "orange" | "sky" }) {
-  const t = { red: "bg-red-600 hover:bg-red-700", orange: "bg-orange-500 hover:bg-orange-600", sky: "bg-sky-600 hover:bg-sky-700" }[tone];
-  return (
-    <button onClick={onClick} className={`flex-1 flex items-center justify-center gap-1.5 text-white ${t} rounded-lg py-1.5 text-[11px] font-semibold`}>
-      {icon} {label}
-    </button>
-  );
-}
-
-function CallDialog({ info, onClose }: { info: CallInfo; onClose: () => void }) {
+function CallDialog({ num, lang, onClose }: { num: CallNo; lang: Lang; onClose: () => void }) {
+  const ui = UI[lang];
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-ink-950/60 backdrop-blur-sm p-4 animate-fade" onClick={onClose}>
       <div onClick={(e) => e.stopPropagation()} className="w-full max-w-xs bg-white rounded-3xl shadow-2xl overflow-hidden">
         <div className="bg-ink-950 text-white pt-7 pb-6 text-center relative">
           <button onClick={onClose} className="absolute top-3 right-3 p-1.5 rounded-lg hover:bg-white/10 text-ink-400"><X className="w-4 h-4" /></button>
-          <div className="mx-auto h-16 w-16 rounded-full bg-brand-500/20 grid place-items-center mb-3 animate-ring">
-            <PhoneCall className="w-7 h-7 text-brand-300" />
-          </div>
-          <div className="text-sm text-ink-400">Calling</div>
-          <div className="text-lg font-bold">{info.service}</div>
-          <div className="text-3xl font-extrabold tracking-wider mt-1">{info.number}</div>
+          <div className="mx-auto h-16 w-16 rounded-full bg-brand-500/20 grid place-items-center mb-3 animate-ring"><PhoneCall className="w-7 h-7 text-brand-300" /></div>
+          <div className="text-sm text-ink-400">{ui.calling}</div>
+          <div className="text-lg font-bold px-3">{SERVICE[num][lang]}</div>
+          <div className="text-3xl font-extrabold tracking-wider mt-1">{num}</div>
         </div>
         <div className="p-4 flex gap-3">
-          <button onClick={onClose} className="flex-1 rounded-xl border border-ink-200 text-ink-600 font-semibold py-3 text-sm hover:bg-ink-50">Cancel</button>
-          <a href={`tel:${info.number}`} className="flex-[1.4] rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold py-3 text-sm flex items-center justify-center gap-2">
-            <PhoneCall className="w-4 h-4" /> Call now
-          </a>
+          <button onClick={onClose} className="flex-1 rounded-xl border border-ink-200 text-ink-600 font-semibold py-3 text-sm hover:bg-ink-50">{ui.cancel}</button>
+          <a href={`tel:${num}`} className="flex-[1.4] rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold py-3 text-sm flex items-center justify-center gap-2"><PhoneCall className="w-4 h-4" /> {ui.callNow}</a>
         </div>
       </div>
     </div>
