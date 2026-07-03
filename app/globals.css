@@ -51,6 +51,10 @@ body {
 @keyframes floatY2 { 0%,100% { transform: translateY(0); } 50% { transform: translateY(14px); } }
 .floaty-2 { animation: floatY2 9s ease-in-out infinite; }
 
+/* typewriter caret */
+@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+.tw-cursor { display: inline-block; margin-left: 1px; font-weight: 400; animation: blink 1s steps(1) infinite; }
+
 @media (prefers-reduced-motion: reduce) {
   .reveal > *, .pop, .wave, .floaty, .floaty-2 { animation: none; opacity: 1; transform: none; }
   html { scroll-behavior: auto; }

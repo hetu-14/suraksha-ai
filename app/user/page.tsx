@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Card, Kpi } from "@/components/ui";
 import CountUp from "@/components/CountUp";
+import Typewriter from "@/components/Typewriter";
 import { currentCustomer } from "@/lib/data";
 import {
   ShieldCheck, ReceiptText, Siren, ArrowRight, Phone, Flame, Droplets,
@@ -15,8 +16,12 @@ export default function UserHome() {
         <div className="floaty absolute -right-10 -top-10 w-56 h-56 bg-brand-500/20 rounded-full blur-3xl" />
         <div className="floaty-2 absolute -left-16 -bottom-16 w-48 h-48 bg-brand-400/10 rounded-full blur-3xl" />
         <div className="relative">
-          <p className="text-brand-300 text-sm font-medium">Namaste, {currentCustomer.name.split(" ")[0]} <span className="wave">👋</span></p>
-          <h1 className="text-2xl sm:text-3xl font-extrabold mt-1">Your home is <span className="text-brand-300">safe &amp; sound</span>.</h1>
+          <p className="text-brand-300 text-sm font-medium min-h-[20px]">
+            <Typewriter speed={55} startDelay={250} segments={[{ text: `Namaste, ${currentCustomer.name.split(" ")[0]} ` }, { text: "👋", cls: "wave" }]} />
+          </p>
+          <h1 className="text-2xl sm:text-3xl font-extrabold mt-1 min-h-[36px] sm:min-h-[40px]">
+            <Typewriter speed={42} startDelay={1250} cursorClass="text-brand-300" segments={[{ text: "Your home is " }, { text: "safe & sound", cls: "text-brand-300" }, { text: "." }]} />
+          </h1>
           <p className="text-ink-300 mt-2.5 text-sm flex flex-wrap items-center gap-x-2 gap-y-1">
             <span className="inline-flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-brand-400 animate-pulse" /> {currentCustomer.id}</span>
             <span className="text-ink-600">·</span> {currentCustomer.area}
