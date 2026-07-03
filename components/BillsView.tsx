@@ -56,9 +56,14 @@ export default function BillsView({ customers, live }: { customers: CustomerWith
     <div className="space-y-6">
       {/* header + account switcher */}
       <div className="flex items-start justify-between flex-wrap gap-3">
-        <div>
-          <h2 className="text-xl font-bold text-ink-900">WhyMyBill</h2>
-          <p className="text-sm text-ink-500 mt-0.5">Every charge explained from your own history — no guesswork.</p>
+        <div className="flex items-center gap-3">
+          <div className="h-11 w-11 rounded-2xl bg-brand-100 grid place-items-center shrink-0">
+            <ReceiptText className="w-5 h-5 text-brand-600" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-ink-900">WhyMyBill</h2>
+            <p className="text-sm text-ink-500 mt-0.5">Every charge explained from your own history — no guesswork.</p>
+          </div>
         </div>
         <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-full border ${live ? "bg-brand-50 border-brand-200 text-brand-700" : "bg-ink-100 border-ink-200 text-ink-500"}`}>
           {live ? <Database className="w-3.5 h-3.5" /> : <HardDrive className="w-3.5 h-3.5" />}
@@ -91,7 +96,7 @@ export default function BillsView({ customers, live }: { customers: CustomerWith
               <li key={b.id}>
                 <button
                   onClick={() => setBillId(b.id)}
-                  className={`w-full text-left px-4 py-3 flex items-center justify-between transition ${b.id === bill.id ? "bg-brand-50" : "hover:bg-ink-50"}`}
+                  className={`w-full text-left px-4 py-3 flex items-center justify-between transition border-l-2 ${b.id === bill.id ? "bg-brand-50 border-brand-500" : "border-transparent hover:bg-ink-50"}`}
                 >
                   <div>
                     <div className="text-sm font-semibold text-ink-800">{b.cycleLabel}</div>
@@ -117,9 +122,12 @@ export default function BillsView({ customers, live }: { customers: CustomerWith
             <div className="relative flex items-start justify-between flex-wrap gap-4">
               <div>
                 <div className="text-xs text-brand-300 flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" /> {bill.cycleLabel}</div>
-                <div className="text-4xl font-extrabold mt-1 tabular-nums">{inr(animAmount)}</div>
-                <div className="text-sm text-ink-300 mt-1">
-                  {bill.unitsScm} SCM · {bill.status === "paid" ? `Paid ${fmt(bill.paidOn)}` : `Due ${fmt(bill.dueDate)}`}
+                <div className="text-4xl sm:text-5xl font-extrabold mt-1 tabular-nums">{inr(animAmount)}</div>
+                <div className="flex items-center gap-2 mt-2.5">
+                  <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${bill.status === "paid" ? "bg-brand-400/20 text-brand-200" : "bg-amber-400/20 text-amber-100"}`}>
+                    {bill.status === "paid" ? "Paid" : "Due"}
+                  </span>
+                  <span className="text-xs text-ink-300">{bill.unitsScm} SCM · {bill.status === "paid" ? fmt(bill.paidOn) : fmt(bill.dueDate)}</span>
                 </div>
               </div>
               <button
@@ -249,17 +257,17 @@ export default function BillsView({ customers, live }: { customers: CustomerWith
 function CompareChip({ label, pct, sub }: { label: string; pct: number | null; sub?: string }) {
   const up = (pct ?? 0) > 0;
   const flat = pct === null || Math.abs(pct) < 1;
+  const color = flat ? "text-ink-500" : up ? "text-red-600" : "text-brand-600";
+  const chip = flat ? "bg-ink-100 text-ink-400" : up ? "bg-red-50 text-red-500" : "bg-brand-50 text-brand-600";
   return (
     <div className="bg-white rounded-2xl shadow-soft border border-ink-100 p-4">
-      <div className="text-xs text-ink-500">{label}</div>
-      <div className={`text-xl font-extrabold mt-1 flex items-center gap-1 ${flat ? "text-ink-500" : up ? "text-red-600" : "text-brand-600"}`}>
-        {pct === null ? "—" : (
-          <>
-            {flat ? <Minus className="w-4 h-4" /> : up ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
-            {Math.abs(pct)}%
-          </>
-        )}
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-ink-500">{label}</span>
+        <span className={`h-6 w-6 rounded-lg grid place-items-center ${chip}`}>
+          {flat ? <Minus className="w-3.5 h-3.5" /> : up ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
+        </span>
       </div>
+      <div className={`text-2xl font-extrabold mt-2 tabular-nums ${color}`}>{pct === null ? "—" : `${Math.abs(pct)}%`}</div>
       {sub && <div className="text-[11px] text-ink-400 mt-0.5">{sub}</div>}
     </div>
   );
