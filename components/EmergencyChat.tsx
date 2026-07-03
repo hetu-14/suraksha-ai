@@ -225,6 +225,17 @@ const INTENTS: Intent[] = [
 
 const norm = (s: string) => " " + s.toLowerCase().replace(/[.,!?;:()"]/g, " ").replace(/\s+/g, " ").trim() + " ";
 
+// Gujarati (U+0A80–U+0AFF) → Devanagari (U+0900–U+097F): parallel Unicode blocks,
+// offset 0x180. Lets a Hindi TTS voice pronounce Gujarati when no gu-IN voice exists.
+function guToDeva(s: string) {
+  let out = "";
+  for (const ch of s) {
+    const c = ch.codePointAt(0)!;
+    out += c >= 0x0a80 && c <= 0x0aff ? String.fromCodePoint(c - 0x180) : ch;
+  }
+  return out;
+}
+
 type Msg = { role: "bot" | "user"; text: string; call?: CallNo };
 
 export default function EmergencyChat() {
@@ -276,10 +287,19 @@ export default function EmergencyChat() {
   const speak = useCallback((text: string) => {
     if (mutedRef.current || typeof window === "undefined" || !window.speechSynthesis) return;
     window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
+    const v = voiceRef.current;
+    const usingGuVoice = !!v && v.lang.toLowerCase().startsWith("gu");
+    let toSpeak = text;
+    let spokenLang = v ? v.lang : (langRef.current === "hi" ? "hi-IN" : langRef.current === "gu" ? "gu-IN" : "en-GB");
+    // No Gujarati voice on this device → transliterate to Devanagari + read with Hindi voice.
+    if (langRef.current === "gu" && !usingGuVoice) {
+      toSpeak = guToDeva(text);
+      spokenLang = "hi-IN";
+    }
+    const u = new SpeechSynthesisUtterance(toSpeak);
     u.rate = 0.96; u.pitch = 1;
-    if (voiceRef.current) { u.voice = voiceRef.current; u.lang = voiceRef.current.lang; }
-    else u.lang = langRef.current === "hi" ? "hi-IN" : langRef.current === "gu" ? "gu-IN" : "en-GB";
+    if (v) u.voice = v;
+    u.lang = spokenLang;
     window.speechSynthesis.speak(u);
     setTimeout(() => window.speechSynthesis.resume(), 250);
   }, []);
@@ -408,7 +428,15 @@ export default function EmergencyChat() {
   }
 
   const ui = UI[lang];
+  const hasGuVoice = voices.some((v) => v.lang.toLowerCase().startsWith("gu"));
   const langVoices = (() => {
+    if (lang === "gu") {
+      const gu = voices.filter((v) => v.lang.toLowerCase().startsWith("gu"));
+      if (gu.length) return gu;
+      const hi = voices.filter((v) => v.lang.toLowerCase().startsWith("hi"));
+      if (hi.length) return hi; // Hindi voice reads the Devanagari transliteration
+      return voices.filter((v) => /^en/i.test(v.lang));
+    }
     const f = voices.filter((v) => v.lang.toLowerCase().startsWith(lang));
     if (f.length) return f;
     const en = voices.filter((v) => /^en/i.test(v.lang));
@@ -445,6 +473,9 @@ export default function EmergencyChat() {
               className="w-full text-[11px] bg-white/10 text-white rounded-lg px-2 py-1 outline-none border border-white/10">
               {langVoices.map((v) => <option key={v.name} value={v.name} className="text-ink-900">{v.name.replace(/Microsoft |Google |Online.*|\(.*\)/g, "").trim() || v.name}</option>)}
             </select>
+            {lang === "gu" && !hasGuVoice && (
+              <p className="text-[10px] text-ink-400 mt-1">ગુજરાતી અવાજ ઉપલબ્ધ નથી — હિન્દી અવાજ દ્વારા વાંચે છે.</p>
+            )}
           </div>
         )}
 
