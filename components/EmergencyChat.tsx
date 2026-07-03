@@ -227,9 +227,18 @@ const norm = (s: string) => " " + s.toLowerCase().replace(/[.,!?;:()"]/g, " ").r
 
 // Gujarati (U+0A80–U+0AFF) → Devanagari (U+0900–U+097F): parallel Unicode blocks,
 // offset 0x180. Lets a Hindi TTS voice pronounce Gujarati when no gu-IN voice exists.
+// A few letters need a phonetic override so a Hindi engine reads them cleanly.
+const GU_FIX: Record<string, string> = {
+  "ળ": "ल",   // retroflex ḷa → la  (સળગ, પાળતુ, મળે …)
+  "ૄ": "ृ",   // vocalic RR sign → R sign
+  "ૠ": "ऋ",   // vocalic RR → R
+  "ઌ": "ल",   // vocalic L → la
+  "ૐ": "ॐ",
+};
 function guToDeva(s: string) {
   let out = "";
   for (const ch of s) {
+    if (GU_FIX[ch] !== undefined) { out += GU_FIX[ch]; continue; }
     const c = ch.codePointAt(0)!;
     out += c >= 0x0a80 && c <= 0x0aff ? String.fromCodePoint(c - 0x180) : ch;
   }
