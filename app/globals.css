@@ -20,3 +20,30 @@ body {
 ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
 .glass { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(12px); }
+
+/* ---- classic, subtle motion ---- */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes popIn { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: none; } }
+@keyframes sheen { to { background-position: 200% 0; } }
+
+/* staggered entrance for direct children of a section */
+.reveal > * { opacity: 0; animation: fadeUp .55s cubic-bezier(.22,.61,.36,1) forwards; }
+.reveal > *:nth-child(1) { animation-delay: .04s; }
+.reveal > *:nth-child(2) { animation-delay: .10s; }
+.reveal > *:nth-child(3) { animation-delay: .16s; }
+.reveal > *:nth-child(4) { animation-delay: .22s; }
+.reveal > *:nth-child(5) { animation-delay: .28s; }
+.reveal > *:nth-child(6) { animation-delay: .34s; }
+.reveal > *:nth-child(7) { animation-delay: .40s; }
+.reveal > *:nth-child(n+8) { animation-delay: .46s; }
+
+/* gentle hover lift for interactive cards */
+.lift { transition: transform .22s cubic-bezier(.22,.61,.36,1), box-shadow .22s ease; }
+.lift:hover { transform: translateY(-3px); box-shadow: 0 16px 34px -14px rgba(15,23,42,.22); }
+
+.pop { animation: popIn .4s cubic-bezier(.22,.61,.36,1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal > *, .pop { animation: none; opacity: 1; transform: none; }
+  html { scroll-behavior: auto; }
+}

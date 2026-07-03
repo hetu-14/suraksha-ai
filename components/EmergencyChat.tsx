@@ -550,7 +550,7 @@ function CallDialog({ num, lang, onClose }: { num: CallNo; lang: Lang; onClose: 
   const ui = UI[lang];
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-ink-950/60 backdrop-blur-sm p-4 animate-fade" onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-xs bg-white rounded-3xl shadow-2xl overflow-hidden">
+      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-xs bg-white rounded-3xl shadow-2xl overflow-hidden pop">
         <div className="bg-ink-950 text-white pt-7 pb-6 text-center relative">
           <button onClick={onClose} className="absolute top-3 right-3 p-1.5 rounded-lg hover:bg-white/10 text-ink-400"><X className="w-4 h-4" /></button>
           <div className="mx-auto h-16 w-16 rounded-full bg-brand-500/20 grid place-items-center mb-3 animate-ring"><PhoneCall className="w-7 h-7 text-brand-300" /></div>

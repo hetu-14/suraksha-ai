@@ -278,7 +278,7 @@ export default function BillAssistant({ explanation, bill, onClose }: { explanat
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-ink-950/60 backdrop-blur-sm p-3 animate-fade" onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md">
+      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md pop">
         <Card className="overflow-hidden flex flex-col h-[600px]">
           <div className="bg-ink-950 text-white p-3 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5 min-w-0">

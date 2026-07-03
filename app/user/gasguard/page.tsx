@@ -41,7 +41,7 @@ export default function UserEmergency() {
   const doneCount = checked.filter(Boolean).length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 reveal">
       {!active ? (
         /* ---------- SOS landing ---------- */
         <div className="relative overflow-hidden rounded-3xl border border-red-100 bg-gradient-to-b from-red-50 via-white to-white p-8 sm:p-14 text-center shadow-soft">
@@ -74,7 +74,7 @@ export default function UserEmergency() {
                 { icon: Languages, label: "EN · हिं · ગુ" },
                 { icon: MapPin, label: "Auto-dispatch" },
               ].map((f, i) => (
-                <div key={i} className="rounded-2xl border border-ink-100 bg-white/70 backdrop-blur px-3 py-3">
+                <div key={i} className="rounded-2xl border border-ink-100 bg-white/70 backdrop-blur px-3 py-3 lift">
                   <f.icon className="w-5 h-5 text-red-500 mx-auto" />
                   <div className="text-[11px] font-medium text-ink-600 mt-1.5">{f.label}</div>
                 </div>

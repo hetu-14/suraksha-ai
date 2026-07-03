@@ -53,7 +53,7 @@ export default function BillsView({ customers, live }: { customers: CustomerWith
   const verdictTone = explanation.verdict === "leak" ? "red" : explanation.verdict === "under" ? "sky" : "brand";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 reveal">
       {/* header + account switcher */}
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
@@ -182,8 +182,8 @@ export default function BillsView({ customers, live }: { customers: CustomerWith
 
       {/* ask assistant — sits between the breakdown and the narrative */}
       <button onClick={() => setAskOpen(true)}
-        className="w-full flex items-center justify-center gap-2 text-sm font-semibold text-white bg-gradient-to-r from-ink-900 to-brand-800 hover:opacity-95 rounded-2xl py-3.5 shadow-soft transition">
-        <MessageSquareText className="w-4 h-4" /> Ask about this bill · chat &amp; voice
+        className="group w-full flex items-center justify-center gap-2 text-sm font-semibold text-white bg-gradient-to-r from-ink-900 to-brand-800 hover:opacity-95 active:scale-[.99] rounded-2xl py-3.5 shadow-soft transition">
+        <MessageSquareText className="w-4 h-4 transition-transform group-hover:-rotate-6" /> Ask about this bill · chat &amp; voice
       </button>
 
       {/* narrative + safety */}
@@ -260,7 +260,7 @@ function CompareChip({ label, pct, sub }: { label: string; pct: number | null; s
   const color = flat ? "text-ink-500" : up ? "text-red-600" : "text-brand-600";
   const chip = flat ? "bg-ink-100 text-ink-400" : up ? "bg-red-50 text-red-500" : "bg-brand-50 text-brand-600";
   return (
-    <div className="bg-white rounded-2xl shadow-soft border border-ink-100 p-4">
+    <div className="bg-white rounded-2xl shadow-soft border border-ink-100 p-4 lift">
       <div className="flex items-center justify-between">
         <span className="text-xs text-ink-500">{label}</span>
         <span className={`h-6 w-6 rounded-lg grid place-items-center ${chip}`}>
