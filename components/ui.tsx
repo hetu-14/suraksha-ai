@@ -28,7 +28,7 @@ export function Kpi({
   accent?: string;
 }) {
   return (
-    <Card className="p-5">
+    <Card className="p-5 lift">
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium text-ink-500">{label}</span>
         <span className={accent}>{icon}</span>

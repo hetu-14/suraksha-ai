@@ -43,7 +43,15 @@ body {
 
 .pop { animation: popIn .4s cubic-bezier(.22,.61,.36,1) both; }
 
+/* waving hand + slow floating blob */
+@keyframes wave { 0%,60%,100% { transform: rotate(0); } 10% { transform: rotate(14deg); } 20% { transform: rotate(-8deg); } 30% { transform: rotate(14deg); } 40% { transform: rotate(-4deg); } 50% { transform: rotate(10deg); } }
+.wave { display: inline-block; transform-origin: 70% 70%; animation: wave 2.6s ease-in-out .8s infinite; }
+@keyframes floatY { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-16px); } }
+.floaty { animation: floatY 7s ease-in-out infinite; }
+@keyframes floatY2 { 0%,100% { transform: translateY(0); } 50% { transform: translateY(14px); } }
+.floaty-2 { animation: floatY2 9s ease-in-out infinite; }
+
 @media (prefers-reduced-motion: reduce) {
-  .reveal > *, .pop { animation: none; opacity: 1; transform: none; }
+  .reveal > *, .pop, .wave, .floaty, .floaty-2 { animation: none; opacity: 1; transform: none; }
   html { scroll-behavior: auto; }
 }
