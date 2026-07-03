@@ -172,6 +172,12 @@ export default function BillsView({ customers, live }: { customers: CustomerWith
         </div>
       </div>
 
+      {/* ask assistant — sits between the breakdown and the narrative */}
+      <button onClick={() => setAskOpen(true)}
+        className="w-full flex items-center justify-center gap-2 text-sm font-semibold text-white bg-gradient-to-r from-ink-900 to-brand-800 hover:opacity-95 rounded-2xl py-3.5 shadow-soft transition">
+        <MessageSquareText className="w-4 h-4" /> Ask about this bill · chat &amp; voice
+      </button>
+
       {/* narrative + safety */}
       <div className="grid lg:grid-cols-3 gap-5">
         <div className="lg:col-span-2 bg-white rounded-2xl shadow-soft border border-ink-100 p-5">
@@ -188,10 +194,6 @@ export default function BillsView({ customers, live }: { customers: CustomerWith
           <p className="text-sm text-ink-700 leading-relaxed bg-brand-50 border border-brand-100 rounded-xl p-4">
             {explanation.narrative}
           </p>
-          <button onClick={() => setAskOpen(true)}
-            className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-white bg-ink-900 hover:bg-ink-800 rounded-xl px-4 py-2.5">
-            <MessageSquareText className="w-4 h-4" /> Ask about this bill · chat &amp; voice
-          </button>
         </div>
 
         {explanation.verdict === "under" ? (
