@@ -45,6 +45,7 @@ export type CustomerWithBills = Customer & {
 // ---- Explanation engine output ----
 
 export type Verdict = "normal" | "leak" | "under";
+export type LeakLevel = "none" | "watch" | "high";
 
 export type ExplanationFactor = {
   label: string;
@@ -60,6 +61,11 @@ export type BillExplanation = {
   narrative: string;
   factors: ExplanationFactor[]; // decomposition of amount change vs previous cycle
   amountDeltaVsPrev: number;
+  // leak assessment
+  leakPct: number; // 0-99 estimated probability of a leak
+  leakLevel: LeakLevel;
+  leakReasons: string[]; // human-readable signals behind the score
+  away: boolean; // was the premise unoccupied this cycle
   comparisons: {
     vsPrevPct: number | null;
     vsYearPct: number | null;

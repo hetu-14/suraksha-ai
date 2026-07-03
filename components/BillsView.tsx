@@ -5,7 +5,7 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell,
 } from "recharts";
 import {
-  ReceiptText, Download, Sparkles, ShieldCheck, AlertTriangle, Gauge,
+  ReceiptText, Download, Sparkles, Gauge,
   ArrowUpRight, ArrowDownRight, Minus, TrendingUp, Database, HardDrive, Calendar,
 } from "lucide-react";
 import { CustomerWithBills } from "@/lib/types";
@@ -36,10 +36,11 @@ export default function BillsView({ customers, live }: { customers: CustomerWith
   const bills = customer.bills;
   const [billId, setBillId] = useState(bills[bills.length - 1]?.id);
 
+  const [away, setAway] = useState(false);
   const bill = bills.find((b) => b.id === billId) ?? bills[bills.length - 1];
   const explanation = useMemo(
-    () => explainBill(bills, customer, bill.id),
-    [bills, customer, bill.id]
+    () => explainBill(bills, customer, bill.id, away),
+    [bills, customer, bill.id, away]
   );
 
   const animAmount = useCountUp(bill.amount, bill.id);
@@ -48,11 +49,6 @@ export default function BillsView({ customers, live }: { customers: CustomerWith
   const maxFactor = Math.max(1, ...explanation.factors.map((f) => Math.abs(f.amount)));
 
   const verdictTone = explanation.verdict === "leak" ? "red" : explanation.verdict === "under" ? "sky" : "brand";
-  const toneClasses: Record<string, string> = {
-    red: "bg-red-50 border-red-200 text-red-700",
-    sky: "bg-sky-50 border-sky-200 text-sky-700",
-    brand: "bg-brand-50 border-brand-200 text-brand-700",
-  };
 
   return (
     <div className="space-y-6">
@@ -192,16 +188,18 @@ export default function BillsView({ customers, live }: { customers: CustomerWith
           </p>
         </div>
 
-        <div className={`rounded-2xl shadow-soft border p-5 ${toneClasses[verdictTone]}`}>
-          <div className="flex items-center gap-2 font-bold">
-            {explanation.verdict === "leak" ? <AlertTriangle className="w-5 h-5" /> : explanation.verdict === "under" ? <Gauge className="w-5 h-5" /> : <ShieldCheck className="w-5 h-5" />}
-            {explanation.safety.title}
+        {explanation.verdict === "under" ? (
+          <div className="rounded-2xl shadow-soft border border-sky-200 bg-sky-50 p-5">
+            <div className="flex items-center gap-2 font-bold text-sky-700"><Gauge className="w-5 h-5" /> {explanation.safety.title}</div>
+            <p className="text-sm text-ink-600 mt-2">{explanation.safety.message}</p>
+            <label className="mt-4 flex items-center gap-2 text-xs text-ink-700 cursor-pointer bg-white/60 rounded-lg px-3 py-2">
+              <input type="checkbox" checked={away} onChange={(e) => setAway(e.target.checked)} className="rounded text-brand-600" />
+              I was away / house locked this cycle
+            </label>
           </div>
-          <p className="text-sm text-ink-600 mt-2">{explanation.safety.message}</p>
-          {explanation.verdict === "leak" && (
-            <button className="mt-4 w-full bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-xl py-2.5">Book free safety check</button>
-          )}
-        </div>
+        ) : (
+          <LeakPanel pct={explanation.leakPct} level={explanation.leakLevel} reasons={explanation.leakReasons} away={away} setAway={setAway} />
+        )}
       </div>
 
       {/* usage history */}
@@ -258,4 +256,68 @@ function CompareChip({ label, pct, sub }: { label: string; pct: number | null; s
 function fmt(iso?: string) {
   if (!iso) return "—";
   return new Date(iso).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function LeakPanel({
+  pct, level, reasons, away, setAway,
+}: {
+  pct: number;
+  level: "none" | "watch" | "high";
+  reasons: string[];
+  away: boolean;
+  setAway: (b: boolean) => void;
+}) {
+  const map = {
+    high: { ring: "#ef4444", text: "text-red-700", chip: "bg-red-100 text-red-700", label: "High leak chance", border: "border-red-200" },
+    watch: { ring: "#f59e0b", text: "text-amber-700", chip: "bg-amber-100 text-amber-700", label: "Worth watching", border: "border-amber-200" },
+    none: { ring: "#10b981", text: "text-brand-700", chip: "bg-brand-100 text-brand-700", label: "No leak signs", border: "border-brand-200" },
+  }[level];
+  const R = 42;
+  const C = 2 * Math.PI * R;
+  const off = C * (1 - pct / 100);
+
+  return (
+    <div className={`rounded-2xl shadow-soft border ${map.border} bg-white p-5`}>
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="font-bold text-ink-900 text-sm">Gas leak risk</h3>
+        <span className={`text-xs font-semibold px-2 py-1 rounded-full ${map.chip}`}>{map.label}</span>
+      </div>
+
+      <div className="flex items-center gap-4">
+        <div className="relative shrink-0" style={{ width: 108, height: 108 }}>
+          <svg viewBox="0 0 100 100" className="w-[108px] h-[108px] -rotate-90">
+            <circle cx="50" cy="50" r={R} stroke="#eef2f6" strokeWidth="10" fill="none" />
+            <circle cx="50" cy="50" r={R} stroke={map.ring} strokeWidth="10" fill="none" strokeLinecap="round"
+              strokeDasharray={C} strokeDashoffset={off} style={{ transition: "stroke-dashoffset .7s ease" }} />
+          </svg>
+          <div className="absolute inset-0 grid place-items-center">
+            <div className="text-center">
+              <div className={`text-2xl font-extrabold ${map.text}`}>{pct}%</div>
+              <div className="text-[10px] text-ink-400 -mt-0.5">probability</div>
+            </div>
+          </div>
+        </div>
+        <p className="text-xs text-ink-500">Estimated from your usage vs your average, the season, and whether the home was occupied.</p>
+      </div>
+
+      <ul className="mt-3 space-y-1.5">
+        {reasons.map((r, i) => (
+          <li key={i} className="flex items-start gap-2 text-xs text-ink-600">
+            <span className="mt-1 h-1.5 w-1.5 rounded-full shrink-0" style={{ background: map.ring }} /> {r}
+          </li>
+        ))}
+      </ul>
+
+      <label className="mt-3 flex items-center gap-2 text-xs text-ink-700 cursor-pointer bg-ink-50 rounded-lg px-3 py-2">
+        <input type="checkbox" checked={away} onChange={(e) => setAway(e.target.checked)} className="rounded text-brand-600" />
+        I was away / house locked this cycle
+      </label>
+
+      {level !== "none" && (
+        <button className={`mt-3 w-full text-white text-sm font-semibold rounded-xl py-2.5 ${level === "high" ? "bg-red-600 hover:bg-red-700" : "bg-amber-500 hover:bg-amber-600"}`}>
+          Book free safety check
+        </button>
+      )}
+    </div>
+  );
 }
