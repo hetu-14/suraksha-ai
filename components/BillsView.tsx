@@ -5,12 +5,13 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell,
 } from "recharts";
 import {
-  ReceiptText, Download, Sparkles, Gauge,
+  ReceiptText, Download, Sparkles, Gauge, MessageSquareText,
   ArrowUpRight, ArrowDownRight, Minus, TrendingUp, Database, HardDrive, Calendar,
 } from "lucide-react";
 import { CustomerWithBills } from "@/lib/types";
 import { explainBill, inr } from "@/lib/billExplain";
 import { downloadBillPdf } from "@/lib/pdf";
+import BillAssistant from "@/components/BillAssistant";
 
 function useCountUp(target: number, key: string | number) {
   const [v, setV] = useState(0);
@@ -37,6 +38,7 @@ export default function BillsView({ customers, live }: { customers: CustomerWith
   const [billId, setBillId] = useState(bills[bills.length - 1]?.id);
 
   const [away, setAway] = useState(false);
+  const [askOpen, setAskOpen] = useState(false);
   const bill = bills.find((b) => b.id === billId) ?? bills[bills.length - 1];
   const explanation = useMemo(
     () => explainBill(bills, customer, bill.id, away),
@@ -186,6 +188,10 @@ export default function BillsView({ customers, live }: { customers: CustomerWith
           <p className="text-sm text-ink-700 leading-relaxed bg-brand-50 border border-brand-100 rounded-xl p-4">
             {explanation.narrative}
           </p>
+          <button onClick={() => setAskOpen(true)}
+            className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-white bg-ink-900 hover:bg-ink-800 rounded-xl px-4 py-2.5">
+            <MessageSquareText className="w-4 h-4" /> Ask about this bill · chat &amp; voice
+          </button>
         </div>
 
         {explanation.verdict === "under" ? (
@@ -230,6 +236,10 @@ export default function BillsView({ customers, live }: { customers: CustomerWith
           <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-ink-300" /> Other</span>
         </div>
       </div>
+
+      {askOpen && (
+        <BillAssistant key={bill.id + String(away)} explanation={explanation} bill={bill} customer={customer} onClose={() => setAskOpen(false)} />
+      )}
     </div>
   );
 }
