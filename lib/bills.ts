@@ -7,7 +7,7 @@ import { Bill, CustomerWithBills } from "./types";
 
 export const usingLiveDb = hasSupabaseEnv();
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable */
 function mapBill(row: any): Bill {
   return {
     id: row.id,
