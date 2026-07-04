@@ -33,19 +33,27 @@ function useCountUp(target: number, key: string | number) {
 
 export default function BillsView({ customers, live }: { customers: CustomerWithBills[]; live: boolean }) {
   // A logged-in customer only ever sees their own account.
-  const customer = customers[0];
-  const bills = customer.bills;
+  const customer = customers?.[0];
+  const bills = useMemo(() => customer?.bills ?? [], [customer]);
   const [billId, setBillId] = useState(bills[bills.length - 1]?.id);
-
   const [away, setAway] = useState(false);
   const [askOpen, setAskOpen] = useState(false);
+
   const bill = bills.find((b) => b.id === billId) ?? bills[bills.length - 1];
   const explanation = useMemo(
-    () => explainBill(bills, customer, bill.id, away),
-    [bills, customer, bill.id, away]
+    () => (bill && customer) ? explainBill(bills, customer, bill.id, away) : null,
+    [bills, customer, bill, away]
   );
 
-  const animAmount = useCountUp(bill.amount, bill.id);
+  const animAmount = useCountUp(bill?.amount ?? 0, bill?.id ?? "");
+
+  if (!customer || !bill || !explanation) {
+    return (
+      <div className="p-8 text-center text-ink-500 bg-white rounded-2xl border border-ink-100">
+        No billing records found.
+      </div>
+    );
+  }
 
   const chartData = bills.map((b) => ({ name: b.cycleLabel.replace(" 20", " '"), units: b.unitsScm, id: b.id, winter: [11, 12, 1, 2].includes(new Date(b.periodEnd).getUTCMonth() + 1) }));
   const maxFactor = Math.max(1, ...explanation.factors.map((f) => Math.abs(f.amount)));

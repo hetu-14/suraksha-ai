@@ -7,7 +7,9 @@ html { scroll-behavior: smooth; }
 body { background: var(--background); color: #1e293b; }
 
 /* ─── custom cursor: hide native ─── */
-* { cursor: none !important; }
+.custom-cursor-active, .custom-cursor-active * {
+  cursor: none !important;
+}
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 9999px; }

@@ -675,7 +675,7 @@ export default function Landing() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#020617] text-white relative overflow-x-hidden cursor-none">
+    <div className="min-h-screen bg-[#020617] text-white relative overflow-x-hidden cursor-none custom-cursor-active">
 
       {/* ── Layer 0: Atmosphere ── */}
       <AuroraBackground />
