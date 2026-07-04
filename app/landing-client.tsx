@@ -239,8 +239,8 @@ function HUDOverlay() {
     <div className="fixed inset-0 z-[25] pointer-events-none select-none">
       {/* Corner brackets */}
       {[["top-3 left-3 border-t-2 border-l-2 rounded-tl","tl"],["top-3 right-3 border-t-2 border-r-2 rounded-tr","tr"],
-        ["bottom-3 left-3 border-b-2 border-l-2 rounded-bl","bl"],["bottom-3 right-3 border-b-2 border-r-2 rounded-br","br"]].map(([cls]) => (
-        <div key={cls} className={`absolute w-8 h-8 border-brand-400/22 ${cls}`} />
+        ["bottom-3 left-3 border-b-2 border-l-2 rounded-bl","bl"],["bottom-3 right-3 border-b-2 border-r-2 rounded-br","br"]].map(([cls, cornerId]) => (
+        <div key={cornerId} className={`absolute w-8 h-8 border-brand-400/22 transition-all duration-300 hud-corner-${cornerId} ${cls}`} />
       ))}
 
       {/* TL */}

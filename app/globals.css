@@ -306,6 +306,47 @@ body { background: var(--background); color: #1e293b; }
 .floaty-2 { animation:floatY2 9s ease-in-out infinite; }
 .tw-cursor { display:inline-block; margin-left:1px; animation:blink 1s steps(1) infinite; }
 
+/* ─── HUD Corner camera focus animations ─── */
+@keyframes hudCornerFocus {
+  0%, 35%, 65%, 100% {
+    border-color: rgba(52,211,153,0.22);
+    filter: none;
+  }
+  43%, 57% {
+    border-color: rgba(239,68,68,0.75);
+    filter: drop-shadow(0 0 5px rgba(239,68,68,0.7));
+  }
+}
+@keyframes hudTlFocus {
+  0%, 35%, 65%, 100% { transform: translate(0, 0); }
+  43%, 57% { transform: translate(6px, 6px); }
+}
+@keyframes hudTrFocus {
+  0%, 35%, 65%, 100% { transform: translate(0, 0); }
+  43%, 57% { transform: translate(-6px, 6px); }
+}
+@keyframes hudBlFocus {
+  0%, 35%, 65%, 100% { transform: translate(0, 0); }
+  43%, 57% { transform: translate(6px, -6px); }
+}
+@keyframes hudBrFocus {
+  0%, 35%, 65%, 100% { transform: translate(0, 0); }
+  43%, 57% { transform: translate(-6px, -6px); }
+}
+
+.hud-corner-tl {
+  animation: hudCornerFocus 6s ease-in-out infinite, hudTlFocus 6s ease-in-out infinite;
+}
+.hud-corner-tr {
+  animation: hudCornerFocus 6s ease-in-out infinite, hudTrFocus 6s ease-in-out infinite;
+}
+.hud-corner-bl {
+  animation: hudCornerFocus 6s ease-in-out infinite, hudBlFocus 6s ease-in-out infinite;
+}
+.hud-corner-br {
+  animation: hudCornerFocus 6s ease-in-out infinite, hudBrFocus 6s ease-in-out infinite;
+}
+
 /* ══════════════════════════════════════════════════════════════
    REDUCED MOTION
 ══════════════════════════════════════════════════════════════ */
