@@ -127,6 +127,7 @@ function NeuralNetCanvas() {
    CUSTOM GLOW CURSOR
 ══════════════════════════════════════════════════════════════ */
 function CustomCursor() {
+  const [enabled, setEnabled] = useState(false);
   const dot = useRef<HTMLDivElement>(null);
   const ring = useRef<HTMLDivElement>(null);
   const trail = useRef<HTMLDivElement[]>([]);
@@ -136,6 +137,11 @@ function CustomCursor() {
   const TRAIL = 8;
 
   useEffect(() => {
+    // Only enable custom cursor on hoverable devices (desktop with mouse)
+    const mediaQuery = window.matchMedia("(hover: hover) and (pointer: fine)");
+    if (!mediaQuery.matches) return;
+    setEnabled(true);
+
     const onMove = (e: MouseEvent) => { pos.current = { x: e.clientX, y: e.clientY }; };
     window.addEventListener("mousemove", onMove);
 
@@ -161,6 +167,8 @@ function CustomCursor() {
     animate();
     return () => { window.removeEventListener("mousemove", onMove); cancelAnimationFrame(raf.current); };
   }, []);
+
+  if (!enabled) return null;
 
   return (
     <>
@@ -236,7 +244,7 @@ function HUDOverlay() {
   const alertCycle = [0, 0, 1, 0, 0, 1][tick % 6];
 
   return (
-    <div className="fixed inset-0 z-[25] pointer-events-none select-none">
+    <div className="fixed inset-0 z-[25] pointer-events-none select-none hidden md:block">
       {/* Corner brackets */}
       {[["top-3 left-3 border-t-2 border-l-2 rounded-tl","tl"],["top-3 right-3 border-t-2 border-r-2 rounded-tr","tr"],
         ["bottom-3 left-3 border-b-2 border-l-2 rounded-bl","bl"],["bottom-3 right-3 border-b-2 border-r-2 rounded-br","br"]].map(([cls, cornerId]) => (
@@ -562,20 +570,23 @@ function OrbitBadges() {
     { label: "Emergency",     deg: 288, cls: "text-red-300 border-red-400/35 bg-red-500/10 text-xs sm:text-sm px-3.5 py-1.5" },
   ];
   return (
-    <div className="relative w-[480px] h-[480px] mx-auto">
-      <div className="absolute inset-0 rounded-full border-2 border-brand-400/[0.13] animate-[spin_24s_linear_infinite]" />
-      <div className="absolute inset-12 rounded-full border border-brand-400/[0.07] animate-[spin_16s_linear_infinite_reverse]" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"><RadarCanvas /></div>
-      {badges.map(({ label, deg, cls }) => {
-        const rad = deg * Math.PI / 180;
-        return (
-          <div key={deg}
-            className={`absolute font-semibold border rounded-full whitespace-nowrap orbit-badge ${cls}`}
-            style={{ left:`calc(50% + ${Math.cos(rad)*230}px)`, top:`calc(50% + ${Math.sin(rad)*230}px)`, transform:"translate(-50%,-50%)", animationDelay:`${deg*8}ms` }}>
-            {label}
-          </div>
-        );
-      })}
+    <div className="relative w-[300px] h-[300px] sm:w-[480px] sm:h-[480px] mx-auto flex items-center justify-center overflow-visible">
+      {/* Outer scale container for mobile compatibility */}
+      <div className="absolute w-[480px] h-[480px] scale-[0.62] sm:scale-100 origin-center transition-transform duration-300 flex-shrink-0">
+        <div className="absolute inset-0 rounded-full border-2 border-brand-400/[0.13] animate-[spin_24s_linear_infinite]" />
+        <div className="absolute inset-12 rounded-full border border-brand-400/[0.07] animate-[spin_16s_linear_infinite_reverse]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"><RadarCanvas /></div>
+        {badges.map(({ label, deg, cls }) => {
+          const rad = deg * Math.PI / 180;
+          return (
+            <div key={deg}
+              className={`absolute font-semibold border rounded-full whitespace-nowrap orbit-badge ${cls}`}
+              style={{ left:`calc(50% + ${Math.cos(rad)*230}px)`, top:`calc(50% + ${Math.sin(rad)*230}px)`, transform:"translate(-50%,-50%)", animationDelay:`${deg*8}ms` }}>
+              {label}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -793,7 +804,7 @@ export default function Landing() {
         </div>
 
         {/* ── STATS ── */}
-        <div className="grid grid-cols-3 gap-4 max-w-2xl mx-auto mb-20">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto mb-20">
           <StatCard value={6}   label="AI Agents"       icon={<Zap className="w-5 h-5"/>}      delay={0}   pct={1}    />
           <StatCard value={999} suffix="%" label="Uptime SLA"  icon={<Activity className="w-5 h-5"/>} delay={150} pct={0.999} />
           <StatCard value={2}   suffix="s" label="Alert Speed" icon={<Shield className="w-5 h-5"/>}   delay={300} pct={0.85}  />

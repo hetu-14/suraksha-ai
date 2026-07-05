@@ -71,7 +71,7 @@ export default function GasGuardCases() {
     <div className="space-y-6">
       <SectionTitle title="GasGuard — Live Emergency Cases" sub="Every SOS from customers, triaged in real time" />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Kpi label="Active emergencies" value={active} accent="text-red-600" icon={<Siren className="w-4 h-4" />} />
         <Kpi label="Awaiting dispatch" value={needAction} accent="text-amber-600" icon={<Bell className="w-4 h-4" />} />
         <Kpi label="Avg AI pickup" value="1.2s" icon={<Timer className="w-4 h-4" />} />

@@ -38,6 +38,14 @@ export default function Shell({
 
   return (
     <div className="flex min-h-screen">
+      {/* Sidebar Backdrop */}
+      {open && (
+        <div
+          className="fixed inset-0 bg-ink-950/60 backdrop-blur-sm z-30 lg:hidden"
+          onClick={() => setOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
       <aside
         className={`${open ? "flex" : "hidden"} lg:flex w-64 shrink-0 flex-col bg-ink-950 text-ink-300 fixed h-screen z-40`}

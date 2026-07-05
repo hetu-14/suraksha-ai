@@ -30,7 +30,7 @@ export default function SLA() {
     <div className="space-y-6">
       <SectionTitle title="SLA Sentinel — Compliance Guardian" sub="Predict & prevent PNGRB compensation payouts" />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Kpi label="Open complaints" value={rows.length} icon={<Timer className="w-4 h-4" />} />
         <Kpi label="At breach-risk" value={atRisk} accent="text-amber-600" icon={<AlertTriangle className="w-4 h-4" />} />
         <Kpi label="Breaches prevented (MTD)" value="63" icon={<ShieldCheck className="w-4 h-4" />} />

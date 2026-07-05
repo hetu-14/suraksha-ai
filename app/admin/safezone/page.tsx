@@ -650,7 +650,7 @@ export default function SafeZoneAdmin() {
       </div>
 
       {/* ── KPIs ── */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         {[
           { label:"Cameras online",   val:`${CAMERAS.length-offlineCams.size}/${CAMERAS.length}`, sub:offlineCams.size>0?`${offlineCams.size} offline`:"All active", icon:<Camera className="w-4 h-4"/>, col:offlineCams.size>0?"text-amber-600":"text-brand-600" },
           { label:"Open cases",       val:openCount,         sub:activeAlerts.filter(a=>a.escalated).length>0?`${activeAlerts.filter(a=>a.escalated).length} escalated`:"", icon:<Bell className="w-4 h-4"/>, col:openCount>0?"text-red-600":"text-brand-600" },
@@ -676,7 +676,7 @@ export default function SafeZoneAdmin() {
         <div className="lg:col-span-2 space-y-4">
 
           {/* 6-camera thumbnail grid */}
-          <div className="grid grid-cols-3 gap-1.5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
             {CAMERAS.map((cam) => {
               const openAlert = activeAlerts.find((a) => a.camId===cam.id);
               const isOff     = offlineCams.has(cam.id);
@@ -736,7 +736,7 @@ export default function SafeZoneAdmin() {
                   bboxes={focusBboxes} offline={offlineCams.has(focusCam)} />
               </div>
               {/* AI bar */}
-              <div className="bg-ink-50 border-t border-ink-100 px-4 py-2.5 grid grid-cols-4 gap-2 text-xs">
+              <div className="bg-ink-50 border-t border-ink-100 px-4 py-2.5 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
                 <div><div className="text-ink-400 mb-0.5">Zone</div><div className="font-semibold text-ink-800">{focusCamData.zone}</div></div>
                 <div><div className="text-ink-400 mb-0.5">Open alerts</div>
                   <div className={`font-semibold ${focusAlerts.length>0?"text-red-600":"text-brand-600"}`}>{focusAlerts.length>0?`${focusAlerts.length} active`:"None"}</div>
@@ -969,7 +969,7 @@ export default function SafeZoneAdmin() {
             {activeTab==="analytics" && (
               <div className="p-4 space-y-5">
                 {/* Quick stats row */}
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {[
                     { label:"Total today",     val:violations,                                             col:"text-ink-900" },
                     { label:"Resolved",        val:resolvedCount,                                          col:"text-brand-600" },
@@ -1024,7 +1024,7 @@ export default function SafeZoneAdmin() {
                   </div>
                 </div>
                 {/* Resolution trend */}
-                <div className="grid grid-cols-2 gap-3 pt-3 border-t border-ink-100">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-ink-100">
                   <div className="bg-ink-50 rounded-xl p-3 text-center">
                     <TrendingUp className="w-5 h-5 text-brand-500 mx-auto mb-1"/>
                     <div className="text-lg font-extrabold text-brand-700">{resolvedCount>0?Math.round((resolvedCount/(resolvedCount+activeAlerts.length))*100):0}%</div>

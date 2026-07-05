@@ -140,7 +140,7 @@ export default function BillsView({ customers, live }: { customers: CustomerWith
               </div>
               <button
                 onClick={() => downloadBillPdf(customer, bill)}
-                className="flex items-center gap-2 text-sm font-semibold bg-white/10 hover:bg-white/20 border border-white/15 rounded-xl px-4 py-2.5 transition"
+                className="flex items-center justify-center gap-2 text-sm font-semibold bg-white/10 hover:bg-white/20 border border-white/15 rounded-xl px-4 py-2.5 transition w-full sm:w-auto"
               >
                 <Download className="w-4 h-4" /> Download PDF
               </button>
@@ -148,7 +148,7 @@ export default function BillsView({ customers, live }: { customers: CustomerWith
           </div>
 
           {/* comparison chips */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <CompareChip label="vs last cycle" pct={explanation.comparisons.vsPrevPct} />
             <CompareChip label="vs last year" pct={explanation.comparisons.vsYearPct} sub={explanation.comparisons.yoyLabel ?? undefined} />
             <CompareChip label="vs 6-mo avg" pct={explanation.comparisons.vsAvgPct} sub={explanation.comparisons.avgUnits ? `${explanation.comparisons.avgUnits} SCM` : undefined} />

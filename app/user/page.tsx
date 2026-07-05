@@ -51,7 +51,7 @@ export default function UserHome() {
       {animStep >= 2 && (
         <div className="space-y-6 anim-fade-up">
           {/* KPIs */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Kpi label="Safety status" value="Safe" sub="All sensors nominal" icon={<ShieldCheck className="w-4 h-4" />} />
             <Kpi label="Current bill" value={due ? <CountUp to={due.amount} prefix="₹" format /> : "—"} sub={due ? "Due this cycle" : "Nothing due"} accent="text-amber-600" icon={<ReceiptText className="w-4 h-4" />} />
             <Kpi label="Leak risk" value="None" sub="No anomaly detected" icon={<Droplets className="w-4 h-4" />} />
@@ -90,17 +90,18 @@ export default function UserHome() {
             </Link>
           </div>
 
-          {/* emergency banner */}
           <Card className="p-5 border-red-200 bg-red-50">
-            <div className="flex items-center gap-4">
-              <div className="h-11 w-11 rounded-2xl bg-red-100 grid place-items-center shrink-0">
-                <Phone className="w-5 h-5 text-red-600" />
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="h-11 w-11 rounded-2xl bg-red-100 grid place-items-center shrink-0">
+                  <Phone className="w-5 h-5 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-red-800">Smell gas? Act now.</h3>
+                  <p className="text-sm text-red-700/80">Our AI emergency line answers instantly and guides you step-by-step.</p>
+                </div>
               </div>
-              <div className="flex-1">
-                <h3 className="font-bold text-red-800">Smell gas? Act now.</h3>
-                <p className="text-sm text-red-700/80">Our AI emergency line answers instantly and guides you step-by-step.</p>
-              </div>
-              <Link href="/user/gasguard" className="bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl px-4 py-2.5 text-sm whitespace-nowrap">
+              <Link href="/user/gasguard" className="bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl px-4 py-2.5 text-sm text-center w-full sm:w-auto shrink-0">
                 SOS
               </Link>
             </div>

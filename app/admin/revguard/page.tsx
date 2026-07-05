@@ -15,7 +15,7 @@ export default function RevGuard() {
     <div className="space-y-6">
       <SectionTitle title="RevGuard — Revenue & Tampering Intelligence" sub="Finds hidden money in data you already have" />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Kpi label="Accounts scanned" value="2,41,860" icon={<ScanLine className="w-4 h-4" />} />
         <Kpi label="High-risk flagged" value="142" accent="text-red-600" icon={<ShieldAlert className="w-4 h-4" />} />
         <Kpi label="Est. revenue at risk" value="₹27.3L" icon={<IndianRupee className="w-4 h-4" />} />

@@ -94,7 +94,7 @@ export default function AutoNotify() {
             ))}
           </select>
 
-          <div className="grid grid-cols-2 gap-3 mb-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
             <div>
               <label className="text-xs font-medium text-ink-500">Work start</label>
               <input type="datetime-local" value={start} onChange={(e) => setStart(e.target.value)}

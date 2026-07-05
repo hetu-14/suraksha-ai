@@ -76,7 +76,7 @@ export default function SafeZone() {
               {scanning && <span className="text-brand-300 text-sm font-medium animate-pulse">Analyzing frame…</span>}
             </div>
           </div>
-          <div className="p-4 flex gap-2">
+          <div className="p-4 flex flex-col sm:flex-row gap-2">
             <button
               onClick={runScan}
               disabled={scanning}
@@ -86,7 +86,7 @@ export default function SafeZone() {
             </button>
             <button
               onClick={() => setDetected((d) => !d)}
-              className="px-4 rounded-xl border border-ink-200 hover:bg-ink-100 text-ink-600 text-sm"
+              className="px-4 py-2.5 sm:py-0 rounded-xl border border-ink-200 hover:bg-ink-100 text-ink-600 text-sm w-full sm:w-auto"
             >
               Simulate hazard
             </button>
@@ -131,15 +131,19 @@ export default function SafeZone() {
         <h3 className="font-bold text-ink-900 mb-3">Recent safety events</h3>
         <ul className="space-y-2">
           {safetyAlerts.map((a, i) => (
-            <li key={i} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-ink-50">
-              <span className={`shrink-0 h-8 w-8 rounded-lg grid place-items-center ${
-                a.level === "critical" ? "bg-red-50 text-red-500" : a.level === "warn" ? "bg-amber-50 text-amber-500" : "bg-brand-50 text-brand-600"
-              }`}>
-                {a.level === "info" ? <CheckCircle2 className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
-              </span>
-              <span className="text-sm text-ink-700 flex-1">{a.text}</span>
-              <span className="text-xs text-ink-400 shrink-0">{a.time}</span>
-              <Badge tone={a.level === "critical" ? "red" : a.level === "warn" ? "amber" : "brand"}>{a.level}</Badge>
+            <li key={i} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-2.5 rounded-xl hover:bg-ink-50">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <span className={`shrink-0 h-8 w-8 rounded-lg grid place-items-center ${
+                  a.level === "critical" ? "bg-red-50 text-red-500" : a.level === "warn" ? "bg-amber-50 text-amber-500" : "bg-brand-50 text-brand-600"
+                }`}>
+                  {a.level === "info" ? <CheckCircle2 className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
+                </span>
+                <span className="text-sm text-ink-700 truncate sm:whitespace-normal">{a.text}</span>
+              </div>
+              <div className="flex items-center justify-between sm:justify-end gap-3 pl-11 sm:pl-0 shrink-0">
+                <span className="text-xs text-ink-400 shrink-0">{a.time}</span>
+                <Badge tone={a.level === "critical" ? "red" : a.level === "warn" ? "amber" : "brand"}>{a.level}</Badge>
+              </div>
             </li>
           ))}
         </ul>
