@@ -3,13 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 
 export default function CountUp({
-  to, prefix = "", suffix = "", format = false, dur = 900,
+  to, prefix = "", suffix = "", format = false, dur = 900, decimals = 0,
 }: {
   to: number;
   prefix?: string;
   suffix?: string;
   format?: boolean;
   dur?: number;
+  decimals?: number;
 }) {
   const [v, setV] = useState(0);
   const raf = useRef(0);
@@ -24,6 +25,13 @@ export default function CountUp({
     raf.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf.current);
   }, [to, dur]);
-  const n = Math.round(v);
-  return <span className="tabular-nums">{prefix}{format ? n.toLocaleString("en-IN") : n}{suffix}</span>;
+
+  const displayVal = format
+    ? v.toLocaleString("en-IN", {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals,
+      })
+    : v.toFixed(decimals);
+
+  return <span className="tabular-nums">{prefix}{displayVal}{suffix}</span>;
 }
