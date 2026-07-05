@@ -30,13 +30,15 @@ export default function UserHome() {
             />
           </p>
           <h1 className="text-2xl sm:text-3xl font-extrabold mt-1 min-h-[36px] sm:min-h-[40px]">
-            {animStep >= 1 && (
+            {animStep >= 1 ? (
               <Typewriter
                 speed={42}
                 onComplete={() => setAnimStep(2)}
                 cursorClass="text-brand-300"
                 segments={[{ text: "Your home is " }, { text: "safe & sound", cls: "text-brand-300" }, { text: "." }]}
               />
+            ) : (
+              <span className="text-transparent">Your home is safe & sound.</span>
             )}
           </h1>
           <p className="text-ink-300 mt-2.5 text-sm flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -47,67 +49,64 @@ export default function UserHome() {
         </div>
       </div>
 
-      {/* KPIs & Actions (Fade in together at step 2) */}
-      {animStep >= 2 && (
-        <div className="space-y-6 anim-fade-up">
-          {/* KPIs */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Kpi label="Safety status" value="Safe" sub="All sensors nominal" icon={<ShieldCheck className="w-4 h-4" />} />
-            <Kpi label="Current bill" value={due ? <CountUp to={due.amount} prefix="₹" format /> : "—"} sub={due ? "Due this cycle" : "Nothing due"} accent="text-amber-600" icon={<ReceiptText className="w-4 h-4" />} />
-            <Kpi label="Leak risk" value="None" sub="No anomaly detected" icon={<Droplets className="w-4 h-4" />} />
-            <Kpi label="This cycle usage" value={<CountUp to={due?.units ?? 0} suffix=" SCM" />} sub="Winter heating" icon={<Flame className="w-4 h-4" />} accent="text-orange-500" />
-          </div>
-
-          {/* quick actions */}
-          <div className="grid md:grid-cols-2 gap-4">
-            <Link href="/user/gasguard">
-              <Card className="p-6 hover:border-red-300 transition h-full lift">
-                <div className="flex items-center justify-between">
-                  <div className="h-11 w-11 rounded-2xl bg-red-100 grid place-items-center">
-                    <Siren className="w-5 h-5 text-red-600" />
-                  </div>
-                  <ArrowRight className="w-5 h-5 text-ink-300" />
-                </div>
-                <h3 className="font-bold text-ink-900 mt-4">Gas Emergency</h3>
-                <p className="text-sm text-ink-500 mt-1">
-                  Smell gas? Tap SOS to connect instantly — AI guides you and dispatches the nearest crew.
-                </p>
-              </Card>
-            </Link>
-            <Link href="/user/bills">
-              <Card className="p-6 hover:border-brand-300 transition h-full lift">
-                <div className="flex items-center justify-between">
-                  <div className="h-11 w-11 rounded-2xl bg-brand-100 grid place-items-center">
-                    <ReceiptText className="w-5 h-5 text-brand-600" />
-                  </div>
-                  <ArrowRight className="w-5 h-5 text-ink-300" />
-                </div>
-                <h3 className="font-bold text-ink-900 mt-4">WhyMyBill</h3>
-                <p className="text-sm text-ink-500 mt-1">
-                  See all your past bills and get a plain-language reason for every charge.
-                </p>
-              </Card>
-            </Link>
-          </div>
-
-          <Card className="p-5 border-red-200 bg-red-50">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className="h-11 w-11 rounded-2xl bg-red-100 grid place-items-center shrink-0">
-                  <Phone className="w-5 h-5 text-red-600" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-red-800">Smell gas? Act now.</h3>
-                  <p className="text-sm text-red-700/80">Our AI emergency line answers instantly and guides you step-by-step.</p>
-                </div>
-              </div>
-              <Link href="/user/gasguard" className="bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl px-4 py-2.5 text-sm text-center w-full sm:w-auto shrink-0">
-                SOS
-              </Link>
-            </div>
-          </Card>
+      <div className="space-y-6 anim-fade-up">
+        {/* KPIs */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Kpi label="Safety status" value="Safe" sub="All sensors nominal" icon={<ShieldCheck className="w-4 h-4" />} />
+          <Kpi label="Current bill" value={due ? <CountUp to={due.amount} prefix="₹" format /> : "—"} sub={due ? "Due this cycle" : "Nothing due"} accent="text-amber-600" icon={<ReceiptText className="w-4 h-4" />} />
+          <Kpi label="Leak risk" value="None" sub="No anomaly detected" icon={<Droplets className="w-4 h-4" />} />
+          <Kpi label="This cycle usage" value={<CountUp to={due?.units ?? 0} suffix=" SCM" />} sub="Winter heating" icon={<Flame className="w-4 h-4" />} accent="text-orange-500" />
         </div>
-      )}
+
+        {/* quick actions */}
+        <div className="grid md:grid-cols-2 gap-4">
+          <Link href="/user/gasguard">
+            <Card className="p-6 hover:border-red-300 transition h-full lift">
+              <div className="flex items-center justify-between">
+                <div className="h-11 w-11 rounded-2xl bg-red-100 grid place-items-center">
+                  <Siren className="w-5 h-5 text-red-600" />
+                </div>
+                <ArrowRight className="w-5 h-5 text-ink-300" />
+              </div>
+              <h3 className="font-bold text-ink-900 mt-4">Gas Emergency</h3>
+              <p className="text-sm text-ink-500 mt-1">
+                Smell gas? Tap SOS to connect instantly — AI guides you and dispatches the nearest crew.
+              </p>
+            </Card>
+          </Link>
+          <Link href="/user/bills">
+            <Card className="p-6 hover:border-brand-300 transition h-full lift">
+              <div className="flex items-center justify-between">
+                <div className="h-11 w-11 rounded-2xl bg-brand-100 grid place-items-center">
+                  <ReceiptText className="w-5 h-5 text-brand-600" />
+                </div>
+                <ArrowRight className="w-5 h-5 text-ink-300" />
+              </div>
+              <h3 className="font-bold text-ink-900 mt-4">WhyMyBill</h3>
+              <p className="text-sm text-ink-500 mt-1">
+                See all your past bills and get a plain-language reason for every charge.
+              </p>
+            </Card>
+          </Link>
+        </div>
+
+        <Card className="p-5 border-red-200 bg-red-50">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="h-11 w-11 rounded-2xl bg-red-100 grid place-items-center shrink-0">
+                <Phone className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <h3 className="font-bold text-red-800">Smell gas? Act now.</h3>
+                <p className="text-sm text-red-700/80">Our AI emergency line answers instantly and guides you step-by-step.</p>
+              </div>
+            </div>
+            <Link href="/user/gasguard" className="bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl px-4 py-2.5 text-sm text-center w-full sm:w-auto shrink-0">
+              SOS
+            </Link>
+          </div>
+        </Card>
+      </div>
     </div>
   );
 }

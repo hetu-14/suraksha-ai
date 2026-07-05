@@ -680,13 +680,22 @@ export default function Landing() {
   const [parallax, setParallax] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
+    // Force dark background on body for the landing page to prevent mobile light leaks
+    const prevBg = document.body.style.backgroundColor;
+    document.body.style.backgroundColor = "#020617";
+
     const onMove = (e: MouseEvent) => setParallax({ x: e.clientX/window.innerWidth - 0.5, y: e.clientY/window.innerHeight - 0.5 });
     window.addEventListener("mousemove", onMove);
-    return () => window.removeEventListener("mousemove", onMove);
+
+    return () => {
+      document.body.style.backgroundColor = prevBg;
+      window.removeEventListener("mousemove", onMove);
+    };
   }, []);
 
   return (
     <div className="min-h-screen bg-[#020617] text-white relative overflow-x-hidden cursor-none custom-cursor-active">
+      <meta name="theme-color" content="#020617" />
 
       {/* ── Layer 0: Atmosphere ── */}
       <AuroraBackground />
