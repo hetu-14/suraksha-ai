@@ -1,20 +1,22 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
-
 export const metadata: Metadata = {
-  title: "SuRaksha AI — CGD Safety, Trust & Compliance Intelligence",
+  title: "SuRaksha AI — The Intelligent Operating System for City Gas Distribution",
   description:
-    "The AI layer that catches what humans miss across safety, customer trust, revenue and compliance for City Gas Distribution.",
+    "Customer experience, safety & operations, and business intelligence — unified AI platform for City Gas Distribution.",
 };
 
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+      </head>
       <body className="font-sans text-ink-800 antialiased">{children}</body>
     </html>
   );

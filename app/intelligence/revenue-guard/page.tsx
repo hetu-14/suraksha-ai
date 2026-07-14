@@ -13,7 +13,7 @@ export default function RevGuard() {
 
   return (
     <div className="space-y-6">
-      <SectionTitle title="RevGuard — Revenue & Tampering Intelligence" sub="Finds hidden money in data you already have" />
+      <SectionTitle title="Revenue Guard — Revenue & Tampering Intelligence" sub="Finds hidden money in data you already have" />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Kpi label="Accounts scanned" value="2,41,860" icon={<ScanLine className="w-4 h-4" />} />

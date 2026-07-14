@@ -13,7 +13,7 @@ const steps = [
   { label: "Evacuate everyone", icon: LogOut },
 ];
 
-export default function UserEmergency() {
+export default function GasCarePage() {
   const [active, setActive] = useState(false);
   const [checked, setChecked] = useState<boolean[]>([false, false, false, false]);
   const [dispatched, setDispatched] = useState(false);
@@ -54,7 +54,7 @@ export default function UserEmergency() {
                 <Siren className="w-9 h-9 text-white" />
               </div>
             </div>
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-red-600 bg-red-100 px-3 py-1 rounded-full">24×7 Emergency</span>
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-red-600 bg-red-100 px-3 py-1 rounded-full">24×7 GasCare Emergency</span>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-ink-900 mt-4 leading-tight">Smell gas? Get help in seconds.</h2>
             <p className="text-ink-500 mt-2.5 max-w-md mx-auto text-sm leading-relaxed">
               Tap SOS to connect to our AI safety assistant. It talks you through every step by voice and dispatches the nearest crew automatically.
@@ -92,7 +92,7 @@ export default function UserEmergency() {
                 <span className="relative rounded-full h-2.5 w-2.5 bg-red-500" />
               </span>
               <div className="min-w-0">
-                <div className="text-sm font-semibold truncate">Emergency session active</div>
+                <div className="text-sm font-semibold truncate">GasCare emergency session active</div>
                 <div className="text-[11px] text-ink-400 truncate">AI assistant connected · crew notified</div>
               </div>
             </div>

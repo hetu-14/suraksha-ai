@@ -55,7 +55,12 @@ export default function BillsView({ customers, live }: { customers: CustomerWith
     );
   }
 
-  const chartData = bills.map((b) => ({ name: b.cycleLabel.replace(" 20", " '"), units: b.unitsScm, id: b.id, winter: [11, 12, 1, 2].includes(new Date(b.periodEnd).getUTCMonth() + 1) }));
+  const chartData = bills.map((b) => {
+    const label = b.cycleLabel ?? "";
+    const name = label.includes(" 20") ? label.replace(" 20", " '") : label;
+    const isWinterMonth = b.periodEnd ? [11, 12, 1, 2].includes(new Date(b.periodEnd).getUTCMonth() + 1) : false;
+    return { name, units: b.unitsScm ?? 0, id: b.id, winter: isWinterMonth };
+  });
   const maxFactor = Math.max(1, ...explanation.factors.map((f) => Math.abs(f.amount)));
 
   const verdictTone = explanation.verdict === "leak" ? "red" : explanation.verdict === "under" ? "sky" : "brand";

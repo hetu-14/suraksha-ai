@@ -8,7 +8,7 @@ import { Megaphone, CheckCircle2, XCircle, Loader2, MessageCircle, Info } from "
 type SendResult = { phone: string; status: "sent" | "failed"; error?: string };
 type ApiResp = { configured: boolean; provider: string | null; sent: number; total: number; results: SendResult[] };
 
-export default function AutoNotify() {
+export default function SmartNotify() {
   const [zoneIdx, setZoneIdx] = useState(0);
   const [start, setStart] = useState("");
   const [dur, setDur] = useState("4 hours");
@@ -16,11 +16,16 @@ export default function AutoNotify() {
   const [sending, setSending] = useState(false);
   const [resp, setResp] = useState<ApiResp | null>(null);
   const [sim, setSim] = useState<{ progress: number; log: string[] } | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const zone = zones[zoneIdx];
-  const hrs = start ? (new Date(start).getTime() - Date.now()) / 3.6e6 : NaN;
+  const hrs = (mounted && start) ? (new Date(start).getTime() - Date.now()) / 3.6e6 : NaN;
   const compliant = hrs >= 48;
-  const when = start ? new Date(start).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) : "[set date]";
+  const when = (mounted && start) ? new Date(start).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) : "[set date]";
   const msg = `Dear Customer, your PNG supply in ${zone.name} will be temporarily interrupted on ${when} for approx. ${dur} due to planned network maintenance. We regret the inconvenience. — Torrent Gas`;
 
   useEffect(() => {
@@ -49,7 +54,6 @@ export default function AutoNotify() {
     } catch {
       /* fall through to simulation */
     }
-    // Not configured → simulate a bulk send for the demo
     simulate();
   }
 
@@ -72,7 +76,7 @@ export default function AutoNotify() {
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between flex-wrap gap-3">
-        <SectionTitle title="AutoNotify — 48-hour Interruption Notices" sub="Real WhatsApp delivery to affected customers · PNGRB 2025 compliant" />
+        <SectionTitle title="Smart Notify — 48-hour Interruption Notices" sub="Real WhatsApp delivery to affected customers · PNGRB 2025 compliant" />
         <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-full border ${wa.configured ? "bg-brand-50 border-brand-200 text-brand-700" : "bg-amber-50 border-amber-200 text-amber-700"}`}>
           <MessageCircle className="w-3.5 h-3.5" />
           {wa.configured ? `WhatsApp live · ${wa.provider}` : "WhatsApp not configured (demo)"}
@@ -131,7 +135,6 @@ export default function AutoNotify() {
         <Card className="p-5">
           <h3 className="font-bold text-ink-900 mb-3">Delivery log &amp; proof</h3>
 
-          {/* Real WhatsApp results */}
           {resp && resp.configured && (
             <div>
               <div className="text-sm mb-3">
@@ -152,7 +155,6 @@ export default function AutoNotify() {
             </div>
           )}
 
-          {/* Simulated (not configured) */}
           {sim && (
             <div>
               <div className="flex items-start gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3">
