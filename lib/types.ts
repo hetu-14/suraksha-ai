@@ -17,6 +17,9 @@ export type Bill = {
   fixedCharge: number;
   tax: number;
   arrears: number;
+  lateFee: number;
+  manualAdjustment: boolean;
+  areaAverageScm?: number;
   amount: number;
   status: BillStatus;
   dueDate?: string;

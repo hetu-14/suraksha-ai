@@ -29,7 +29,7 @@ const norm = (s: string) => " " + s.toLowerCase().replace(/[.,!?;:()"]/g, " ").r
 /* ---------- facts from the computed explanation ---------- */
 type Facts = {
   cycle: string; amount: number; delta: number; higher: boolean;
-  usage?: ExplanationFactor; tariff?: ExplanationFactor; fixed?: ExplanationFactor;
+  usage?: ExplanationFactor; tariff?: ExplanationFactor; fixed?: ExplanationFactor; arrears?: ExplanationFactor; lateFee?: ExplanationFactor;
   leakPct: number; leakLevel: "none" | "watch" | "high"; verdict: string; away: boolean;
   units: number; avg: number | null; vsPrev: number | null; vsYear: number | null; vsAvg: number | null;
   yoy: string | null; rate: number; status: string; dueDate?: string;
@@ -38,7 +38,7 @@ function toFacts(ex: BillExplanation, bill: Bill): Facts {
   const f = ex.factors;
   return {
     cycle: bill.cycleLabel, amount: bill.amount, delta: ex.amountDeltaVsPrev, higher: ex.amountDeltaVsPrev >= 0,
-    usage: f.find((x) => /usage/i.test(x.label)), tariff: f.find((x) => /tariff/i.test(x.label)), fixed: f.find((x) => /fixed/i.test(x.label)),
+    usage: f.find((x) => /usage/i.test(x.label)), tariff: f.find((x) => /tariff/i.test(x.label)), fixed: f.find((x) => /fixed/i.test(x.label)), arrears: f.find((x) => /arrears/i.test(x.label)), lateFee: f.find((x) => /late payment/i.test(x.label)),
     leakPct: ex.leakPct, leakLevel: ex.leakLevel, verdict: ex.verdict, away: ex.away,
     units: bill.unitsScm, avg: ex.comparisons.avgUnits, vsPrev: ex.comparisons.vsPrevPct, vsYear: ex.comparisons.vsYearPct,
     vsAvg: ex.comparisons.vsAvgPct, yoy: ex.comparisons.yoyLabel, rate: bill.ratePerScm, status: bill.status, dueDate: bill.dueDate,
@@ -47,11 +47,13 @@ function toFacts(ex: BillExplanation, bill: Bill): Facts {
 const abs = (n: number) => Math.abs(n);
 
 function driver(f: Facts, lg: Lang) {
-  const cand = [f.usage, f.tariff, f.fixed].filter(Boolean).sort((a, b) => abs(b!.amount) - abs(a!.amount));
+  const cand = [f.usage, f.tariff, f.fixed, f.arrears, f.lateFee].filter(Boolean).sort((a, b) => abs(b!.amount) - abs(a!.amount));
   if (!cand.length) return t(lg, "routine variation", "सामान्य बदलाव", "સામાન્ય ફેરફાર");
   const top = cand[0]!;
   if (/usage/i.test(top.label)) return t(lg, "higher gas usage", "गैस की ज़्यादा खपत", "ગેસનો વધુ વપરાશ");
   if (/tariff/i.test(top.label)) return t(lg, "a change in the gas rate", "गैस दर में बदलाव", "ગેસના દરમાં ફેરફાર");
+  if (/arrears/i.test(top.label)) return t(lg, "a previous unpaid balance", "पिछला बकाया", "પહેલાનું બાકી" );
+  if (/late payment/i.test(top.label)) return t(lg, "a late payment fee", "देरी शुल्क", "વિલંબ શુલ્ક");
   return t(lg, "fixed charges", "फिक्स्ड चार्ज", "ફિક્સ્ડ ચાર્જ");
 }
 function levelNote(f: Facts, lg: Lang) {
@@ -77,6 +79,8 @@ function answer(intent: string, f: Facts, lg: Lang): string {
       if (f.usage) parts.push(t(lg, `usage ${f.usage.amount >= 0 ? "added" : "saved"} ${inr(abs(f.usage.amount))}`, `खपत ने ${inr(abs(f.usage.amount))} ${f.usage.amount >= 0 ? "जोड़े" : "घटाए"}`, `વપરાશે ${inr(abs(f.usage.amount))} ${f.usage.amount >= 0 ? "ઉમેર્યા" : "ઘટાડ્યા"}`));
       if (f.tariff) parts.push(t(lg, `the rate change added ${inr(f.tariff.amount)}`, `दर बदलाव ने ${inr(f.tariff.amount)} जोड़े`, `દર ફેરફારે ${inr(f.tariff.amount)} ઉમેર્યા`));
       if (f.fixed) parts.push(t(lg, `fixed charges ${f.fixed.amount >= 0 ? "added" : "saved"} ${inr(abs(f.fixed.amount))}`, `फिक्स्ड चार्ज ने ${inr(abs(f.fixed.amount))} ${f.fixed.amount >= 0 ? "जोड़े" : "घटाए"}`, `ફિક્સ્ડ ચાર્જે ${inr(abs(f.fixed.amount))} ${f.fixed.amount >= 0 ? "ઉમેર્યા" : "ઘટાડ્યા"}`));
+      if (f.arrears) parts.push(t(lg, `previous due added ${inr(abs(f.arrears.amount))}`, `पिछले बकाये ने ${inr(abs(f.arrears.amount))} जोड़े`, `પહેલાના બાકીએ ${inr(abs(f.arrears.amount))} ઉમેર્યા`));
+      if (f.lateFee) parts.push(t(lg, `late payment fee added ${inr(abs(f.lateFee.amount))}`, `देरी शुल्क ने ${inr(abs(f.lateFee.amount))} जोड़े`, `વિલંબ શુલ્કે ${inr(abs(f.lateFee.amount))} ઉમેર્યા`));
       const joined = parts.length ? parts.join(t(lg, "; ", "; ", "; ")) : t(lg, "small routine variation", "छोटा सामान्य बदलाव", "નાનો સામાન્ય ફેરફાર");
       const awayNote = f.away ? t(lg, " You also marked this cycle as away, which is factored in.", " आपने इस चक्र को 'बाहर' चिह्नित किया है, जो शामिल है।", " તમે આ ચક્રને 'બહાર' તરીકે ચિહ્નિત કર્યું છે, જે સામેલ છે.") : "";
       return t(lg,

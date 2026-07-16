@@ -5,13 +5,13 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell,
 } from "recharts";
 import {
-  ReceiptText, Download, Sparkles, Gauge, MessageSquareText,
-  ArrowUpRight, ArrowDownRight, Minus, TrendingUp, Database, HardDrive, Calendar,
+  ReceiptText, Download, ArrowUpRight, ArrowDownRight, Minus, Database, HardDrive, Calendar,
 } from "lucide-react";
 import { CustomerWithBills } from "@/lib/types";
 import { explainBill, inr } from "@/lib/billExplain";
 import { downloadBillPdf } from "@/lib/pdf";
 import BillAssistant from "@/components/BillAssistant";
+import BillIntelligence from "@/components/BillIntelligence";
 
 function useCountUp(target: number, key: string | number) {
   const [v, setV] = useState(0);
@@ -40,6 +40,9 @@ export default function BillsView({ customers, live }: { customers: CustomerWith
   const [askOpen, setAskOpen] = useState(false);
 
   const bill = bills.find((b) => b.id === billId) ?? bills[bills.length - 1];
+  const previousBill = bills.findIndex((b) => b.id === bill?.id) > 0
+    ? bills[bills.findIndex((b) => b.id === bill?.id) - 1]
+    : undefined;
   const explanation = useMemo(
     () => (bill && customer) ? explainBill(bills, customer, bill.id, away) : null,
     [bills, customer, bill, away]
@@ -61,8 +64,6 @@ export default function BillsView({ customers, live }: { customers: CustomerWith
     const isWinterMonth = b.periodEnd ? [11, 12, 1, 2].includes(new Date(b.periodEnd).getUTCMonth() + 1) : false;
     return { name, units: b.unitsScm ?? 0, id: b.id, winter: isWinterMonth };
   });
-  const maxFactor = Math.max(1, ...explanation.factors.map((f) => Math.abs(f.amount)));
-
   const verdictTone = explanation.verdict === "leak" ? "red" : explanation.verdict === "under" ? "sky" : "brand";
 
   return (
@@ -159,106 +160,38 @@ export default function BillsView({ customers, live }: { customers: CustomerWith
             <CompareChip label="vs 6-mo avg" pct={explanation.comparisons.vsAvgPct} sub={explanation.comparisons.avgUnits ? `${explanation.comparisons.avgUnits} SCM` : undefined} />
           </div>
 
-          {/* why this amount — breakdown */}
-          {explanation.factors.length > 0 && (
-            <div className="bg-white rounded-2xl shadow-soft border border-ink-100 p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-ink-900 flex items-center gap-2"><TrendingUp className="w-4 h-4 text-brand-600" /> Why this amount changed</h3>
-                <span className={`text-sm font-bold ${explanation.amountDeltaVsPrev >= 0 ? "text-red-600" : "text-brand-600"}`}>
-                  {explanation.amountDeltaVsPrev >= 0 ? "+" : ""}{inr(explanation.amountDeltaVsPrev)} vs last cycle
-                </span>
-              </div>
-              <div className="space-y-3">
-                {explanation.factors.map((f, i) => {
-                  const up = f.amount >= 0;
-                  return (
-                    <div key={i} className="animate-slideIn" style={{ animationDelay: `${i * 80}ms` }}>
-                      <div className="flex items-center justify-between text-sm mb-1">
-                        <span className="font-medium text-ink-700">{f.label}</span>
-                        <span className={`font-bold tabular-nums ${up ? "text-red-600" : "text-brand-600"}`}>{up ? "+" : ""}{inr(f.amount)}</span>
-                      </div>
-                      <div className="h-2.5 rounded-full bg-ink-100 overflow-hidden">
-                        <div
-                          className={`h-full rounded-full transition-all duration-700 ${up ? "bg-red-400" : "bg-brand-400"}`}
-                          style={{ width: `${(Math.abs(f.amount) / maxFactor) * 100}%` }}
-                        />
-                      </div>
-                      <div className="text-xs text-ink-400 mt-1">{f.detail}</div>
-                    </div>
-                  );
-                })}
-              </div>
+        </div>
+      </div>
+
+      <BillIntelligence
+        bill={bill}
+        previousBill={previousBill}
+        customer={customer}
+        explanation={explanation}
+        away={away}
+        onAwayChange={setAway}
+        onAsk={() => setAskOpen(true)}
+        onDownload={() => downloadBillPdf(customer, bill)}
+        usageHistory={
+          <div className="bg-white rounded-2xl shadow-soft border border-ink-100 p-5">
+            <h3 className="font-bold text-ink-900 mb-3">Consumption history (SCM)</h3>
+            <div className="h-[260px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#eef2f6" vertical={false} />
+                  <XAxis dataKey="name" tick={{ fontSize: 10, fill: "#94a3b8" }} axisLine={false} tickLine={false} interval={0} angle={-12} dy={8} />
+                  <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
+                  <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid #e2e8f0", fontSize: 12 }} cursor={{ fill: "#f1f5f9" }} />
+                  <Bar dataKey="units" radius={[6, 6, 0, 0]} onClick={(d: { id?: string }) => d?.id && setBillId(d.id)}>
+                    {chartData.map((d) => <Cell key={d.id} cursor="pointer" fill={d.id === bill.id ? (verdictTone === "red" ? "#ef4444" : verdictTone === "sky" ? "#0ea5e9" : "#10b981") : d.winter ? "#fcd9b6" : "#cbd5e1"} />)}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
             </div>
-          )}
-        </div>
-      </div>
-
-      {/* ask assistant — sits between the breakdown and the narrative */}
-      <button onClick={() => setAskOpen(true)}
-        className="group w-full flex items-center justify-center gap-2 text-sm font-semibold text-white bg-gradient-to-r from-ink-900 to-brand-800 hover:opacity-95 active:scale-[.99] rounded-2xl py-3.5 shadow-soft transition">
-        <MessageSquareText className="w-4 h-4 transition-transform group-hover:-rotate-6" /> Ask about this bill · chat &amp; voice
-      </button>
-
-      {/* narrative + safety */}
-      <div className="grid lg:grid-cols-3 gap-5">
-        <div className="lg:col-span-2 bg-white rounded-2xl shadow-soft border border-ink-100 p-5">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-bold text-ink-900 flex items-center gap-2"><Sparkles className="w-4 h-4 text-brand-600" /> {explanation.headline}</h3>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-ink-400">AI confidence</span>
-              <div className="w-20 h-1.5 rounded-full bg-ink-100 overflow-hidden">
-                <div className="h-full bg-brand-500 transition-all duration-700" style={{ width: `${explanation.confidence}%` }} />
-              </div>
-              <span className="text-xs font-semibold text-brand-600">{explanation.confidence}%</span>
-            </div>
+            <div className="flex items-center gap-4 mt-2 text-xs text-ink-500"><span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-brand-500" /> Selected</span><span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm" style={{ background: "#fcd9b6" }} /> Winter cycle</span><span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-ink-300" /> Other</span></div>
           </div>
-          <p className="text-sm text-ink-700 leading-relaxed bg-brand-50 border border-brand-100 rounded-xl p-4">
-            {explanation.narrative}
-          </p>
-        </div>
-
-        {explanation.verdict === "under" ? (
-          <div className="rounded-2xl shadow-soft border border-sky-200 bg-sky-50 p-5">
-            <div className="flex items-center gap-2 font-bold text-sky-700"><Gauge className="w-5 h-5" /> {explanation.safety.title}</div>
-            <p className="text-sm text-ink-600 mt-2">{explanation.safety.message}</p>
-            <label className="mt-4 flex items-center gap-2 text-xs text-ink-700 cursor-pointer bg-white/60 rounded-lg px-3 py-2">
-              <input type="checkbox" checked={away} onChange={(e) => setAway(e.target.checked)} className="rounded text-brand-600" />
-              I was away / house locked this cycle
-            </label>
-          </div>
-        ) : (
-          <LeakPanel pct={explanation.leakPct} level={explanation.leakLevel} reasons={explanation.leakReasons} away={away} setAway={setAway} />
-        )}
-      </div>
-
-      {/* usage history */}
-      <div className="bg-white rounded-2xl shadow-soft border border-ink-100 p-5">
-        <h3 className="font-bold text-ink-900 mb-3">Consumption history (SCM)</h3>
-        <div className="h-[260px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#eef2f6" vertical={false} />
-              <XAxis dataKey="name" tick={{ fontSize: 10, fill: "#94a3b8" }} axisLine={false} tickLine={false} interval={0} angle={-12} dy={8} />
-              <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
-              <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid #e2e8f0", fontSize: 12 }} cursor={{ fill: "#f1f5f9" }} />
-              <Bar dataKey="units" radius={[6, 6, 0, 0]} onClick={(d: { id?: string }) => d?.id && setBillId(d.id)}>
-                {chartData.map((d) => (
-                  <Cell
-                    key={d.id}
-                    cursor="pointer"
-                    fill={d.id === bill.id ? (verdictTone === "red" ? "#ef4444" : verdictTone === "sky" ? "#0ea5e9" : "#10b981") : d.winter ? "#fcd9b6" : "#cbd5e1"}
-                  />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-        <div className="flex items-center gap-4 mt-2 text-xs text-ink-500">
-          <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-brand-500" /> Selected</span>
-          <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm" style={{ background: "#fcd9b6" }} /> Winter cycle</span>
-          <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-ink-300" /> Other</span>
-        </div>
-      </div>
+        }
+      />
 
       {askOpen && (
         <BillAssistant key={bill.id + String(away)} explanation={explanation} bill={bill} customer={customer} onClose={() => setAskOpen(false)} />
@@ -289,68 +222,4 @@ function CompareChip({ label, pct, sub }: { label: string; pct: number | null; s
 function fmt(iso?: string) {
   if (!iso) return "—";
   return new Date(iso).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
-}
-
-function LeakPanel({
-  pct, level, reasons, away, setAway,
-}: {
-  pct: number;
-  level: "none" | "watch" | "high";
-  reasons: string[];
-  away: boolean;
-  setAway: (b: boolean) => void;
-}) {
-  const map = {
-    high: { ring: "#ef4444", text: "text-red-700", chip: "bg-red-100 text-red-700", label: "High leak chance", border: "border-red-200" },
-    watch: { ring: "#f59e0b", text: "text-amber-700", chip: "bg-amber-100 text-amber-700", label: "Worth watching", border: "border-amber-200" },
-    none: { ring: "#10b981", text: "text-brand-700", chip: "bg-brand-100 text-brand-700", label: "No leak signs", border: "border-brand-200" },
-  }[level];
-  const R = 42;
-  const C = 2 * Math.PI * R;
-  const off = C * (1 - pct / 100);
-
-  return (
-    <div className={`rounded-2xl shadow-soft border ${map.border} bg-white p-5`}>
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="font-bold text-ink-900 text-sm">Gas leak risk</h3>
-        <span className={`text-xs font-semibold px-2 py-1 rounded-full ${map.chip}`}>{map.label}</span>
-      </div>
-
-      <div className="flex items-center gap-4">
-        <div className="relative shrink-0" style={{ width: 108, height: 108 }}>
-          <svg viewBox="0 0 100 100" className="w-[108px] h-[108px] -rotate-90">
-            <circle cx="50" cy="50" r={R} stroke="#eef2f6" strokeWidth="10" fill="none" />
-            <circle cx="50" cy="50" r={R} stroke={map.ring} strokeWidth="10" fill="none" strokeLinecap="round"
-              strokeDasharray={C} strokeDashoffset={off} style={{ transition: "stroke-dashoffset .7s ease" }} />
-          </svg>
-          <div className="absolute inset-0 grid place-items-center">
-            <div className="text-center">
-              <div className={`text-2xl font-extrabold ${map.text}`}>{pct}%</div>
-              <div className="text-[10px] text-ink-400 -mt-0.5">probability</div>
-            </div>
-          </div>
-        </div>
-        <p className="text-xs text-ink-500">Estimated from your usage vs your average, the season, and whether the home was occupied.</p>
-      </div>
-
-      <ul className="mt-3 space-y-1.5">
-        {reasons.map((r, i) => (
-          <li key={i} className="flex items-start gap-2 text-xs text-ink-600">
-            <span className="mt-1 h-1.5 w-1.5 rounded-full shrink-0" style={{ background: map.ring }} /> {r}
-          </li>
-        ))}
-      </ul>
-
-      <label className="mt-3 flex items-center gap-2 text-xs text-ink-700 cursor-pointer bg-ink-50 rounded-lg px-3 py-2">
-        <input type="checkbox" checked={away} onChange={(e) => setAway(e.target.checked)} className="rounded text-brand-600" />
-        I was away / house locked this cycle
-      </label>
-
-      {level !== "none" && (
-        <button className={`mt-3 w-full text-white text-sm font-semibold rounded-xl py-2.5 ${level === "high" ? "bg-red-600 hover:bg-red-700" : "bg-amber-500 hover:bg-amber-600"}`}>
-          Book free safety check
-        </button>
-      )}
-    </div>
-  );
 }

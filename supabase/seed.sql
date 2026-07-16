@@ -30,6 +30,11 @@ select c.id, v.* from c, (values
   ('Jan–Feb 2026', '2026-01-01',       '2026-02-28',       4481, 4539, 36, 2088, 40, 2128, 'due',  '2026-03-15', null)
 ) as v(cycle_label, period_start, period_end, opening_reading, closing_reading, rate_per_scm, gas_charge, fixed_charge, amount, status, due_date, paid_on);
 
+update public.bills
+set area_average_scm = 48
+where customer_id = (select id from public.customers where account_no = 'GJ-559210')
+  and cycle_label = 'Jan–Feb 2026';
+
 -- Ankit — possible in-premise leak (sustained, non-seasonal doubling)
 with c as (select id from public.customers where account_no = 'GJ-330118')
 insert into public.bills (customer_id, cycle_label, period_start, period_end, opening_reading, closing_reading, rate_per_scm, gas_charge, fixed_charge, amount, status, due_date, paid_on)

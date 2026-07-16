@@ -124,6 +124,7 @@ export async function downloadBillPdf(customer: Customer, bill: Bill) {
   ];
   if (bill.tax) rows.push(["Taxes & duties", inr(bill.tax)]);
   if (bill.arrears) rows.push(["Arrears carried forward", inr(bill.arrears)]);
+  if (bill.lateFee) rows.push(["Late payment fee", inr(bill.lateFee)]);
 
   doc.setTextColor(...ink);
   doc.setFontSize(10);

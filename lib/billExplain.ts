@@ -40,6 +40,7 @@ function decompose(cur: Bill, prev: Bill): ExplanationFactor[] {
   const tariffEffect = prev.unitsScm * (cur.ratePerScm - prev.ratePerScm);
   const fixedEffect = cur.fixedCharge - prev.fixedCharge;
   const arrearsEffect = cur.arrears - prev.arrears;
+  const lateFeeEffect = cur.lateFee - prev.lateFee;
   const f: ExplanationFactor[] = [];
   if (Math.abs(usageEffect) >= 1)
     f.push({ label: usageEffect >= 0 ? "Higher gas usage" : "Lower gas usage", amount: usageEffect, detail: `${cur.unitsScm - prev.unitsScm >= 0 ? "+" : ""}${(cur.unitsScm - prev.unitsScm).toFixed(0)} SCM at ${inr(cur.ratePerScm)}/SCM` });
@@ -49,6 +50,8 @@ function decompose(cur: Bill, prev: Bill): ExplanationFactor[] {
     f.push({ label: "Fixed charges", amount: fixedEffect, detail: "Change in fixed / service charge" });
   if (Math.abs(arrearsEffect) >= 1)
     f.push({ label: "Previous arrears", amount: arrearsEffect, detail: "Unpaid balance carried forward" });
+  if (Math.abs(lateFeeEffect) >= 1)
+    f.push({ label: "Late payment fee", amount: lateFeeEffect, detail: "Fee applied after the payment due date" });
   return f;
 }
 

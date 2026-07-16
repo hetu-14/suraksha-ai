@@ -11,6 +11,11 @@ type Row = {
   close: number;
   rate: number;
   fixed: number;
+  tax?: number;
+  arrears?: number;
+  lateFee?: number;
+  manualAdjustment?: boolean;
+  areaAverageScm?: number;
   status: BillStatus;
   dueDate?: string;
   paidOn?: string;
@@ -20,7 +25,10 @@ function buildBills(customerId: string, rows: Row[]): Bill[] {
   return rows.map((r, i) => {
     const units = r.close - r.open;
     const gas = +(units * r.rate).toFixed(2);
-    const amount = +(gas + r.fixed).toFixed(2);
+    const tax = r.tax ?? 0;
+    const arrears = r.arrears ?? 0;
+    const lateFee = r.lateFee ?? 0;
+    const amount = +(gas + r.fixed + tax + arrears + lateFee).toFixed(2);
     return {
       id: `${customerId}-b${i + 1}`,
       customerId,
@@ -33,8 +41,11 @@ function buildBills(customerId: string, rows: Row[]): Bill[] {
       ratePerScm: r.rate,
       gasCharge: gas,
       fixedCharge: r.fixed,
-      tax: 0,
-      arrears: 0,
+      tax,
+      arrears,
+      lateFee,
+      manualAdjustment: r.manualAdjustment ?? false,
+      areaAverageScm: r.areaAverageScm,
       amount,
       status: r.status,
       dueDate: r.dueDate,
@@ -46,14 +57,14 @@ function buildBills(customerId: string, rows: Row[]): Bill[] {
 // Reading meters accumulate; we derive open/close from a running total.
 function cycles(
   base: number,
-  seq: { cycle: string; start: string; end: string; units: number; rate: number; fixed: number; status: BillStatus; dueDate?: string; paidOn?: string }[]
+  seq: { cycle: string; start: string; end: string; units: number; rate: number; fixed: number; tax?: number; arrears?: number; lateFee?: number; manualAdjustment?: boolean; areaAverageScm?: number; status: BillStatus; dueDate?: string; paidOn?: string }[]
 ): Row[] {
   let reading = base;
   return seq.map((s) => {
     const open = reading;
     const close = reading + s.units;
     reading = close;
-    return { cycle: s.cycle, start: s.start, end: s.end, open, close, rate: s.rate, fixed: s.fixed, status: s.status, dueDate: s.dueDate, paidOn: s.paidOn };
+    return { cycle: s.cycle, start: s.start, end: s.end, open, close, rate: s.rate, fixed: s.fixed, tax: s.tax, arrears: s.arrears, lateFee: s.lateFee, manualAdjustment: s.manualAdjustment, areaAverageScm: s.areaAverageScm, status: s.status, dueDate: s.dueDate, paidOn: s.paidOn };
   });
 }
 
@@ -65,7 +76,7 @@ const riddhi = cycles(4210, [
   { cycle: "Jul–Aug 2025", start: "2025-07-01", end: "2025-08-31", units: 31, rate: 36, fixed: 40, status: "paid", paidOn: "2025-09-08" },
   { cycle: "Sep–Oct 2025", start: "2025-09-01", end: "2025-10-31", units: 32, rate: 36, fixed: 40, status: "paid", paidOn: "2025-11-06" },
   { cycle: "Nov–Dec 2025", start: "2025-11-01", end: "2025-12-31", units: 50, rate: 36, fixed: 40, status: "paid", paidOn: "2026-01-09" },
-  { cycle: "Jan–Feb 2026", start: "2026-01-01", end: "2026-02-28", units: 58, rate: 36, fixed: 40, status: "due", dueDate: "2026-03-15" },
+  { cycle: "Jan–Feb 2026", start: "2026-01-01", end: "2026-02-28", units: 58, rate: 36, fixed: 40, areaAverageScm: 48, status: "due", dueDate: "2026-03-15" },
 ]);
 
 const ankit = cycles(8850, [
