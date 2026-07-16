@@ -794,19 +794,22 @@ export default function Landing() {
             <MagButton href="/customer" primary
               className="group font-semibold px-6 py-3.5 rounded-2xl text-white bg-brand-500 hover:bg-brand-400 shadow-lg shadow-brand-500/35 hover:shadow-brand-400/55 transition-all duration-300">
               <span className="btn-shimmer absolute inset-0" />
-              🟢 Customer Suite
+              <User className="w-4 h-4 flex-shrink-0" />
+              Customer Suite
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-200" />
             </MagButton>
 
             <MagButton href="/safety"
               className="group font-semibold px-6 py-3.5 rounded-2xl text-white bg-amber-600 hover:bg-amber-500 shadow-lg shadow-amber-500/35 transition-all duration-300">
-              🟠 Safety Suite
+              <ShieldCheck className="w-4 h-4 flex-shrink-0" />
+              Safety Suite
               <ArrowRight className="w-4 h-4 text-ink-100 group-hover:translate-x-1 transition-all duration-200" />
             </MagButton>
 
             <MagButton href="/intelligence"
               className="group font-semibold px-6 py-3.5 rounded-2xl text-white bg-indigo-600 hover:bg-indigo-500 shadow-lg shadow-indigo-500/35 transition-all duration-300">
-              🔵 Intelligence Suite
+              <Cog className="w-4 h-4 flex-shrink-0" strokeWidth={2.5} />
+              Intelligence Suite
               <ArrowRight className="w-4 h-4 text-ink-100 group-hover:translate-x-1 transition-all duration-200" />
             </MagButton>
           </div>
@@ -835,7 +838,7 @@ export default function Landing() {
                 </div>
                 <ArrowRight className="w-4 h-4 text-ink-500" />
               </div>
-              <h2 className="text-lg font-bold mt-4 text-brand-300">🟢 Customer Experience</h2>
+              <h2 className="text-lg font-bold mt-4 text-brand-300">Customer Experience</h2>
               <p className="text-xs text-ink-400 mt-1.5 leading-relaxed min-h-[48px]">
                 PNG/CNG billing insights, connection journey trackers, and direct AI safety assistance.
               </p>
@@ -858,7 +861,7 @@ export default function Landing() {
                 </div>
                 <ArrowRight className="w-4 h-4 text-ink-500" />
               </div>
-              <h2 className="text-lg font-bold mt-4 text-amber-300">🟠 Safety &amp; Operations</h2>
+              <h2 className="text-lg font-bold mt-4 text-amber-300">Safety &amp; Operations</h2>
               <p className="text-xs text-ink-400 mt-1.5 leading-relaxed min-h-[48px]">
                 CNG readiness index checker, pipeline asset health trackers, and contractor safety audits.
               </p>
@@ -881,7 +884,7 @@ export default function Landing() {
                 </div>
                 <ArrowRight className="w-4 h-4 text-ink-500" />
               </div>
-              <h2 className="text-lg font-bold mt-4 text-indigo-300">🔵 Business Intelligence</h2>
+              <h2 className="text-lg font-bold mt-4 text-indigo-300">Business Intelligence</h2>
               <p className="text-xs text-ink-400 mt-1.5 leading-relaxed min-h-[48px]">
                 Revenue tamper exception monitoring, PNGRB compliance metrics, and predictive insights dashboard.
               </p>
@@ -901,9 +904,9 @@ export default function Landing() {
         <div className="relative overflow-hidden mb-10 anim-fade-up" style={{ animationDelay:"850ms" }}>
           <div className="ticker-scroll inline-flex gap-5 whitespace-nowrap">
             {[...Array(2)].flatMap((_, groupIdx) =>
-              ["🔒 Real-time Leak Detection","📊 PNGRB Compliance","⚡ Emergency Dispatch AI",
-               "🧾 Bill Anomaly Detection","📣 AutoNotice Generator","🛡️ Revenue Loss Guard",
-               "📡 SLA Monitoring","🔍 Pressure Analytics","🤖 AI Decision Engine","🗺️ Pipeline Mapping"]
+              ["Real-time Leak Detection","PNGRB Compliance","Emergency Dispatch AI",
+               "Bill Anomaly Detection","AutoNotice Generator","Revenue Loss Guard",
+               "SLA Monitoring","Pressure Analytics","AI Decision Engine","Pipeline Mapping"]
               .map((item, i) => (
                 <span key={`${groupIdx}-${i}`} className="inline-flex items-center text-xs font-medium text-ink-400 bg-white/[0.04] border border-white/[0.08] px-4 py-2 rounded-full flex-shrink-0 hover:border-brand-400/30 hover:text-brand-300 transition-colors duration-200">
                   {item}
