@@ -23,6 +23,19 @@ export default function GasCarePage() {
 
   function sos() {
     if (active) return;
+
+    // ── Browser audio unlock ──────────────────────────────────────────────
+    // Browsers block speechSynthesis.speak() unless called from a user-gesture
+    // handler. We fire a silent utterance here (inside the click) to unlock the
+    // audio context, so EmergencyChat's greeting voice plays automatically on mount.
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      const unlock = new SpeechSynthesisUtterance("");
+      unlock.volume = 0;
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(unlock);
+    }
+    // ─────────────────────────────────────────────────────────────────────
+
     setActive(true);
     setChecked([false, false, false, false]);
     setDispatched(false);

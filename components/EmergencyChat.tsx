@@ -374,7 +374,7 @@ export default function EmergencyChat() {
   useEffect(() => {
     setMsgs([{ role: "bot", text: GREET.en }]);
     lastReply.current = GREET.en;
-    setTimeout(() => speak(GREET.en), 350);
+    setTimeout(() => speak(GREET[langRef.current]), 600);
 
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (SR) {

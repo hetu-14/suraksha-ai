@@ -8,7 +8,7 @@ import Typewriter from "@/components/Typewriter";
 import { currentCustomer } from "@/lib/data";
 import {
   ShieldCheck, ReceiptText, Siren, ArrowRight, Phone, Flame, Droplets,
-  Route, HeartPulse, MessageSquare, Award,
+  Route, HeartPulse, MessageSquare, Award, Calendar, Star,
 } from "lucide-react";
 
 export default function CustomerHome() {
@@ -61,15 +61,16 @@ export default function CustomerHome() {
           <Kpi label="Confidence Score" value="87 / 100" sub="Verified safety index" icon={<Award className="w-4 h-4" />} />
         </div>
 
-        {/* 6 Grid Modules */}
+        {/* 7 Grid Modules — matching the confirmed feature list */}
         <h3 className="font-bold text-sm text-ink-500 uppercase tracking-wider mt-4">Customer Experience Modules</h3>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <Tile href="/customer/explainbill" icon={<ReceiptText className="w-5 h-5 text-emerald-500" />} title="ExplainBill AI" sub="Understand every charge on your bill" />
-          <Tile href="/customer/connection" icon={<Route className="w-5 h-5 text-sky-500" />} title="Connection Journey" sub="Track pipeline connection process status" />
-          <Tile href="/customer/health" icon={<HeartPulse className="w-5 h-5 text-red-500" />} title="Customer Health Score" sub="Your overall utility compliance index" />
-          <Tile href="/customer/voice" icon={<MessageSquare className="w-5 h-5 text-indigo-500" />} title="Voice of Customer AI" sub="Feedback and complaint analysis" />
-          <Tile href="/customer/confidence" icon={<Award className="w-5 h-5 text-amber-500" />} title="Confidence Score" sub="Loyalty points, ratings, and benefits" />
-          <Tile href="/customer/gascare" icon={<Siren className="w-5 h-5 text-red-600" />} title="GasCare SOS" sub="Report emergencies or gas leaks" />
+          <Tile href="/customer/gascare" icon={<Flame className="w-5 h-5 text-red-500" />} title="Gas-Guard" sub="AI real-time gas leak detection & alerts" />
+          <Tile href="/customer/explainbill" icon={<ReceiptText className="w-5 h-5 text-emerald-500" />} title="Why-My-Bill" sub="Understand every charge on your bill" />
+          <Tile href="/customer/connection" icon={<Route className="w-5 h-5 text-sky-500" />} title="My PNG Status" sub="Track pipeline connection status" />
+          <Tile href="/customer/health" icon={<HeartPulse className="w-5 h-5 text-red-500" />} title="Health Score" sub="Your overall customer health index" />
+          <Tile href="/customer/voice" icon={<MessageSquare className="w-5 h-5 text-indigo-500" />} title="Voice of Customer" sub="AI feedback & complaint analysis" />
+          <Tile href="/customer/trustpoints" icon={<Star className="w-5 h-5 text-amber-500" />} title="TrustPoints" sub="Earn & redeem loyalty rewards" />
+          <Tile href="/customer/appointment" icon={<Calendar className="w-5 h-5 text-sky-600" />} title="Appointment Booking" sub="Book certified gas engineers instantly" />
         </div>
 
         {/* SOS Emergency Banner */}
@@ -81,7 +82,7 @@ export default function CustomerHome() {
               </div>
               <div>
                 <h3 className="font-bold text-red-800">Smell gas? Act now.</h3>
-                <p className="text-sm text-red-700/80">Our emergency GasCare line responds instantly by voice and dispatches nearest crew.</p>
+                <p className="text-sm text-red-700/80">Our emergency Gas-Guard line responds instantly by voice and dispatches nearest crew.</p>
               </div>
             </div>
             <Link href="/customer/gascare" className="bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl px-4 py-2.5 text-sm text-center w-full sm:w-auto shrink-0">

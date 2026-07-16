@@ -7,7 +7,7 @@ import {
   ShieldCheck, LayoutDashboard, PhoneCall, Megaphone, Timer, ShieldAlert,
   ScanEye, ReceiptText, Menu, Bell, LogOut, ChevronRight, Video, Siren,
   Route, HeartPulse, MessageSquare, Award, Building2, Wrench, HardHat,
-  Monitor, TrendingUp, Activity,
+  Monitor, TrendingUp, Activity, Flame, CalendarDays,
 } from "lucide-react";
 
 export type NavItem = { href: string; label: string; icon: keyof typeof ICONS; badge?: string };
@@ -32,6 +32,8 @@ const ICONS = {
   monitor: Monitor,
   trendingUp: TrendingUp,
   activity: Activity,
+  flame: Flame,
+  calendarDays: CalendarDays,
 };
 
 type SuiteRole = "customer" | "safety" | "intelligence";

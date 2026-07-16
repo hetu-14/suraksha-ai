@@ -9,18 +9,21 @@ import Typewriter from "@/components/Typewriter";
 import { trend, workload } from "@/lib/data";
 import {
   Siren, BadgeCheck, Megaphone, Wrench, HardHat, Building2, Video, ArrowRight,
+  Flame, ShieldAlert, Timer,
 } from "lucide-react";
 
 export default function SafetyHome() {
   const [animStep, setAnimStep] = useState(0);
 
-  // Safety Suite specific workload
+  // Safety Suite specific workload (7 modules)
   const safetyWorkload = [
-    { name: "Smart Notify", value: 15, color: "#f59e0b" },
-    { name: "Station Readiness", value: 24, color: "#8b5cf6" },
-    { name: "Asset Health", value: 31, color: "#6366f1" },
-    { name: "Contractor Safety", value: 18, color: "#0ea5e9" },
-    { name: "Emergency SOS", value: 28, color: "#ef4444" }
+    { name: "Dashboard Gas-Guard", value: 18, color: "#ef4444" },
+    { name: "Rev-Guard", value: 14, color: "#f97316" },
+    { name: "SLA Sentinel", value: 12, color: "#8b5cf6" },
+    { name: "Auto-Notify", value: 15, color: "#f59e0b" },
+    { name: "Station Safety", value: 16, color: "#a855f7" },
+    { name: "Asset Maintenance", value: 13, color: "#6366f1" },
+    { name: "Contractor Safety", value: 12, color: "#0ea5e9" },
   ];
 
   return (
@@ -77,14 +80,16 @@ export default function SafetyHome() {
           </Card>
         </div>
 
-        {/* 5 Grid Modules */}
+        {/* 7 Grid Modules */}
         <h3 className="font-bold text-sm text-ink-500 uppercase tracking-wider mt-4">Safety &amp; Operations Modules</h3>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <Tile href="/safety/smartnotify" icon={<Megaphone className="w-5 h-5 text-amber-500" />} title="Smart Notify" sub="Plan outages and send WhatsApp notices" />
-          <Tile href="/safety/station-readiness" icon={<Building2 className="w-5 h-5 text-purple-500" />} title="Station Readiness Index" sub="CNG station operation compliance metrics" />
-          <Tile href="/safety/asset-health" icon={<Wrench className="w-5 h-5 text-indigo-500" />} title="Asset Health" sub="Pipeline telemetry &amp; lifecycle checks" />
-          <Tile href="/safety/contractor-safety" icon={<HardHat className="w-5 h-5 text-sky-500" />} title="Contractor Safety Index" sub="Third-party contractor safety score audit" />
-          <Tile href="/safety/emergency" icon={<Siren className="w-5 h-5 text-red-600" />} title="Emergency Dashboard" sub="Unified CCTV / SOS incident command" />
+          <Tile href="/safety/dashboard-gas-guard" icon={<Flame className="w-5 h-5 text-red-500" />} title="Dashboard-Gas-Guard" sub="Centralized gas grid safety monitoring" />
+          <Tile href="/safety/rev-guard" icon={<ShieldAlert className="w-5 h-5 text-red-600" />} title="Rev-Guard" sub="AI revenue leakage detection & tamper alerts" />
+          <Tile href="/safety/sla-sentinel" icon={<Timer className="w-5 h-5 text-violet-500" />} title="SLA Sentinel" sub="PNGRB SLA compliance & breach tracking" />
+          <Tile href="/safety/smartnotify" icon={<Megaphone className="w-5 h-5 text-amber-500" />} title="Auto-Notify" sub="Plan outages and send WhatsApp notices" />
+          <Tile href="/safety/station-readiness" icon={<Building2 className="w-5 h-5 text-purple-500" />} title="Station Safety Score" sub="CNG station operation readiness metrics" />
+          <Tile href="/safety/asset-health" icon={<Wrench className="w-5 h-5 text-indigo-500" />} title="Asset Maintenance Notify" sub="Pipeline telemetry & lifecycle alerts" />
+          <Tile href="/safety/contractor-safety" icon={<HardHat className="w-5 h-5 text-sky-500" />} title="Contractor Safety Scorecard" sub="Third-party contractor safety audit" />
         </div>
       </div>
     </div>
