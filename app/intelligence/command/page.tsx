@@ -94,17 +94,24 @@ export default function CommandCenter() {
                 <div key={idx} className={`p-4 rounded-2xl border ${bg} ${border} flex flex-col justify-between`}>
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-sm text-ink-800">{r.name}</span>
-                    <span className={`h-2.5 w-2.5 rounded-full ${dot}`} />
+                    <span className="flex items-center gap-1.5">
+                      <span className={`text-[10px] font-bold uppercase tracking-wide ${r.status === "Healthy" ? "text-brand-700" : r.status === "Attention" ? "text-amber-700" : "text-red-700"}`}>{r.status}</span>
+                      <span className={`h-2.5 w-2.5 rounded-full ${dot}`} />
+                    </span>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 mt-4 text-xs">
+                  <div className="grid grid-cols-3 gap-2 mt-4 text-xs">
                     <div>
                       <span className="block text-ink-500">Pressure</span>
-                      <span className="font-extrabold text-ink-800">{r.pressure} bar</span>
+                      <span className="font-extrabold text-ink-800 tabular-nums">{r.pressure} bar</span>
                     </div>
                     <div>
                       <span className="block text-ink-500">Flow Rate</span>
-                      <span className="font-extrabold text-ink-800">{r.flow} SCM/h</span>
+                      <span className="font-extrabold text-ink-800 tabular-nums">{r.flow} SCM/h</span>
+                    </div>
+                    <div>
+                      <span className="block text-ink-500">Complaints</span>
+                      <span className={`font-extrabold tabular-nums ${r.complaints > 1 ? "text-amber-700" : "text-ink-800"}`}>{r.complaints}</span>
                     </div>
                   </div>
                 </div>

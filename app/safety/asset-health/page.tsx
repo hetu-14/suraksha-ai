@@ -116,7 +116,7 @@ export default function AssetHealth() {
 
             <div className="mt-6">
               {assets[sel].status !== "Healthy" ? (
-                <button className="w-full bg-ink-900 hover:bg-ink-800 text-white font-semibold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2">
+                <button onClick={scheduleMaintenance} className="w-full bg-ink-900 hover:bg-ink-800 text-white font-semibold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 transition-colors">
                   <Wrench className="w-4 h-4" /> Schedule maintenance
                 </button>
               ) : (

@@ -8,8 +8,44 @@ import CountUp from "@/components/CountUp";
 import Typewriter from "@/components/Typewriter";
 import { trend } from "@/lib/data";
 import {
-  TrendingUp, ShieldAlert, Timer, Monitor, ArrowRight, IndianRupee, ShieldCheck
+  TrendingUp, ShieldAlert, Timer, Monitor, ArrowRight, IndianRupee, ShieldCheck, Sparkles
 } from "lucide-react";
+
+const BRIEFING = [
+  {
+    area: "Revenue Protection",
+    tone: "red" as const,
+    finding: "142 accounts show tamper-pattern consumption signatures; the top 12 account for ₹8.4L of annualized risk.",
+    action: "Dispatch physical inspections for the 12 highest-score accounts this week.",
+    impact: "₹8.4L annualized recovery",
+    confidence: 91,
+    priority: "High",
+    href: "/intelligence/revenue-guard",
+    cta: "Open Revenue Guard",
+  },
+  {
+    area: "PNGRB Compliance",
+    tone: "amber" as const,
+    finding: "3 emergency tickets are within 6 hours of their 24h SLA breach window; T-7720 carries 91% breach risk.",
+    action: "Escalate T-7720 to priority crew routing before the 11:00 review.",
+    impact: "Avoids compensation payout and a reportable breach",
+    confidence: 96,
+    priority: "High",
+    href: "/intelligence/sla",
+    cta: "Open SLA Sentinel",
+  },
+  {
+    area: "Network Operations",
+    tone: "sky" as const,
+    finding: "Ghatlodia zone pressure is trending below 3.0 bar with complaint volume rising over 48 hours.",
+    action: "Schedule a regulator inspection before the evening demand peak.",
+    impact: "Prevents supply degradation for ~640 connections",
+    confidence: 84,
+    priority: "Medium",
+    href: "/intelligence/command",
+    cta: "Open Command Center",
+  },
+];
 
 export default function IntelligenceHome() {
   const [animStep, setAnimStep] = useState(0);
@@ -75,6 +111,42 @@ export default function IntelligenceHome() {
             <DonutChart data={intelWorkload} />
           </Card>
         </div>
+
+        {/* Executive AI briefing */}
+        <Card className="p-5">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <h3 className="font-bold text-ink-900 flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-indigo-500" /> Executive AI Briefing
+            </h3>
+            <span className="text-xs text-ink-500">Generated from overnight scan · 3 items need decisions</span>
+          </div>
+          <div className="mt-4 grid lg:grid-cols-3 gap-4">
+            {BRIEFING.map((b) => (
+              <div key={b.area} className="rounded-xl border border-ink-100 bg-ink-50/50 p-4 flex flex-col">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wide text-ink-500">{b.area}</span>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${b.priority === "High" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"}`}>
+                    {b.priority} priority
+                  </span>
+                </div>
+                <p className="text-xs text-ink-700 mt-2.5 leading-relaxed">{b.finding}</p>
+                <p className="text-xs mt-2.5"><span className="font-bold text-ink-800">Recommended: </span><span className="text-ink-600">{b.action}</span></p>
+                <p className="text-xs mt-1.5"><span className="font-bold text-ink-800">Impact: </span><span className="text-ink-600">{b.impact}</span></p>
+                <div className="mt-3 pt-3 border-t border-ink-100 flex items-center justify-between mt-auto">
+                  <span className="flex items-center gap-1.5 text-[11px] text-ink-500">
+                    <span className="w-12 h-1.5 rounded-full bg-ink-100 overflow-hidden inline-block">
+                      <span className="block h-full bg-indigo-500" style={{ width: `${b.confidence}%` }} />
+                    </span>
+                    {b.confidence}% confidence
+                  </span>
+                  <Link href={b.href} className="text-[11px] font-bold text-indigo-700 hover:text-indigo-900 inline-flex items-center gap-1 transition-colors">
+                    {b.cta} <ArrowRight className="w-3 h-3" />
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
 
         {/* 4 Grid Modules */}
         <h3 className="font-bold text-sm text-ink-500 uppercase tracking-wider mt-4">Business Intelligence Modules</h3>

@@ -62,10 +62,33 @@ export default function RevGuard() {
           <h3 className="font-bold text-ink-900">{d.id} — {d.pattern}</h3>
           <p className="text-xs text-ink-500 mb-3">{d.area} · anomaly score {d.score} · {d.risk} at risk</p>
           <FingerprintChart normal={d.normal} actual={d.actual} />
-          <button onClick={() => setDispatched(true)}
-            className="mt-4 w-full bg-ink-900 hover:bg-ink-800 text-white text-sm font-semibold rounded-xl py-2.5 flex items-center justify-center gap-2">
-            {dispatched ? <><Check className="w-4 h-4" /> Inspection dispatched</> : <><MapPin className="w-4 h-4" /> Dispatch field inspection</>}
-          </button>
+
+          <div className="mt-4 rounded-xl bg-ink-50 border border-ink-100 p-3 text-xs space-y-1.5">
+            <p className="font-bold text-ink-800 uppercase tracking-wide text-[10px]">AI assessment</p>
+            <p className="text-ink-600 leading-relaxed">
+              Consumption fingerprint deviates {Math.round((1 - d.actual[d.actual.length - 1] / d.normal[d.normal.length - 1]) * 100)}% from the account&apos;s seasonal baseline.
+              Pattern matches <span className="font-semibold text-ink-800">{d.pattern.toLowerCase()}</span> signatures with <span className="font-semibold text-ink-800">{d.score}% confidence</span>.
+            </p>
+            <p className="text-ink-600">Recommended action: physical meter inspection · Priority: {d.score >= 90 ? "High" : "Medium"} · Expected recovery: {d.risk}</p>
+          </div>
+
+          {dispatched ? (
+            <div className="mt-4 rounded-xl border border-brand-200 bg-brand-50 p-4 text-xs space-y-2 anim-fade-up">
+              <p className="flex items-center gap-1.5 font-bold text-brand-800"><Check className="w-4 h-4" /> Inspection dispatched</p>
+              <div className="grid grid-cols-2 gap-2 text-ink-700">
+                <div><span className="block text-ink-500">Case reference</span><span className="font-bold">RG-{d.id.slice(3)}-A</span></div>
+                <div><span className="block text-ink-500">Assigned crew</span><span className="font-bold">Vigilance Unit V-2</span></div>
+                <div><span className="block text-ink-500">Visit window</span><span className="font-bold">Tomorrow · 10:00–13:00</span></div>
+                <div><span className="block text-ink-500">Meter status</span><span className="font-bold">Flagged · read-lock on</span></div>
+              </div>
+              <p className="text-ink-500">Outcome auto-syncs to this queue and the executive revenue dashboard.</p>
+            </div>
+          ) : (
+            <button onClick={() => setDispatched(true)}
+              className="mt-4 w-full bg-ink-900 hover:bg-ink-800 text-white text-sm font-semibold rounded-xl py-2.5 flex items-center justify-center gap-2 transition-colors">
+              <MapPin className="w-4 h-4" /> Dispatch field inspection
+            </button>
+          )}
         </Card>
       </div>
     </div>

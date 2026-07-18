@@ -18,9 +18,27 @@ export default function OperationalInsights() {
   ]);
 
   const insights = [
-    { text: "Gas consumption has risen by 23% in Maninagar area due to early winter heaters.", cat: "Consumption" },
-    { text: "Predictive maintenance on COMP-104 avoided a potential 4-hour breakdown downtime last week.", cat: "Predictive" },
-    { text: "Revenue leakage anomaly checks reduced overall billing disputes by 18% in Surat region.", cat: "Leakage" }
+    {
+      cat: "Consumption",
+      text: "Gas consumption rose 23% in Maninagar driven by early winter heater usage.",
+      action: "Pre-position LPG-to-PNG conversion crews and re-forecast zone allocation.",
+      impact: "Protects supply continuity through peak season",
+      confidence: 89,
+    },
+    {
+      cat: "Predictive",
+      text: "Predictive maintenance on COMP-104 avoided a potential 4-hour breakdown last week.",
+      action: "Extend vibration-model coverage to the remaining 6 Naroda compressors.",
+      impact: "₹3.1L avoided downtime per prevented failure",
+      confidence: 94,
+    },
+    {
+      cat: "Leakage",
+      text: "Revenue anomaly checks reduced billing disputes 18% in the Surat region.",
+      action: "Roll the same scoring model out to Ahmedabad commercial accounts.",
+      impact: "Projected 12% dispute reduction on 41k accounts",
+      confidence: 86,
+    },
   ];
 
   return (
@@ -50,7 +68,7 @@ export default function OperationalInsights() {
       <div className="grid lg:grid-cols-3 gap-6 anim-fade-up">
         {/* Trend analysis chart */}
         <Card className="lg:col-span-2 p-6">
-          <h3 className="font-bold text-ink-900 mb-5">Monthly Supply Intake vs Allocation (SCM)</h3>
+          <h3 className="font-bold text-ink-900 mb-5">Network Alerts Raised vs Resolved — 6-Month Trend</h3>
           <TrendChart data={data} />
         </Card>
 
@@ -65,7 +83,15 @@ export default function OperationalInsights() {
                     <span className="font-bold text-ink-800">Observation {idx + 1}</span>
                     <Badge tone="indigo">{ins.cat}</Badge>
                   </div>
-                  <p className="text-ink-600 leading-relaxed mt-1">&quot;{ins.text}&quot;</p>
+                  <p className="text-ink-600 leading-relaxed mt-1">{ins.text}</p>
+                  <p className="mt-2"><span className="font-bold text-ink-800">Recommended: </span><span className="text-ink-600">{ins.action}</span></p>
+                  <p className="mt-1"><span className="font-bold text-ink-800">Impact: </span><span className="text-ink-600">{ins.impact}</span></p>
+                  <div className="mt-2 flex items-center gap-1.5 text-[11px] text-ink-500">
+                    <span className="w-12 h-1.5 rounded-full bg-ink-200 overflow-hidden inline-block">
+                      <span className="block h-full bg-indigo-500" style={{ width: `${ins.confidence}%` }} />
+                    </span>
+                    {ins.confidence}% confidence
+                  </div>
                 </div>
               ))}
             </div>

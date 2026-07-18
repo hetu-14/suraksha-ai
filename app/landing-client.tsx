@@ -5,7 +5,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import {
   ShieldCheck, ArrowRight, User, Cog, PhoneCall, ReceiptText,
   Megaphone, Timer, ShieldAlert, ScanEye, Sparkles,
-  Activity, Zap, Shield,
+  Activity, Zap, Shield, CheckCircle2, Layers, Workflow,
 } from "lucide-react";
 
 /* ══════════════════════════════════════════════════════════════
@@ -399,7 +399,7 @@ function WordReveal({ text, className, baseDelay = 0 }: { text: string; classNam
 /* ══════════════════════════════════════════════════════════════
    TYPEWRITER WITH GRADIENT
 ══════════════════════════════════════════════════════════════ */
-const PHRASES = ["humans miss.", "the naked eye.", "manual checks.", "legacy alerts.", "every anomaly."];
+const PHRASES = ["manual checks.", "legacy alerts.", "disconnected tools.", "delayed response.", "paper trails."];
 function TypewriterWord() {
   const [idx, setIdx] = useState(0);
   const [txt, setTxt] = useState("");
@@ -438,7 +438,7 @@ function HoloCard({ children, accent = "brand" }: { children: React.ReactNode; a
 
   return (
     <div ref={ref}
-      className={`relative rounded-3xl overflow-hidden cursor-pointer card-anim ${accent === "brand" ? "card-anim-1" : "card-anim-2"}`}
+      className={`group relative rounded-3xl overflow-hidden cursor-pointer card-anim ${accent === "brand" ? "card-anim-1" : "card-anim-2"}`}
       style={{
         transform: `perspective(900px) rotateX(${s.rx}deg) rotateY(${s.ry}deg) scale(${s.over ? 1.025 : 1})`,
         transition: !s.over ? "transform 0.7s cubic-bezier(.22,.61,.36,1)" : "transform 0.08s linear",
@@ -559,33 +559,66 @@ function RadarCanvas() {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   ORBIT BADGES
+   ORBIT BADGES — AI module radar with hover intel + click-through
 ══════════════════════════════════════════════════════════════ */
+const RADAR_MODULES = [
+  { label: "ExplainBill AI", deg: 0,   cls: "text-brand-300 border-brand-400/35 bg-brand-500/10 text-xs sm:text-sm px-3.5 py-1.5",
+    purpose: "Plain-language AI billing explanations", impact: "Fewer billing complaints, faster resolution", href: "/customer" },
+  { label: "SLA Sentinel",   deg: 72,  cls: "text-yellow-300 border-yellow-400/35 bg-yellow-500/10 text-xs sm:text-sm px-3.5 py-1.5",
+    purpose: "Continuous PNGRB SLA compliance tracking", impact: "Regulatory adherence, audit-ready reporting", href: "/intelligence" },
+  { label: "Smart Notify",   deg: 144, cls: "text-cyan-300 border-cyan-400/35 bg-cyan-500/10 text-xs sm:text-sm px-3.5 py-1.5",
+    purpose: "Automated multi-channel customer alerts", impact: "Higher engagement, fewer missed notices", href: "/safety" },
+  { label: "Revenue Guard",  deg: 216, cls: "text-indigo-300 border-indigo-400/35 bg-indigo-500/10 text-xs sm:text-sm px-3.5 py-1.5",
+    purpose: "Tamper & leakage exception monitoring", impact: "Protects revenue integrity at scale", href: "/intelligence" },
+  { label: "GasCare SOS",    deg: 288, cls: "text-red-300 border-red-400/35 bg-red-500/10 text-xs sm:text-sm px-3.5 py-1.5",
+    purpose: "One-tap AI-triaged emergency escalation", impact: "Faster emergency response times", href: "/customer" },
+];
+
 function OrbitBadges() {
-  const badges = [
-    { label: "ExplainBill AI", deg: 0,   cls: "text-brand-300 border-brand-400/35 bg-brand-500/10 text-xs sm:text-sm px-3.5 py-1.5" },
-    { label: "SLA Sentinel",   deg: 72,  cls: "text-yellow-300 border-yellow-400/35 bg-yellow-500/10 text-xs sm:text-sm px-3.5 py-1.5" },
-    { label: "Smart Notify",   deg: 144, cls: "text-cyan-300 border-cyan-400/35 bg-cyan-500/10 text-xs sm:text-sm px-3.5 py-1.5" },
-    { label: "Revenue Guard",  deg: 216, cls: "text-indigo-300 border-indigo-400/35 bg-indigo-500/10 text-xs sm:text-sm px-3.5 py-1.5" },
-    { label: "GasCare SOS",    deg: 288, cls: "text-red-300 border-red-400/35 bg-red-500/10 text-xs sm:text-sm px-3.5 py-1.5" },
-  ];
+  const [active, setActive] = useState<number | null>(null);
+  const activeModule = active !== null ? RADAR_MODULES[active] : null;
+
   return (
-    <div className="relative w-[300px] h-[300px] sm:w-[480px] sm:h-[480px] mx-auto flex items-center justify-center overflow-visible">
-      {/* Outer scale container for mobile compatibility */}
-      <div className="absolute w-[480px] h-[480px] scale-[0.62] sm:scale-100 origin-center transition-transform duration-300 flex-shrink-0">
-        <div className="absolute inset-0 rounded-full border-2 border-brand-400/[0.13] animate-[spin_24s_linear_infinite]" />
-        <div className="absolute inset-12 rounded-full border border-brand-400/[0.07] animate-[spin_16s_linear_infinite_reverse]" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"><RadarCanvas /></div>
-        {badges.map(({ label, deg, cls }) => {
-          const rad = deg * Math.PI / 180;
-          return (
-            <div key={deg}
-              className={`absolute font-semibold border rounded-full whitespace-nowrap orbit-badge ${cls}`}
-              style={{ left:`calc(50% + ${Math.cos(rad)*230}px)`, top:`calc(50% + ${Math.sin(rad)*230}px)`, transform:"translate(-50%,-50%)", animationDelay:`${deg*8}ms` }}>
-              {label}
-            </div>
-          );
-        })}
+    <div className="flex flex-col items-center">
+      <div className="relative w-[300px] h-[300px] sm:w-[480px] sm:h-[480px] mx-auto flex items-center justify-center overflow-visible">
+        {/* Outer scale container for mobile compatibility */}
+        <div className="absolute w-[480px] h-[480px] scale-[0.62] sm:scale-100 origin-center transition-transform duration-300 flex-shrink-0">
+          <div className="absolute inset-0 rounded-full border-2 border-brand-400/[0.13] animate-[spin_24s_linear_infinite]" />
+          <div className="absolute inset-12 rounded-full border border-brand-400/[0.07] animate-[spin_16s_linear_infinite_reverse]" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"><RadarCanvas /></div>
+          {RADAR_MODULES.map(({ label, deg, cls, href }, i) => {
+            const rad = deg * Math.PI / 180;
+            return (
+              <Link key={deg} href={href}
+                onMouseEnter={() => setActive(i)}
+                onMouseLeave={() => setActive(a => (a === i ? null : a))}
+                onFocus={() => setActive(i)}
+                onBlur={() => setActive(a => (a === i ? null : a))}
+                className={`absolute font-semibold border rounded-full whitespace-nowrap orbit-badge cursor-pointer transition-shadow duration-200 focus:outline-none ${cls} ${active === i ? "!opacity-100 brightness-125 z-10" : ""}`}
+                style={{
+                  left:`calc(50% + ${Math.cos(rad)*230}px)`, top:`calc(50% + ${Math.sin(rad)*230}px)`,
+                  animationDelay:`${deg*8}ms`,
+                  boxShadow: active === i ? "0 0 0 1.5px currentColor, 0 0 18px -2px currentColor" : undefined,
+                }}>
+                {label}
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Module intel readout */}
+      <div className="mt-1 sm:mt-3 h-[54px] flex items-center justify-center text-center px-4 max-w-md">
+        {activeModule ? (
+          <div className="anim-fade-up" style={{ animationDuration: "0.3s" }}>
+            <span className="text-sm font-bold text-brand-300">{activeModule.label}</span>
+            <p className="text-xs text-ink-400 mt-0.5 leading-relaxed">
+              {activeModule.purpose} — <span className="text-ink-300">{activeModule.impact}</span>
+            </p>
+          </div>
+        ) : (
+          <span className="text-[10px] text-ink-600 uppercase tracking-widest">Hover or focus a module for details</span>
+        )}
       </div>
     </div>
   );
@@ -772,45 +805,63 @@ export default function Landing() {
           {/* Cinematic headline */}
           <div className="mt-6 anim-fade-up" style={{ animationDelay:"260ms" }}>
             <h1 className="text-4xl sm:text-6xl font-extrabold leading-[1.1] tracking-tight">
-              <WordReveal text="The" baseDelay={300} className="inline" />{" "}
-              <GlitchText text="AI OS" className="text-transparent bg-clip-text bg-gradient-to-r from-brand-300 to-cyan-300" />{" "}
-              <WordReveal text="that protects" baseDelay={420} className="inline" />
+              <WordReveal text="The AI Operating System" baseDelay={300} className="inline" />
               <br />
-              <TypewriterWord />
+              <WordReveal text="for" baseDelay={460} className="inline" />{" "}
+              <GlitchText text="City Gas Distribution" className="text-transparent bg-clip-text bg-gradient-to-r from-brand-300 to-cyan-300" />
             </h1>
           </div>
 
           {/* Sub */}
           <div className="anim-fade-up" style={{ animationDelay:"500ms" }}>
             <WordReveal
-              text="The Intelligent Operating System for City Gas Distribution. Unified Customer Experience, Safety & Operations, and Business Intelligence."
+              text="One platform for operations, safety, and customer teams — unifying billing intelligence, pipeline safety, and executive decision-making in real time."
               baseDelay={550}
               className="block text-ink-300 mt-5 text-lg max-w-xl mx-auto leading-relaxed"
             />
+            <p className="text-sm text-ink-500 mt-3">
+              Replacing <TypewriterWord />
+            </p>
+          </div>
+
+          {/* Business value strip */}
+          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2.5 mt-8 anim-fade-up" style={{ animationDelay:"620ms" }}>
+            {[
+              "Faster Emergency Response",
+              "Better Customer Experience",
+              "Revenue Protection",
+              "Predictive Safety",
+              "Executive Visibility",
+            ].map((v) => (
+              <span key={v} className="inline-flex items-center gap-1.5 text-xs sm:text-[13px] font-medium text-ink-300 hover:text-brand-300 transition-colors duration-200">
+                <CheckCircle2 className="w-3.5 h-3.5 text-brand-400 flex-shrink-0" />
+                {v}
+              </span>
+            ))}
           </div>
 
           {/* CTAs */}
           <div className="flex flex-wrap items-center justify-center gap-4 mt-10 anim-fade-up" style={{ animationDelay:"700ms" }}>
             <MagButton href="/customer" primary
-              className="group font-semibold px-6 py-3.5 rounded-2xl text-white bg-brand-500 hover:bg-brand-400 shadow-lg shadow-brand-500/35 hover:shadow-brand-400/55 transition-all duration-300">
+              className="group font-semibold px-7 py-3.5 rounded-2xl text-white bg-brand-500 hover:bg-brand-400 shadow-lg shadow-brand-500/35 hover:shadow-brand-400/60 hover:-translate-y-0.5 transition-all duration-300">
               <span className="btn-shimmer absolute inset-0" />
               <User className="w-4 h-4 flex-shrink-0" />
-              Customer Suite
+              Enter Customer Suite
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-200" />
             </MagButton>
 
             <MagButton href="/safety"
-              className="group font-semibold px-6 py-3.5 rounded-2xl text-white bg-amber-600 hover:bg-amber-500 shadow-lg shadow-amber-500/35 transition-all duration-300">
+              className="group font-semibold px-6 py-3.5 rounded-2xl text-amber-200 bg-amber-500/[0.08] border border-amber-400/25 hover:bg-amber-500/[0.14] hover:border-amber-400/45 hover:-translate-y-0.5 transition-all duration-300">
               <ShieldCheck className="w-4 h-4 flex-shrink-0" />
               Safety Suite
-              <ArrowRight className="w-4 h-4 text-ink-100 group-hover:translate-x-1 transition-all duration-200" />
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-all duration-200" />
             </MagButton>
 
             <MagButton href="/intelligence"
-              className="group font-semibold px-6 py-3.5 rounded-2xl text-white bg-indigo-600 hover:bg-indigo-500 shadow-lg shadow-indigo-500/35 transition-all duration-300">
+              className="group font-semibold px-6 py-3.5 rounded-2xl text-indigo-200 bg-indigo-500/[0.08] border border-indigo-400/25 hover:bg-indigo-500/[0.14] hover:border-indigo-400/45 hover:-translate-y-0.5 transition-all duration-300">
               <Cog className="w-4 h-4 flex-shrink-0" strokeWidth={2.5} />
               Intelligence Suite
-              <ArrowRight className="w-4 h-4 text-ink-100 group-hover:translate-x-1 transition-all duration-200" />
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-all duration-200" />
             </MagButton>
           </div>
 
@@ -822,10 +873,22 @@ export default function Landing() {
         </div>
 
         {/* ── STATS ── */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto mb-20">
-          <StatCard value={16}  label="AI Modules"       icon={<Zap className="w-5 h-5"/>}      delay={0}   pct={1}    />
-          <StatCard value={999} suffix="%" label="Uptime SLA"  icon={<Activity className="w-5 h-5"/>} delay={150} pct={0.999} />
-          <StatCard value={1}   suffix="s" label="Alert Response" icon={<Shield className="w-5 h-5"/>}   delay={300} pct={0.95}  />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto mb-16">
+          <StatCard value={16} label="AI Modules"            icon={<Zap className="w-5 h-5"/>}      delay={0}   pct={1}    />
+          <StatCard value={3}  label="Integrated Suites"     icon={<Layers className="w-5 h-5"/>}   delay={150} pct={0.65} />
+          <StatCard value={24} label="Enterprise Workflows"  icon={<Workflow className="w-5 h-5"/>} delay={300} pct={0.9}  />
+        </div>
+
+        {/* ── TRUST STRIP ── */}
+        <div className="text-center mb-20 anim-fade-up" style={{ animationDelay:"100ms" }}>
+          <div className="text-[10px] uppercase tracking-[0.3em] text-ink-600 mb-4">Designed For</div>
+          <div className="flex flex-wrap items-center justify-center gap-2.5 max-w-2xl mx-auto">
+            {["City Gas Distribution", "Operations Teams", "Emergency Response", "Customer Service", "Executive Leadership"].map((v) => (
+              <span key={v} className="text-xs sm:text-[13px] text-ink-300 bg-white/[0.03] border border-white/[0.08] px-4 py-2 rounded-full hover:border-brand-400/35 hover:text-brand-300 hover:bg-white/[0.05] transition-all duration-200">
+                {v}
+              </span>
+            ))}
+          </div>
         </div>
 
         {/* ── PORTAL CARDS ── */}
@@ -833,14 +896,15 @@ export default function Landing() {
           <HoloCard accent="brand">
             <div className="p-6">
               <div className="flex items-center justify-between">
-                <div className="h-10 w-10 rounded-xl bg-brand-500/20 border border-brand-400/20 grid place-items-center">
+                <div className="h-10 w-10 rounded-xl bg-brand-500/20 border border-brand-400/20 grid place-items-center group-hover:scale-110 group-hover:bg-brand-500/30 transition-all duration-300">
                   <User className="w-5 h-5 text-brand-300" />
                 </div>
                 <ArrowRight className="w-4 h-4 text-ink-500" />
               </div>
-              <h2 className="text-lg font-bold mt-4 text-brand-300">Customer Experience</h2>
-              <p className="text-xs text-ink-400 mt-1.5 leading-relaxed min-h-[48px]">
-                PNG/CNG billing insights, connection journey trackers, and direct AI safety assistance.
+              <h2 className="text-lg font-bold mt-4 text-brand-300">Customer Suite</h2>
+              <p className="text-[11px] uppercase tracking-wider text-ink-500 mt-0.5">Customer Experience</p>
+              <p className="text-xs text-ink-400 mt-2 leading-relaxed min-h-[48px]">
+                Clear billing explanations, guided connection journeys, and instant AI safety support — fewer complaints, faster resolution, stronger trust.
               </p>
               <div className="flex flex-wrap gap-1.5 mt-4">
                 <Feature icon={<ReceiptText className="w-3 h-3"/>} label="ExplainBill AI"/>
@@ -856,14 +920,15 @@ export default function Landing() {
           <HoloCard accent="indigo">
             <div className="p-6">
               <div className="flex items-center justify-between">
-                <div className="h-10 w-10 rounded-xl bg-amber-500/20 border border-amber-400/20 grid place-items-center">
+                <div className="h-10 w-10 rounded-xl bg-amber-500/20 border border-amber-400/20 grid place-items-center group-hover:scale-110 group-hover:bg-amber-500/30 transition-all duration-300">
                   <Activity className="w-5 h-5 text-amber-300" />
                 </div>
                 <ArrowRight className="w-4 h-4 text-ink-500" />
               </div>
-              <h2 className="text-lg font-bold mt-4 text-amber-300">Safety &amp; Operations</h2>
-              <p className="text-xs text-ink-400 mt-1.5 leading-relaxed min-h-[48px]">
-                CNG readiness index checker, pipeline asset health trackers, and contractor safety audits.
+              <h2 className="text-lg font-bold mt-4 text-amber-300">Safety Suite</h2>
+              <p className="text-[11px] uppercase tracking-wider text-ink-500 mt-0.5">Operational Safety</p>
+              <p className="text-xs text-ink-400 mt-2 leading-relaxed min-h-[48px]">
+                Real-time pipeline health, CNG readiness scoring, and contractor audits — giving field and safety teams earlier warning on risk.
               </p>
               <div className="flex flex-wrap gap-1.5 mt-4">
                 <Feature icon={<Megaphone className="w-3 h-3"/>} label="Smart Notify"/>
@@ -879,14 +944,15 @@ export default function Landing() {
           <HoloCard accent="indigo">
             <div className="p-6">
               <div className="flex items-center justify-between">
-                <div className="h-10 w-10 rounded-xl bg-indigo-500/20 border border-indigo-400/20 grid place-items-center">
-                  <Cog className="w-5 h-5 text-indigo-300 hover:rotate-90 transition-transform duration-500" />
+                <div className="h-10 w-10 rounded-xl bg-indigo-500/20 border border-indigo-400/20 grid place-items-center group-hover:scale-110 group-hover:bg-indigo-500/30 transition-all duration-300">
+                  <Cog className="w-5 h-5 text-indigo-300 group-hover:rotate-90 transition-transform duration-500" />
                 </div>
                 <ArrowRight className="w-4 h-4 text-ink-500" />
               </div>
-              <h2 className="text-lg font-bold mt-4 text-indigo-300">Business Intelligence</h2>
-              <p className="text-xs text-ink-400 mt-1.5 leading-relaxed min-h-[48px]">
-                Revenue tamper exception monitoring, PNGRB compliance metrics, and predictive insights dashboard.
+              <h2 className="text-lg font-bold mt-4 text-indigo-300">Intelligence Suite</h2>
+              <p className="text-[11px] uppercase tracking-wider text-ink-500 mt-0.5">Executive Decision-Making</p>
+              <p className="text-xs text-ink-400 mt-2 leading-relaxed min-h-[48px]">
+                Revenue tamper detection, PNGRB compliance tracking, and a predictive command view — built for faster, evidence-based decisions.
               </p>
               <div className="flex flex-wrap gap-1.5 mt-4">
                 <Feature icon={<ShieldAlert className="w-3 h-3"/>} label="Revenue Guard"/>
