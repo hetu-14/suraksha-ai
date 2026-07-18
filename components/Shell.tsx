@@ -50,12 +50,12 @@ const NOTIFICATIONS: Record<SuiteRole, Notif[]> = {
   safety: [
     { id: "s1", title: "Critical PPM at Naranpura Inlet Line", detail: "Zone Z-04 crossed the critical methane threshold — field response required.", time: "3m ago", read: false, tone: "red" },
     { id: "s2", title: "New SOS · EMG-2231 · Maninagar Sec 12", detail: "AI dispatcher is guiding the caller; crew dispatch pending.", time: "8m ago", read: false, tone: "red" },
-    { id: "s3", title: "SLA-1139 breached — Meter Fault, Satellite", detail: "Compensation payout window is now active.", time: "22m ago", read: false, tone: "amber" },
+    { id: "s3", title: "T-7714 breached — Meter fault, Satellite", detail: "Compensation payout window is now active. Open SLA Sentinel to assign a crew.", time: "22m ago", read: false, tone: "amber" },
     { id: "s4", title: "Contractor audit overdue", detail: "2 vendors have certifications expiring this week.", time: "Yesterday", read: true, tone: "amber" },
   ],
   intelligence: [
     { id: "i1", title: "Weekly revenue report ready", detail: "Revenue Guard flagged 142 high-risk accounts this week.", time: "1h ago", read: false, tone: "brand" },
-    { id: "i2", title: "SLA compliance dipped to 82%", detail: "Below the 95% target — review at-risk tickets.", time: "5h ago", read: true, tone: "amber" },
+    { id: "i2", title: "SLA compliance at 94.2% (MTD)", detail: "0.8 points below the 95% target — 1 breach and 4 at-risk tickets in the live queue.", time: "5h ago", read: true, tone: "amber" },
   ],
 };
 

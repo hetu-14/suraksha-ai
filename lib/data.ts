@@ -56,43 +56,6 @@ export const safetyAlerts: SafetyAlert[] = [
   { time: "3 days ago", level: "critical", text: "Elevated methane reading — you were alerted, resolved in 4m." },
 ];
 
-// ---- Admin: RevGuard ----
-export type Anomaly = {
-  id: string;
-  area: string;
-  pattern: string;
-  risk: string;
-  score: number;
-  normal: number[];
-  actual: number[];
-};
-
-export const anomalies: Anomaly[] = [
-  { id: "GJ-118402", area: "Naroda", pattern: "Flatline (tamper)", risk: "₹18k/yr", score: 97, normal: [210, 205, 212, 208, 209, 211], actual: [210, 205, 90, 40, 38, 39] },
-  { id: "GJ-880142", area: "Vastral", pattern: "Sudden drop", risk: "₹42k/yr", score: 93, normal: [2100, 2050, 2080, 2120, 2090, 2080], actual: [2100, 2050, 2080, 2120, 1380, 1360] },
-  { id: "GJ-220915", area: "Odhav", pattern: "Night spikes", risk: "₹11k/yr", score: 88, normal: [180, 176, 182, 179, 181, 178], actual: [180, 176, 182, 260, 255, 268] },
-  { id: "GJ-501277", area: "Vatva", pattern: "Bypass signature", risk: "₹26k/yr", score: 84, normal: [420, 415, 418, 421, 419, 417], actual: [420, 415, 418, 210, 205, 208] },
-  { id: "GJ-339810", area: "Ghatlodia", pattern: "Reverse anomaly", risk: "₹9k/yr", score: 79, normal: [150, 148, 152, 149, 151, 150], actual: [150, 148, 152, 149, 95, 92] },
-];
-
-// ---- Admin: SLA Sentinel ----
-export type Ticket = {
-  id: string;
-  cat: "24h" | "7d" | "15d";
-  label: string;
-  left: number; // seconds
-  risk: number;
-};
-
-export const tickets: Ticket[] = [
-  { id: "T-7741", cat: "24h", label: "Gas leak — Maninagar", left: 2 * 3600 + 540, risk: 78 },
-  { id: "T-7738", cat: "7d", label: "Pressure low — Vastral", left: 9 * 3600, risk: 64 },
-  { id: "T-7720", cat: "24h", label: "Smell complaint — Odhav", left: 55 * 60, risk: 91 },
-  { id: "T-7702", cat: "15d", label: "Billing dispute — Naroda", left: 3 * 24 * 3600, risk: 22 },
-  { id: "T-7699", cat: "7d", label: "Meter relocation — Vatva", left: 31 * 3600, risk: 48 },
-  { id: "T-7681", cat: "24h", label: "Regulator fault — Ghatlodia", left: 3 * 3600 + 1200, risk: 70 },
-];
-
 // ---- Admin: AutoNotify ----
 export const zones = [
   { n: 1284, name: "Ward 7 — Maninagar" },

@@ -7,6 +7,7 @@ import { TrendChart, DonutChart } from "@/components/Charts";
 import CountUp from "@/components/CountUp";
 import Typewriter from "@/components/Typewriter";
 import { trend } from "@/lib/data";
+import { slaMetrics, revMetrics, inr } from "@/lib/ops";
 import {
   TrendingUp, ShieldAlert, Timer, Monitor, ArrowRight, IndianRupee, ShieldCheck, Sparkles
 } from "lucide-react";
@@ -15,9 +16,9 @@ const BRIEFING = [
   {
     area: "Revenue Protection",
     tone: "red" as const,
-    finding: "142 accounts show tamper-pattern consumption signatures; the top 12 account for ₹8.4L of annualized risk.",
-    action: "Dispatch physical inspections for the 12 highest-score accounts this week.",
-    impact: "₹8.4L annualized recovery",
+    finding: "142 accounts show tamper-pattern consumption signatures; the six highest-score cases carry ₹9.1L of annualized risk.",
+    action: "Dispatch physical inspections for the six highest-score accounts this week.",
+    impact: "₹9.1L annualized recovery",
     confidence: 91,
     priority: "High",
     href: "/intelligence/revenue-guard",
@@ -26,7 +27,7 @@ const BRIEFING = [
   {
     area: "PNGRB Compliance",
     tone: "amber" as const,
-    finding: "3 emergency tickets are within 6 hours of their 24h SLA breach window; T-7720 carries 91% breach risk.",
+    finding: "3 emergency tickets are within 6 hours of their 24h SLA breach window and T-7714 has already breached; T-7720 carries 91% breach risk.",
     action: "Escalate T-7720 to priority crew routing before the 11:00 review.",
     impact: "Avoids compensation payout and a reportable breach",
     confidence: 96,
@@ -94,16 +95,16 @@ export default function IntelligenceHome() {
       <div className="space-y-6 anim-fade-up">
         {/* KPIs */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Kpi label="Revenue Recovered (MTD)" value={<CountUp to={27.3} prefix="₹" suffix="L" decimals={1} />} icon={<IndianRupee className="w-4 h-4" />} />
-          <Kpi label="SLA Compliance Rate" value="99.2%" accent="text-brand-600" icon={<ShieldCheck className="w-4 h-4" />} />
+          <Kpi label="Revenue at Risk (flagged)" value={<CountUp to={27.3} prefix="₹" suffix="L" decimals={1} />} sub={`${inr(revMetrics.recoveredMTD)} recovered MTD`} icon={<IndianRupee className="w-4 h-4" />} />
+          <Kpi label="SLA Compliance (MTD)" value={`${slaMetrics.complianceMTD}%`} sub={`Target ${slaMetrics.complianceTarget}% · ${slaMetrics.breachesPreventedMTD} breaches prevented`} accent="text-amber-600" icon={<ShieldCheck className="w-4 h-4" />} />
           <Kpi label="AI Insights Logged" value={<CountUp to={47} />} icon={<TrendingUp className="w-4 h-4 text-indigo-500" />} />
-          <Kpi label="Pipeline Loss Prevented" value="₹18.6L" icon={<ShieldAlert className="w-4 h-4 text-indigo-500 animate-pulse" />} />
+          <Kpi label="Downtime Cost Avoided (YTD)" value="₹18.6L" icon={<ShieldAlert className="w-4 h-4 text-indigo-500 animate-pulse" />} />
         </div>
 
         {/* Charts block */}
         <div className="grid lg:grid-cols-3 gap-4">
           <Card className="lg:col-span-2 p-5">
-            <h3 className="font-bold text-ink-900 mb-3">Leakage Alerts Scanned vs Recovered — Last 7 Days</h3>
+            <h3 className="font-bold text-ink-900 mb-3">Network Alerts Raised vs Resolved — Last 7 Days</h3>
             <TrendChart data={trend} />
           </Card>
           <Card className="p-5">

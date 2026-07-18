@@ -2,9 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Badge, Card, Kpi } from "@/components/ui";
-import Typewriter from "@/components/Typewriter";
-import CountUp from "@/components/CountUp";
 import { DonutChart, TrendChart } from "@/components/Charts";
+import { revCases, revMetrics, revLifecycle as lifecycle, type RevCase as Case, type RevLifecycle, type RevSeverity as Severity } from "@/lib/ops";
 import { Activity, Camera, Check, CheckCircle2, ChevronRight, ClipboardCheck, Download, FileSearch, FileText, IndianRupee, MapPin, Network, Search, ShieldAlert } from "lucide-react";
 
 const TREND = [
@@ -17,29 +16,10 @@ const TAMPER_TYPES = [
   { name: "Seal Tampering", value: 22, color: "#8b5cf6" }, { name: "Unauthorized Tap", value: 16, color: "#0ea5e9" },
 ];
 
-const lifecycle = ["Detected", "Assigned", "Field Visit", "Evidence Collected", "Action Taken", "Recovered"] as const;
-type Lifecycle = typeof lifecycle[number];
-type Severity = "High" | "Medium" | "Low";
-
-type Case = {
-  id: string; consumer: string; account: string; area: string; type: string; loss: number; severity: Severity; stage: Lifecycle; detectedAt: string;
-  score: number; consumption: number; neighbourhood: number; drop: number; confidence: number; pastAlerts: number; previousVerification: string;
-  timeline: string[]; inspections: string[]; complaints: string[]; evidence: string[];
-};
-
-const CASES: Case[] = [
-  { id: "RG-0921", consumer: "Rajesh Shah", account: "C-1047", area: "Naranpura", type: "Meter Bypass", loss: 18400, severity: "High", stage: "Detected", detectedAt: "Today · 08:32 AM", score: 92, consumption: 12, neighbourhood: 48, drop: 62, confidence: 94, pastAlerts: 3, previousVerification: "Yes · Nov 2025", timeline: ["Jul 2025 · Consumption began declining", "Jan 2026 · Below expected seasonal range", "Today · AI anomaly alert generated"], inspections: ["Nov 2025 · Meter verification completed", "Aug 2024 · Safety inspection passed"], complaints: ["No supply complaints in last 12 months"], evidence: ["Consumption anomaly detected", "Previous 12-month pattern broken", "Meter inspection pending", "Neighbourhood variance high"] },
-  { id: "RG-0920", consumer: "Meenal Joshi", account: "C-2831", area: "Satellite", type: "Seal Tampering", loss: 7200, severity: "Medium", stage: "Evidence Collected", detectedAt: "Yesterday · 04:15 PM", score: 81, consumption: 21, neighbourhood: 46, drop: 44, confidence: 89, pastAlerts: 1, previousVerification: "Yes · Feb 2026", timeline: ["Feb 2026 · Meter verified", "Yesterday · Seal variance flagged", "Today · Photo evidence reviewed"], inspections: ["Feb 2026 · Meter verification completed"], complaints: ["Mar 2026 · Billing query resolved"], evidence: ["Seal mismatch observed", "Consumption anomaly detected", "Field image verification complete"] },
-  { id: "RG-0918", consumer: "Farooq Ahmed", account: "C-0556", area: "Chandkheda", type: "Slow Meter", loss: 9850, severity: "Medium", stage: "Assigned", detectedAt: "Jul 13 · 11:02 AM", score: 78, consumption: 28, neighbourhood: 53, drop: 39, confidence: 86, pastAlerts: 0, previousVerification: "No", timeline: ["Apr 2026 · Meter variance detected", "Jul 13 · Case assigned to field team"], inspections: ["No inspection in previous 18 months"], complaints: ["No complaint history"], evidence: ["Meter reading variance detected", "Consumption trend below cohort"] },
-  { id: "RG-0915", consumer: "Kiran Patel", account: "C-3341", area: "Naranpura", type: "Unauthorized Tap", loss: 23100, severity: "High", stage: "Field Visit", detectedAt: "Jul 12 · 06:50 AM", score: 96, consumption: 9, neighbourhood: 51, drop: 75, confidence: 97, pastAlerts: 2, previousVerification: "Yes · Sep 2025", timeline: ["Sep 2025 · Prior field verification", "Jul 12 · Repeated anomaly detected", "Today · Inspector visit scheduled"], inspections: ["Sep 2025 · Connection verification completed"], complaints: ["No supply complaints in last 12 months"], evidence: ["Repeat pattern detected", "Neighbourhood variance high", "Potential unauthorized tap route"] },
-  { id: "RG-0912", consumer: "Geeta Nair", account: "C-0812", area: "Gota", type: "Meter Bypass", loss: 5600, severity: "Low", stage: "Recovered", detectedAt: "Jul 10 · 09:20 AM", score: 62, consumption: 37, neighbourhood: 49, drop: 21, confidence: 78, pastAlerts: 0, previousVerification: "No", timeline: ["Jul 10 · Alert generated", "Jul 12 · Meter replaced", "Jul 14 · Recovery recorded"], inspections: ["Jul 12 · Meter test failed and replacement completed"], complaints: ["No complaint history"], evidence: ["Meter reading variance detected", "Recovery payment recorded"] },
-  { id: "RG-0908", consumer: "Dilip Mehta", account: "C-1922", area: "Vastral", type: "Slow Meter", loss: 11350, severity: "High", stage: "Recovered", detectedAt: "Jul 08 · 03:45 PM", score: 88, consumption: 18, neighbourhood: 45, drop: 58, confidence: 92, pastAlerts: 1, previousVerification: "Yes · Dec 2025", timeline: ["Jul 08 · Alert generated", "Jul 09 · Meter tested", "Jul 11 · Recovery recorded"], inspections: ["Jul 09 · Slow meter confirmed and replaced"], complaints: ["No complaint history"], evidence: ["Meter test failure confirmed", "Consumption pattern restored after replacement"] },
-];
-
 const areaRisk = [{ area: "Naranpura", alerts: 6, risk: "High" }, { area: "Satellite", alerts: 4, risk: "Medium" }, { area: "Chandkheda", alerts: 3, risk: "Medium" }, { area: "Bopal", alerts: 2, risk: "Watch" }];
 const severityTone: Record<Severity, "red" | "amber" | "sky"> = { High: "red", Medium: "amber", Low: "sky" };
 type RevGuardTab = "overview" | "investigate" | "operations" | "analytics";
-const storageKey = "suraksha:rev-guard:workspace";
+const storageKey = "suraksha:rev-guard:workspace:v2";
 
 function currency(value: number) { return `₹${value.toLocaleString("en-IN")}`; }
 
@@ -49,9 +29,9 @@ function WorkspaceTab({ active, label, sub, onClick }: { active: boolean; label:
 
 export default function RevGuard() {
   const [activeTab, setActiveTab] = useState<RevGuardTab>("overview");
-  const [cases, setCases] = useState(CASES);
-  const [recoveredRevenue, setRecoveredRevenue] = useState(48200);
-  const [selectedId, setSelectedId] = useState(CASES[0].id);
+  const [cases, setCases] = useState(revCases);
+  const [recoveredRevenue, setRecoveredRevenue] = useState(revMetrics.recoveredMTD);
+  const [selectedId, setSelectedId] = useState(revCases[0].id);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"All" | Severity>("All");
   const [notice, setNotice] = useState<string | null>(null);
@@ -59,10 +39,10 @@ export default function RevGuard() {
   const selected = cases.find((item) => item.id === selectedId) ?? cases[0];
   const filtered = useMemo(() => cases.filter((item) => (filter === "All" || item.severity === filter) && `${item.id} ${item.consumer} ${item.area}`.toLowerCase().includes(search.toLowerCase())), [cases, filter, search]);
   const totalLoss = cases.reduce((sum, item) => sum + item.loss, 0);
-  const detectedRevenue = 75500;
+  const detectedRevenue = revMetrics.detectedMTD;
   const pendingRecovery = Math.max(0, detectedRevenue - recoveredRevenue);
   const recoveryRate = (recoveredRevenue / detectedRevenue) * 100;
-  const nextStage = lifecycle[lifecycle.indexOf(selected.stage) + 1];
+  const nextStage: RevLifecycle | undefined = lifecycle[lifecycle.indexOf(selected.stage) + 1];
 
   useEffect(() => {
     try {
@@ -101,7 +81,7 @@ export default function RevGuard() {
 
   return <div className={`space-y-6 reveal revguard-${activeTab}`}>
     {notice && <div className="fixed right-4 top-4 z-50 flex max-w-sm items-center gap-3 rounded-2xl bg-brand-600 px-5 py-3 text-sm font-semibold text-white shadow-xl"><CheckCircle2 className="h-5 w-5" />{notice}<button onClick={() => setNotice(null)} className="ml-auto text-white/80">×</button></div>}
-    <header className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-ink-900 via-ink-900 to-red-950 p-6 text-white shadow-soft"><div className="floaty absolute -right-10 -top-10 h-56 w-56 rounded-full bg-red-500/20 blur-3xl" /><div className="relative"><p className="text-xs font-semibold uppercase tracking-widest text-red-300">CGD revenue protection command center</p><h1 className="mt-1 text-2xl font-extrabold sm:text-3xl"><Typewriter speed={40} segments={[{ text: "Rev-Guard " }, { text: "⚠️" }]} /></h1><p className="mt-2 max-w-2xl text-sm text-ink-300">Prioritize leakage risk, explain every alert, coordinate field action, and track recovered revenue from one operational workspace.</p></div></header>
+    <header className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-ink-900 via-ink-900 to-red-950 p-6 text-white shadow-soft"><div className="floaty absolute -right-10 -top-10 h-56 w-56 rounded-full bg-red-500/20 blur-3xl" /><div className="relative"><p className="text-xs font-semibold uppercase tracking-widest text-red-300">CGD revenue protection command center</p><h1 className="mt-1 text-2xl font-extrabold sm:text-3xl">Rev-Guard</h1><p className="mt-2 max-w-2xl text-sm text-ink-300">Prioritize leakage risk, explain every alert, coordinate field action, and track recovered revenue from one operational workspace.</p></div></header>
 
     <div className="grid grid-cols-2 gap-4 lg:grid-cols-4"><Kpi label="Revenue detected" value={currency(detectedRevenue)} sub="Potential revenue leakage" accent="text-red-600" icon={<IndianRupee className="h-4 w-4" />} /><Kpi label="Recovered" value={currency(recoveredRevenue)} sub="Recovered this month" accent="text-brand-600" icon={<CheckCircle2 className="h-4 w-4" />} /><Kpi label="Recovery rate" value={`${recoveryRate.toFixed(1)}%`} sub="Recovered ÷ detected" accent="text-brand-600" icon={<Activity className="h-4 w-4" />} /><Kpi label="Pending recovery" value={currency(pendingRecovery)} sub="Actionable collection value" icon={<FileSearch className="h-4 w-4" />} /></div>
 
@@ -144,8 +124,8 @@ export default function RevGuard() {
 
     <div className="grid gap-5 lg:grid-cols-3"><Card className="p-5 lg:col-span-2"><h2 className="font-bold text-ink-900">Detection trend · last 7 days</h2><p className="mt-1 text-xs text-ink-500">Kept for operational context; investigation and recovery remain the primary focus.</p><div className="mt-4"><TrendChart data={TREND} /></div></Card><Card className="p-5"><h2 className="font-bold text-ink-900">Tamper categories</h2><p className="mt-1 text-xs text-ink-500">Detection distribution</p><div className="mt-3"><DonutChart data={TAMPER_TYPES} /></div></Card></div>
 
-    <Card className="border-brand-200 bg-brand-50/60 p-5"><div className="flex flex-wrap items-center justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-wider text-brand-700">Equivalent impact</p><p className="mt-1 font-bold text-ink-900">{currency(totalLoss)} detected this month equals approximately 75 households’ monthly PNG revenue.</p><p className="mt-1 text-xs text-ink-600">Recovery tracking turns estimated risk into a measurable operational outcome.</p></div><div className="flex items-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-bold text-brand-800"><IndianRupee className="h-4 w-4" />Pending: ₹11,300</div></div></Card>
-    <div className="grid gap-5 lg:grid-cols-3"><Card className="p-5"><h2 className="font-bold text-ink-900">Financial impact</h2><div className="mt-4 space-y-3">{[["Current loss", "₹75,500"], ["Annualized impact", "₹9.06L"], ["Potential recovery", "₹6.2L"]].map(([label, value]) => <div key={label} className="flex items-center justify-between rounded-xl bg-ink-50 p-3"><span className="text-xs text-ink-600">{label}</span><strong className="text-sm text-ink-900">{value}</strong></div>)}</div></Card><Card className="p-5"><h2 className="font-bold text-ink-900">Alert validation</h2><p className="mt-1 text-xs text-ink-500">Transparent false-positive monitoring for model governance.</p><div className="mt-4 grid grid-cols-3 gap-2 text-center">{[["Generated", "100", "bg-ink-50 text-ink-800"], ["Validated", "88", "bg-brand-50 text-brand-800"], ["False positives", "12", "bg-red-50 text-red-700"]].map(([label, value, tone]) => <div key={label} className={`rounded-xl p-3 ${tone}`}><p className="text-lg font-extrabold">{value}</p><p className="mt-1 text-[10px] font-bold">{label}</p></div>)}</div><p className="mt-3 text-xs font-bold text-brand-700">Verified-alert rate: 88%</p></Card><Card className="p-5"><h2 className="flex items-center gap-2 font-bold text-ink-900"><Network className="h-4 w-4 text-violet-600" /> Repeat-offender network</h2><p className="mt-3 text-sm font-bold text-ink-900">Common contractor pattern found</p><p className="mt-1 text-xs leading-relaxed text-ink-600">One installation contractor appears across four linked investigations in Naranpura and Satellite.</p><div className="mt-4 flex flex-wrap gap-2">{["RG-0921", "RG-0915", "RG-0887", "RG-0874"].map((id) => <span key={id} className="rounded-full bg-violet-50 px-2.5 py-1 text-[10px] font-bold text-violet-800">{id}</span>)}</div><button onClick={() => setNotice("Contractor network investigation opened.")} className="mt-4 text-xs font-bold text-violet-700 hover:underline">View linked cases <ChevronRight className="inline h-3.5 w-3.5" /></button></Card></div>
+    <Card className="border-brand-200 bg-brand-50/60 p-5"><div className="flex flex-wrap items-center justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-wider text-brand-700">Equivalent impact</p><p className="mt-1 font-bold text-ink-900">{currency(totalLoss)} detected this month equals approximately 75 households’ monthly PNG revenue.</p><p className="mt-1 text-xs text-ink-600">Recovery tracking turns estimated risk into a measurable operational outcome.</p></div><div className="flex items-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-bold text-brand-800"><IndianRupee className="h-4 w-4" />Pending: {currency(pendingRecovery)}</div></div></Card>
+    <div className="grid gap-5 lg:grid-cols-3"><Card className="p-5"><h2 className="font-bold text-ink-900">Financial impact</h2><div className="mt-4 space-y-3">{[["Current monthly loss", currency(revMetrics.detectedMTD)], ["Annualized (these cases)", "₹9.06L"], ["Portfolio at risk (142 accts)", revMetrics.atRiskAnnualized]].map(([label, value]) => <div key={label} className="flex items-center justify-between rounded-xl bg-ink-50 p-3"><span className="text-xs text-ink-600">{label}</span><strong className="text-sm text-ink-900">{value}</strong></div>)}</div></Card><Card className="p-5"><h2 className="font-bold text-ink-900">Alert validation</h2><p className="mt-1 text-xs text-ink-500">Transparent false-positive monitoring for model governance.</p><div className="mt-4 grid grid-cols-3 gap-2 text-center">{[["Generated", String(revMetrics.alertsGenerated), "bg-ink-50 text-ink-800"], ["Validated", String(revMetrics.alertsValidated), "bg-brand-50 text-brand-800"], ["False positives", String(revMetrics.falsePositives), "bg-red-50 text-red-700"]].map(([label, value, tone]) => <div key={label} className={`rounded-xl p-3 ${tone}`}><p className="text-lg font-extrabold">{value}</p><p className="mt-1 text-[10px] font-bold">{label}</p></div>)}</div><p className="mt-3 text-xs font-bold text-brand-700">Verified-alert rate: 91%</p></Card><Card className="p-5"><h2 className="flex items-center gap-2 font-bold text-ink-900"><Network className="h-4 w-4 text-violet-600" /> Repeat-offender network</h2><p className="mt-3 text-sm font-bold text-ink-900">Common contractor pattern found</p><p className="mt-1 text-xs leading-relaxed text-ink-600">One installation contractor appears across four linked investigations in Naranpura and Satellite.</p><div className="mt-4 flex flex-wrap gap-2">{["RG-0921", "RG-0915", "RG-0887", "RG-0874"].map((id) => <span key={id} className="rounded-full bg-violet-50 px-2.5 py-1 text-[10px] font-bold text-violet-800">{id}</span>)}</div><button onClick={() => setNotice("Contractor network investigation opened.")} className="mt-4 text-xs font-bold text-violet-700 hover:underline">View linked cases <ChevronRight className="inline h-3.5 w-3.5" /></button></Card></div>
 
     <Card className="border-ink-200 bg-white p-5"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-wider text-ink-500">Selected consumer profile</p><h2 className="mt-1 font-bold text-ink-900">{selected.consumer} · Risk score {selected.score}/100</h2></div><Badge tone={selected.score >= 90 ? "red" : "amber"}>{selected.severity} priority</Badge></div><div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">{[["Past alerts", String(selected.pastAlerts)], ["Previous violations", String(Math.max(0, selected.pastAlerts - 1))], ["Billing volatility", selected.drop >= 50 ? "High" : "Medium"], ["Neighbourhood risk", selected.area === "Naranpura" ? "High" : "Medium"], ["Recommended action", "Field inspection"]].map(([label, value]) => <div key={label} className="rounded-xl bg-ink-50 p-3"><p className="text-[10px] font-bold uppercase tracking-wide text-ink-500">{label}</p><p className="mt-1 text-xs font-extrabold text-ink-900">{value}</p></div>)}</div></Card>
   </div>;
