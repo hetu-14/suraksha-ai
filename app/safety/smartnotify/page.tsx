@@ -121,8 +121,8 @@ export default function SmartNotify() {
               : "bg-red-50 text-red-700 border-red-200"
           }`}>
             {!start ? "Set a work start time to verify the 48-hour rule."
-              : compliant ? `✓ Compliant — ${Math.floor(hrs)}h advance notice (≥48h required by PNGRB 2025).`
-              : `⚠ Only ${Math.max(0, Math.floor(hrs))}h notice — below the mandatory 48h.`}
+              : compliant ? `Compliant — ${Math.floor(hrs)}h advance notice (≥48h required by PNGRB 2025).`
+              : `Only ${Math.max(0, Math.floor(hrs))}h notice — below the mandatory 48h.`}
           </div>
 
           <label className="text-xs font-medium text-ink-500">Message (sent over WhatsApp)</label>
@@ -151,7 +151,7 @@ export default function SmartNotify() {
                     {r.status === "sent" ? <CheckCircle2 className="w-4 h-4 text-brand-600" /> : <XCircle className="w-4 h-4 text-red-500" />}
                     <span className="font-mono text-ink-700">{r.phone}</span>
                     <span className={`ml-auto text-[11px] ${r.status === "sent" ? "text-brand-600" : "text-red-500"}`}>
-                      {r.status === "sent" ? "delivered ✓" : r.error?.slice(0, 40) || "failed"}
+                      {r.status === "sent" ? "delivered" : r.error?.slice(0, 40) || "failed"}
                     </span>
                   </li>
                 ))}
@@ -173,7 +173,7 @@ export default function SmartNotify() {
                 {sim.log.map((n, i) => (
                   <li key={i} className="flex items-center gap-2 text-ink-600 animate-slideIn">
                     <CheckCircle2 className="w-4 h-4 text-brand-600" /> {n}
-                    <span className="text-[11px] text-ink-400 ml-auto">delivered ✓</span>
+                    <span className="text-[11px] text-ink-400 ml-auto">delivered</span>
                   </li>
                 ))}
               </ul>

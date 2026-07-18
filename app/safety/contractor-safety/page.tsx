@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Card, Kpi, SectionTitle, Badge } from "@/components/ui";
 import CountUp from "@/components/CountUp";
-import Typewriter from "@/components/Typewriter";
 import { useLocalWorkspaceState } from "@/lib/useLocalWorkspaceState";
 import { HardHat, ShieldCheck, Activity, Users, AlertOctagon, CheckCircle2 } from "lucide-react";
 import { TrendChart } from "@/components/Charts";
@@ -36,7 +35,7 @@ export default function ContractorSafety() {
         <div className="relative">
           <p className="text-amber-300 text-xs font-semibold uppercase tracking-widest">Safety &amp; Operations Suite</p>
           <h1 className="text-2xl sm:text-3xl font-extrabold mt-1">
-            <Typewriter speed={40} segments={[{ text: "Contractor Risk & Safety Index" }]} />
+            Contractor Risk & Safety Index
           </h1>
           <p className="text-ink-300 mt-2 text-sm max-w-2xl">
             Monitors third-party pipeline contractors on site safety compliance, mandatory certification levels, and safety audits.

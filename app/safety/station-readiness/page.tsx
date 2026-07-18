@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { Card, Kpi, SectionTitle, Badge } from "@/components/ui";
 import CountUp from "@/components/CountUp";
-import Typewriter from "@/components/Typewriter";
 import { useLocalWorkspaceState } from "@/lib/useLocalWorkspaceState";
 import { Building2, CheckCircle2, AlertTriangle, AlertOctagon, HelpCircle, HardHat, TrendingUp } from "lucide-react";
 
@@ -50,7 +49,7 @@ export default function StationReadiness() {
         <div className="relative">
           <p className="text-amber-300 text-xs font-semibold uppercase tracking-widest">Safety &amp; Operations Suite</p>
           <h1 className="text-2xl sm:text-3xl font-extrabold mt-1">
-            <Typewriter speed={40} segments={[{ text: "Station Readiness & Safety Index" }]} />
+            Station Readiness & Safety Index
           </h1>
           <p className="text-ink-300 mt-2 text-sm max-w-2xl">
             Real-time inspection checklists, equipment telemetry metrics, and staff compliance checks mapped to a single unified readiness index.

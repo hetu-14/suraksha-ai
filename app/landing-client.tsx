@@ -263,7 +263,7 @@ function HUDOverlay() {
         <div>CGD.AI v2.6.1</div>
         <div>CONF 99.7%</div>
         <div className={alertCycle > 0 ? "text-red-400/70 hud-blink" : "text-brand-400/38"}>
-          {alertCycle > 0 ? "⚠ ALERT ACTIVE" : "ALERTS 0"}
+          {alertCycle > 0 ? "ALERT ACTIVE" : "ALERTS 0"}
         </div>
       </div>
 

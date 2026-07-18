@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Card, Kpi, Badge } from "@/components/ui";
-import Typewriter from "@/components/Typewriter";
 import CountUp from "@/components/CountUp";
 import { DonutChart, TrendChart } from "@/components/Charts";
 import { useLocalWorkspaceState } from "@/lib/useLocalWorkspaceState";
@@ -10,7 +9,7 @@ import OperatorHandoff, { type HandoffEntry } from "@/components/OperatorHandoff
 import {
   Activity, AlertTriangle, CheckCircle2, Clock3, Download,
   MapPin, Navigation, Pause, Play, Search, Settings2,
-  ShieldCheck, Siren, Truck, Wind, X, Zap,
+  ShieldCheck, Siren, Truck, Wind, X, Zap, Gauge as GaugeIcon, Thermometer, Repeat,
 } from "lucide-react";
 
 type ZoneStatus = "Safe" | "Warning" | "Critical" | "Isolated";
@@ -208,7 +207,7 @@ export default function DashboardGasGuard() {
     <div className="rounded-2xl bg-gradient-to-br from-ink-900 via-ink-900 to-red-950 text-white p-6 relative overflow-hidden shadow-soft">
       <div className="floaty absolute -right-10 -top-10 w-56 h-56 bg-red-500/20 rounded-full blur-3xl" />
       <div className="relative flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-        <div><p className="text-red-300 text-xs font-semibold uppercase tracking-widest">CGD Grid Monitoring</p><h1 className="text-2xl sm:text-3xl font-extrabold mt-1"><Typewriter speed={40} segments={[{ text: "Gas-Guard Dashboard " }, { text: "🔥" }]} /></h1><p className="text-ink-300 mt-2 text-sm max-w-2xl">Real-time gas safety monitoring, incident triage, isolation control, and field-response coordination across the distribution grid.</p></div>
+        <div><p className="text-red-300 text-xs font-semibold uppercase tracking-widest">CGD Grid Monitoring</p><h1 className="text-2xl sm:text-3xl font-extrabold mt-1">Gas-Guard Dashboard</h1><p className="text-ink-300 mt-2 text-sm max-w-2xl">Real-time gas safety monitoring, incident triage, isolation control, and field-response coordination across the distribution grid.</p></div>
         <div className="flex flex-wrap gap-2 lg:justify-end"><button onClick={() => setLive((value) => !value)} className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold hover:bg-white/20">{live ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}{live ? "Pause feed" : "Resume feed"}</button><button onClick={downloadReport} className="inline-flex items-center gap-2 rounded-lg bg-white text-ink-800 px-3 py-2 text-xs font-semibold hover:bg-ink-100"><Download className="w-3.5 h-3.5" />Export report</button></div>
       </div>
       <div className="relative mt-5 inline-flex items-center gap-2 text-xs text-ink-200"><span className={`w-2 h-2 rounded-full ${live ? "bg-brand-400 animate-pulse" : "bg-amber-400"}`} />{live ? "Live telemetry updates every 3.5 seconds" : "Telemetry feed paused"}<span className="text-ink-500">•</span><span>{openIncidents.length} active incident{openIncidents.length === 1 ? "" : "s"}</span></div>
@@ -231,7 +230,7 @@ export default function DashboardGasGuard() {
             const status = statusByZone[zone.id]; const config = statusStyle[status]; const isSelected = selectedId === zone.id;
             return <button key={zone.id} onClick={() => setSelectedId(isSelected ? null : zone.id)} className={`w-full text-left rounded-xl p-4 border transition ${config.border} ${config.bg} ${isSelected ? "ring-2 ring-offset-1 ring-ink-400" : "hover:shadow-md"}`}>
               <div className="flex items-start justify-between gap-3"><div className="flex items-center gap-3 min-w-0"><div className={`h-9 w-9 rounded-xl grid place-items-center shrink-0 ${status === "Critical" ? "bg-red-100" : status === "Warning" ? "bg-amber-100" : status === "Isolated" ? "bg-sky-100" : "bg-brand-100"}`}><MapPin className={`w-4 h-4 ${status === "Critical" ? "text-red-600" : status === "Warning" ? "text-amber-600" : status === "Isolated" ? "text-sky-600" : "text-brand-600"}`} /></div><div className="min-w-0"><p className="font-semibold text-ink-800 text-sm truncate">{zone.name}</p><p className="text-[11px] text-ink-500">{zone.area} · {zone.sensor} · ping {zone.lastPingSeconds}s ago</p></div></div><div className="flex items-center gap-2 shrink-0"><Badge tone={statusTone[status]}>{status}</Badge><span className={`h-2 w-2 rounded-full ${config.dot} ${status !== "Safe" ? "animate-pulse" : ""}`} /></div></div>
-              <div className="mt-3 grid grid-cols-4 gap-2 text-[11px]">{[{ label: "PPM", value: `${zone.ppm}`, icon: "💨" }, { label: "Pressure", value: `${zone.pressure} bar`, icon: "⚡" }, { label: "Temp", value: `${zone.temperature}°C`, icon: "🌡️" }, { label: "Flow", value: `${zone.flow} m³/h`, icon: "🔄" }].map((reading) => <div key={reading.label} className="text-center bg-white/60 rounded-lg px-2 py-1.5"><div className="text-base leading-none">{reading.icon}</div><div className="font-bold text-ink-700 mt-1">{reading.value}</div><div className="text-ink-400">{reading.label}</div></div>)}</div>
+              <div className="mt-3 grid grid-cols-4 gap-2 text-[11px]">{[{ label: "PPM", value: `${zone.ppm}`, icon: Wind }, { label: "Pressure", value: `${zone.pressure} bar`, icon: GaugeIcon }, { label: "Temp", value: `${zone.temperature}°C`, icon: Thermometer }, { label: "Flow", value: `${zone.flow} m³/h`, icon: Repeat }].map((reading) => <div key={reading.label} className="text-center bg-white/60 rounded-lg px-2 py-1.5"><reading.icon className="w-4 h-4 mx-auto text-ink-500" /><div className="font-bold text-ink-700 mt-1">{reading.value}</div><div className="text-ink-400">{reading.label}</div></div>)}</div>
             </button>;
           })}
           {!visibleZones.length && <Card className="p-8 text-center text-sm text-ink-500">No zones match the current search and filter.</Card>}

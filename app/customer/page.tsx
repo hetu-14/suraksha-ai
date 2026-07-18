@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Badge, Card, Kpi } from "@/components/ui";
 import CountUp from "@/components/CountUp";
-import Typewriter from "@/components/Typewriter";
 import { currentCustomer, inr } from "@/lib/data";
 import {
   Award, Bell, Calendar, CheckCircle2, ChevronRight, CircleAlert,
@@ -27,7 +26,6 @@ const INITIAL_UPDATES: UpdateItem[] = [
 ];
 
 export default function CustomerHome() {
-  const [animStep, setAnimStep] = useState(0);
   const [contactVerified, setContactVerified] = useState(false);
   const [inspectionBooked, setInspectionBooked] = useState(false);
   const [billCleared, setBillCleared] = useState(false);
@@ -118,8 +116,8 @@ export default function CustomerHome() {
       <div className="relative grid gap-7 lg:grid-cols-[1.35fr_.65fr] lg:items-end">
         <div>
           <div className="inline-flex items-center gap-2 rounded-full border border-brand-300/20 bg-brand-400/10 px-3 py-1 text-xs font-semibold text-brand-200"><span className="h-1.5 w-1.5 rounded-full bg-brand-400 animate-pulse" />Household protection active</div>
-          <p className="mt-5 min-h-[20px] text-sm font-medium text-brand-200"><Typewriter speed={50} startDelay={180} onComplete={() => setAnimStep(1)} segments={[{ text: `Good afternoon, ${currentCustomer.name.split(" ")[0]} ` }, { text: "👋", cls: "wave" }]} /></p>
-          <h1 className="mt-1 min-h-[38px] text-3xl font-extrabold tracking-tight sm:text-4xl">{animStep ? <Typewriter speed={38} cursorClass="text-brand-300" segments={[{ text: "Your household is " }, { text: "safe", cls: "text-brand-300" }]} /> : <span className="text-transparent">Your household is safe</span>}</h1>
+          <p className="mt-5 text-sm font-medium text-brand-200">Good afternoon, {currentCustomer.name.split(" ")[0]}</p>
+          <h1 className="mt-1 text-3xl font-extrabold tracking-tight sm:text-4xl">Your household is <span className="text-brand-300">safe</span></h1>
           <p className="mt-3 max-w-xl text-sm leading-relaxed text-ink-300">No leak indicators detected. Your PNG connection and home safety profile are protected and monitored.</p>
           <div className="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-xs text-ink-400"><span>{currentCustomer.id}</span><span>{currentCustomer.area}</span><span>{currentCustomer.type} connection</span></div>
         </div>
@@ -166,7 +164,7 @@ export default function CustomerHome() {
 }
 
 function Snapshot({ label, value, detail, tone }: { label: string; value: string; detail: string; tone: "brand" | "amber" }) {
-  return <div className={`rounded-2xl border p-4 ${tone === "brand" ? "border-brand-100 bg-brand-50/60" : "border-amber-200 bg-amber-50/60"}`}><p className="text-xs text-ink-500">{label}</p><p className={`mt-1 text-sm font-bold ${tone === "brand" ? "text-brand-800" : "text-amber-800"}`}>{tone === "brand" ? "✓ " : "⚠ "}{value}</p><p className="mt-1 text-[11px] text-ink-500">{detail}</p></div>;
+  return <div className={`rounded-2xl border p-4 ${tone === "brand" ? "border-brand-100 bg-brand-50/60" : "border-amber-200 bg-amber-50/60"}`}><p className="text-xs text-ink-500">{label}</p><p className={`mt-1 text-sm font-bold ${tone === "brand" ? "text-brand-800" : "text-amber-800"}`}>{value}</p><p className="mt-1 text-[11px] text-ink-500">{detail}</p></div>;
 }
 
 function QuickAction({ icon, label, detail, tone, href, onClick }: { icon: React.ReactNode; label: string; detail: string; tone: "brand" | "amber" | "sky"; href?: string; onClick?: () => void | false }) {
@@ -181,11 +179,11 @@ function QuickAction({ icon, label, detail, tone, href, onClick }: { icon: React
 }
 
 function Risk({ label, value, tone }: { label: string; value: string; tone: "brand" | "amber" }) {
-  return <div className="flex items-center justify-between rounded-xl bg-ink-50 px-3 py-2.5 text-sm"><span className="text-ink-600">{label}</span><Badge tone={tone}>{value} {tone === "brand" ? "✓" : "⚠"}</Badge></div>;
+  return <div className="flex items-center justify-between rounded-xl bg-ink-50 px-3 py-2.5 text-sm"><span className="text-ink-600">{label}</span><Badge tone={tone}>{value}</Badge></div>;
 }
 
 function Readiness({ label, complete = false }: { label: string; complete?: boolean }) {
-  return <div className={`flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-xs ${complete ? "bg-brand-50/70" : "bg-amber-50"}`}><span className="font-medium text-ink-600">{label}</span><span className={`font-bold ${complete ? "text-brand-700" : "text-amber-700"}`}>{complete ? "✓ Ready" : "⚠ Pending"}</span></div>;
+  return <div className={`flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-xs ${complete ? "bg-brand-50/70" : "bg-amber-50"}`}><span className="font-medium text-ink-600">{label}</span><span className={`font-bold ${complete ? "text-brand-700" : "text-amber-700"}`}>{complete ? "Ready" : "Pending"}</span></div>;
 }
 
 function Upcoming({ date, title, detail, accent }: { date: string; title: string; detail: string; accent: "brand" | "amber" | "sky" | "ink" }) {

@@ -401,7 +401,7 @@ export default function EmergencyChat() {
       r.onerror = (e: any) => {
         setListening(false);
         const map: Record<string, string> = {
-          "not-allowed": "Microphone is blocked. Click 🔒 in the address bar → allow Microphone, then retry.",
+          "not-allowed": "Microphone is blocked. Use the lock icon in the address bar to allow the microphone, then retry.",
           "service-not-allowed": "Microphone is blocked in browser settings — allow it and retry.",
           "no-speech": "I didn't catch that — tap the mic and speak again.",
           "audio-capture": "No microphone found. Check it's connected.",

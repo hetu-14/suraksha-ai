@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { Card, Kpi, SectionTitle, Badge } from "@/components/ui";
 import CountUp from "@/components/CountUp";
-import Typewriter from "@/components/Typewriter";
 import { Toast, useToast } from "@/components/Toast";
 import { Monitor, Activity, Thermometer, Truck, Zap } from "lucide-react";
 
@@ -76,7 +75,7 @@ export default function CommandCenter() {
         <div className="relative">
           <p className="text-indigo-300 text-xs font-semibold uppercase tracking-widest">Business Intelligence Suite</p>
           <h1 className="text-2xl sm:text-3xl font-extrabold mt-1">
-            <Typewriter speed={40} segments={[{ text: "Operations Command Center" }]} />
+            Operations Command Center
           </h1>
           <p className="text-ink-300 mt-2 text-sm max-w-2xl">
             Live telemetry monitoring grid. Tracks regional gas supply pressure, inlet flow rates, active complaints, and dispatch crew statuses.

@@ -5,7 +5,6 @@ import Link from "next/link";
 import { Card, Kpi } from "@/components/ui";
 import { TrendChart, DonutChart } from "@/components/Charts";
 import CountUp from "@/components/CountUp";
-import Typewriter from "@/components/Typewriter";
 import { trend, workload } from "@/lib/data";
 import {
   Siren, BadgeCheck, Megaphone, Wrench, HardHat, Building2, Video, ArrowRight,
@@ -13,7 +12,6 @@ import {
 } from "lucide-react";
 
 export default function SafetyHome() {
-  const [animStep, setAnimStep] = useState(0);
 
   // Safety Suite specific workload (7 modules)
   const safetyWorkload = [
@@ -33,25 +31,11 @@ export default function SafetyHome() {
         <div className="floaty absolute -right-10 -top-10 w-56 h-56 bg-amber-500/20 rounded-full blur-3xl" />
         <div className="floaty-2 absolute -left-16 -bottom-16 w-48 h-48 bg-amber-400/10 rounded-full blur-3xl" />
         <div className="relative">
-          <p className="text-amber-300 text-sm font-medium min-h-[20px]">
-            <Typewriter
-              speed={55}
-              startDelay={250}
-              onComplete={() => setAnimStep(1)}
-              segments={[{ text: "Safety & Operations Console " }, { text: "· live", cls: "text-red-400 font-bold" }]}
-            />
+          <p className="text-amber-300 text-sm font-medium">
+            Safety &amp; Operations Console <span className="text-red-400 font-bold">· live</span>
           </p>
-          <h1 className="text-2xl sm:text-3xl font-extrabold mt-1 min-h-[36px] sm:min-h-[40px]">
-            {animStep >= 1 ? (
-              <Typewriter
-                speed={42}
-                onComplete={() => setAnimStep(2)}
-                cursorClass="text-amber-300"
-                segments={[{ text: "The safety layer that " }, { text: "protects our pipeline grid", cls: "text-amber-300" }, { text: "." }]}
-              />
-            ) : (
-              <span className="text-transparent">The safety layer that protects our pipeline grid.</span>
-            )}
+          <h1 className="text-2xl sm:text-3xl font-extrabold mt-1">
+            The safety layer that <span className="text-amber-300">protects our pipeline grid</span>.
           </h1>
           <p className="text-ink-300 mt-2 text-sm max-w-2xl">
             Check station readiness checklists, schedule asset checks, audit contractor compliance, and triage active SOS alarms.

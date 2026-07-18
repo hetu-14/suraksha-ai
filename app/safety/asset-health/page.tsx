@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Card, Kpi, SectionTitle, Badge } from "@/components/ui";
 import CountUp from "@/components/CountUp";
-import Typewriter from "@/components/Typewriter";
 import { useLocalWorkspaceState } from "@/lib/useLocalWorkspaceState";
 import { Wrench, CheckCircle2, AlertTriangle, Hammer, ShieldAlert, Cpu } from "lucide-react";
 
@@ -34,7 +33,7 @@ export default function AssetHealth() {
         <div className="relative">
           <p className="text-amber-300 text-xs font-semibold uppercase tracking-widest">Safety &amp; Operations Suite</p>
           <h1 className="text-2xl sm:text-3xl font-extrabold mt-1">
-            <Typewriter speed={40} segments={[{ text: "Asset Health" }]} />
+            Asset Health
           </h1>
           <p className="text-ink-300 mt-2 text-sm max-w-2xl">
             Predictive lifecycle tracker. Monitors pipeline pressure integrity, compressor vibration anomalies, and valve inspection cadences.

@@ -2,11 +2,13 @@ export type Ledger = { id: string; date: string; action: string; points: number;
 
 export const storageKey = "suraksha:trust-points:GJ-559210";
 
+import { Check, Star, ShieldCheck, Sparkle } from "lucide-react";
+
 export const tiers = [
-  { name: "Safe User", threshold: 0, icon: "✓" },
-  { name: "Safety Champion", threshold: 1000, icon: "★" },
-  { name: "Safety Guardian", threshold: 2500, icon: "🛡" },
-  { name: "Community Protector", threshold: 5000, icon: "✦" },
+  { name: "Safe User", threshold: 0, icon: Check },
+  { name: "Safety Champion", threshold: 1000, icon: Star },
+  { name: "Safety Guardian", threshold: 2500, icon: ShieldCheck },
+  { name: "Community Protector", threshold: 5000, icon: Sparkle },
 ];
 
 export function computeTier(points: number) {

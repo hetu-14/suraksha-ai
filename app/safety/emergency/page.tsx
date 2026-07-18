@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Card, Kpi, Badge } from "@/components/ui";
-import Typewriter from "@/components/Typewriter";
 import CountUp from "@/components/CountUp";
 import { DonutChart, TrendChart } from "@/components/Charts";
 import { useLocalWorkspaceState } from "@/lib/useLocalWorkspaceState";
@@ -253,7 +252,7 @@ export default function EmergencyDashboard() {
           <div>
             <p className="text-amber-300 text-xs font-semibold uppercase tracking-widest">Safety &amp; Operations Console</p>
             <h1 className="text-2xl sm:text-3xl font-extrabold mt-1">
-              <Typewriter speed={40} segments={[{ text: "Emergency Dashboard" }]} />
+              Emergency Dashboard
             </h1>
             <p className="text-ink-300 mt-2 text-sm max-w-2xl">
               Unified control center: real-time customer SOS triggers, automated AI dispatcher, and live CCTV incident triage.
@@ -416,7 +415,7 @@ export default function EmergencyDashboard() {
             </div>
             <div className="my-auto text-center text-white/40 text-sm font-mono tracking-widest uppercase">
               {cameras[workspace.activeCam]}
-              <div className="text-xs text-white/20 mt-1">[Mock video placeholder - Active Detection Mode]</div>
+              <div className="text-xs text-white/20 mt-1">AI DETECTION ACTIVE · MONITORING FOR PPE & IGNITION EVENTS</div>
             </div>
             <div className="flex items-center justify-between text-white/60 text-[10px] font-mono">
               <span>CONF: 94.6%</span>

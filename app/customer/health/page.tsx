@@ -9,7 +9,6 @@ import {
   Sparkles, Wrench,
 } from "lucide-react";
 import { Card, Kpi } from "@/components/ui";
-import Typewriter from "@/components/Typewriter";
 import { buildHealthFactors, emptyHealthProfile, healthProfileStorageKey, normalizeHealthProfile, overallHealthScore, type HealthFactor, type HealthProfile } from "@/lib/healthScore";
 import { connectionStorageKey, emptyConnectionStatus, normalizeConnectionStatus, type ConnectionStatusRecord } from "@/lib/connectionStatus";
 
@@ -81,7 +80,7 @@ export default function CustomerHealthScore() {
     <div className="space-y-6 reveal">
       <header className="rounded-2xl bg-gradient-to-br from-ink-900 via-ink-900 to-brand-900 text-white p-6 sm:p-8 relative overflow-hidden shadow-soft">
         <div className="floaty absolute -right-10 -top-10 w-56 h-56 bg-brand-500/20 rounded-full blur-3xl" />
-        <div className="relative max-w-3xl"><p className="text-brand-300 text-xs font-semibold uppercase tracking-widest">SuRaksha AI · Customer safety</p><h1 className="text-2xl sm:text-3xl font-extrabold mt-1"><Typewriter speed={40} segments={[{ text: "Gas Safety & Service Health Index" }]} /></h1><p className="text-ink-300 mt-2 text-sm">A simple view of whether your connection is safe, equipment is healthy, payments are on track, and any action needs your attention.</p></div>
+        <div className="relative max-w-3xl"><p className="text-brand-300 text-xs font-semibold uppercase tracking-widest">SuRaksha AI · Customer safety</p><h1 className="text-2xl sm:text-3xl font-extrabold mt-1">Gas Safety & Service Health Index</h1><p className="text-ink-300 mt-2 text-sm">A simple view of whether your connection is safe, equipment is healthy, payments are on track, and any action needs your attention.</p></div>
       </header>
 
       <nav aria-label="Health score sections" className="sticky top-3 z-10 flex gap-1 overflow-x-auto rounded-2xl border border-ink-100 bg-white/95 p-1.5 shadow-soft backdrop-blur">
@@ -107,7 +106,7 @@ export default function CustomerHealthScore() {
 }
 
 function RiskSignal({ label, good }: { label: string; good: boolean }) {
-  return <span className={good ? "text-brand-700" : "text-amber-700"}>{good ? "✓" : "⚠"} {label}</span>;
+  return <span className={good ? "text-brand-700" : "text-amber-700"}>{label}</span>;
 }
 
 function ScoreStep({ label, value }: { label: string; value: string }) {
