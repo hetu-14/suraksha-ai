@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { Card, Kpi, SectionTitle, Badge } from "@/components/ui";
 import CountUp from "@/components/CountUp";
 import { useLocalWorkspaceState } from "@/lib/useLocalWorkspaceState";
-import { Building2, CheckCircle2, AlertTriangle, AlertOctagon, HelpCircle, HardHat, TrendingUp } from "lucide-react";
+import { Toast, useToast } from "@/components/Toast";
+import { Building2, CheckCircle2, AlertOctagon, HardHat } from "lucide-react";
 
 type Station = { name: string; score: number; status: "Operational" | "Maintenance" | "Alert"; details: string };
 
@@ -19,6 +20,20 @@ export default function StationReadiness() {
   ]);
 
   const [sel, setSel] = useState(0);
+  const [doneActions, setDoneActions] = useLocalWorkspaceState<string[]>("suraksha:station-actions", []);
+  const toast = useToast();
+
+  function completeAction(action: string, points: number) {
+    const key = `${stations[sel].name}:${action}`;
+    if (doneActions.includes(key)) return;
+    setDoneActions((current) => [...current, key]);
+    setStations((prev) => prev.map((station, index) => {
+      if (index !== sel) return station;
+      const score = Math.min(100, station.score + points);
+      return { ...station, score, status: score >= 85 ? "Operational" : station.status, details: `${action} completed · readiness recalculated.` };
+    }));
+    toast.show(`${action} logged for ${stations[sel].name}. Readiness +${points} points.`);
+  }
 
   useEffect(() => {
     const t = setInterval(() => {
@@ -43,6 +58,7 @@ export default function StationReadiness() {
 
   return (
     <div className="space-y-6 reveal">
+      <Toast message={toast.message} onClose={toast.clear} />
       {/* Header Banner */}
       <div className="rounded-2xl bg-gradient-to-br from-ink-900 via-ink-900 to-amber-900 text-white p-6 relative overflow-hidden shadow-soft">
         <div className="floaty absolute -right-10 -top-10 w-56 h-56 bg-amber-500/20 rounded-full blur-3xl" />
@@ -67,7 +83,7 @@ export default function StationReadiness() {
 
       <div className="grid gap-5 lg:grid-cols-3"><Card className="p-5 lg:col-span-2"><h2 className="font-bold text-ink-900">{selected.name} · readiness explanation</h2><div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">{[["Telemetry health", selected.score >= 85 ? "25/25" : "18/25"], ["Safety compliance", selected.score >= 75 ? "22/25" : "14/25"], ["Staff readiness", "25/25"], ["Maintenance status", selected.score >= 85 ? "23/25" : "15/25"]].map(([label,value]) => <div key={label} className="rounded-xl bg-ink-50 p-3"><p className="text-[10px] font-bold uppercase text-ink-500">{label}</p><p className="mt-1 text-lg font-extrabold text-ink-900">{value}</p></div>)}</div><div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900"><strong>Why not 100%:</strong> {lowReadiness ? "Fire extinguisher inspection overdue, pressure sensor calibration pending, and one operator certification expired." : "Maintenance completion and audit documentation remain pending."}</div></Card><Card className={`p-5 ${lowReadiness ? "border-red-200 bg-red-50" : "border-brand-200 bg-brand-50"}`}><p className="text-xs font-bold uppercase tracking-wide">Risk level</p><p className="mt-2 text-xl font-extrabold">{risk}</p><p className="mt-2 text-xs">{lowReadiness ? "Critical findings require immediate action." : "Station is safe with advisory actions pending."}</p></Card></div>
 
-      <div className="grid gap-5 lg:grid-cols-3"><Card className="p-5 lg:col-span-2"><h2 className="font-bold text-ink-900">Actions required</h2><div className="mt-4 space-y-2">{[["Calibrate pressure sensor #3", "+10 points", "Mandatory"], ["Complete daily inspection", "+5 points", "Mandatory"], ["Renew operator certification", "+8 points", "Mandatory"], ["Housekeeping refresh", "+2 points", "Advisory"]].map(([action,impact,type]) => <div key={action} className="flex items-center justify-between rounded-xl border border-ink-100 p-3 text-sm"><span><CheckCircle2 className="mr-2 inline h-4 w-4 text-amber-600" />{action}</span><span className="text-xs font-bold text-ink-600">{type} · {impact}</span></div>)}</div></Card><Card className="p-5"><h2 className="font-bold text-ink-900">Readiness forecast</h2><p className="mt-3 text-2xl font-extrabold text-amber-700">{selected.score}% → {Math.max(42, selected.score - 7)}%</p><p className="mt-2 text-xs text-ink-600">Projected in 7 days if pending maintenance is not completed.</p><p className="mt-4 text-xs font-bold text-red-700">What if fire inspection is missed? → PNGRB observation risk</p></Card></div>
+      <div className="grid gap-5 lg:grid-cols-3"><Card className="p-5 lg:col-span-2"><h2 className="font-bold text-ink-900">Actions required · {selected.name}</h2><p className="mt-1 text-xs text-ink-500">Completing an action immediately updates this station&rsquo;s readiness index.</p><div className="mt-4 space-y-2">{([["Calibrate pressure sensor #3", 10, "Mandatory"], ["Complete daily inspection", 5, "Mandatory"], ["Renew operator certification", 8, "Mandatory"], ["Housekeeping refresh", 2, "Advisory"]] as const).map(([action, points, type]) => { const done = doneActions.includes(`${selected.name}:${action}`); return <div key={action} className={`flex flex-wrap items-center justify-between gap-2 rounded-xl border p-3 text-sm ${done ? "border-brand-200 bg-brand-50/60" : "border-ink-100"}`}><span className={done ? "text-brand-800" : ""}><CheckCircle2 className={`mr-2 inline h-4 w-4 ${done ? "text-brand-600" : "text-amber-600"}`} />{action}</span><span className="flex items-center gap-2 text-xs font-bold text-ink-600">{type} · +{points} points{done ? <span className="text-brand-700">Completed</span> : <button onClick={() => completeAction(action, points)} className="rounded-lg bg-ink-900 px-2.5 py-1.5 font-bold text-white hover:bg-ink-800">Mark complete</button>}</span></div>; })}</div></Card><Card className="p-5"><h2 className="font-bold text-ink-900">Readiness forecast</h2><p className="mt-3 text-2xl font-extrabold text-amber-700">{selected.score}% → {Math.max(42, selected.score - 7)}%</p><p className="mt-2 text-xs text-ink-600">Projected in 7 days if pending maintenance is not completed.</p><p className="mt-4 text-xs font-bold text-red-700">What if fire inspection is missed? → PNGRB observation risk</p></Card></div>
 
       <div className="grid gap-5 lg:grid-cols-3"><Card className="p-5"><h2 className="font-bold text-ink-900">Equipment health</h2><div className="mt-4 space-y-2 text-xs">{[["Compressor A","Healthy"],["Dispenser 3","Attention required"],["Gas detector","Healthy"],["Pressure sensor","Calibration due"]].map(([item,status]) => <div key={item} className="flex justify-between rounded-lg bg-ink-50 p-2.5"><span>{item}</span><strong>{status}</strong></div>)}</div></Card><Card className="p-5"><h2 className="font-bold text-ink-900">Compliance status</h2><div className="mt-4 space-y-3">{[["PNGRB","98%"],["Internal SOP","93%"],["Audit preparedness","95%"]].map(([item,score]) => <div key={item} className="flex justify-between text-sm"><span>{item}</span><strong className="text-brand-700">{score}</strong></div>)}</div></Card><Card className="p-5"><h2 className="font-bold text-ink-900">GA readiness heatmap</h2><div className="mt-4 space-y-2">{stations.map((station) => <div key={station.name} className="flex justify-between rounded-lg bg-ink-50 p-2 text-xs"><span>{station.name.split("·").pop()}</span><strong className={station.score < 75 ? "text-red-600" : station.score < 85 ? "text-amber-600" : "text-brand-700"}>{station.score}</strong></div>)}</div></Card></div>
 
