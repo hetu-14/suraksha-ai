@@ -6,6 +6,7 @@ import Typewriter from "@/components/Typewriter";
 import CountUp from "@/components/CountUp";
 import { DonutChart, TrendChart } from "@/components/Charts";
 import { useLocalWorkspaceState } from "@/lib/useLocalWorkspaceState";
+import { readLiveIncident, liveIncidentKey } from "@/lib/ops";
 import OperatorHandoff, { type HandoffEntry } from "@/components/OperatorHandoff";
 import {
   Siren, Timer, Truck, CheckCircle2, MapPin, Video, ShieldAlert,
@@ -13,7 +14,7 @@ import {
 } from "lucide-react";
 
 type CaseStatus = "AI guiding" | "Acknowledged" | "Dispatched" | "Resolved";
-type EmergencyCase = { id: string; area: string; severity: "High" | "Medium"; age: number; status: CaseStatus; crew?: string };
+type EmergencyCase = { id: string; area: string; severity: "High" | "Medium"; age: number; status: CaseStatus; crew?: string; source?: "customer-app" };
 type CCTVAle = { id: string; cam: string; type: string; ts: string; status: "Open" | "Resolved"; severity: "Critical" | "Warning" };
 type Rules = { sosThresholdSec: number; autoDispatch: boolean };
 type Workspace = {
@@ -90,6 +91,46 @@ export default function EmergencyDashboard() {
     const t = window.setTimeout(() => setNotice(""), 3500);
     return () => window.clearTimeout(t);
   }, [notice]);
+
+  // Bridge: SOS sessions started in the Customer App (GasGuard) surface here live.
+  useEffect(() => {
+    function syncLiveIncident() {
+      const live = readLiveIncident();
+      if (!live) return;
+      setWorkspace((w) => {
+        const existing = w.cases.find((c) => c.id === live.id);
+        if (live.status === "active" && !existing) {
+          const incoming: EmergencyCase = {
+            id: live.id,
+            area: `${live.area} · ${live.address}`,
+            severity: "High",
+            age: Math.max(0, Math.round((Date.now() - live.startedAt) / 1000)),
+            status: "AI guiding",
+            source: "customer-app",
+          };
+          return {
+            ...w,
+            cases: [incoming, ...w.cases].slice(0, 6),
+            feed: [`New SOS · ${live.id} · ${live.area} — Customer App voice assistant guiding household`, ...w.feed].slice(0, 6),
+          };
+        }
+        if (live.status === "resolved" && existing && existing.status !== "Resolved") {
+          return {
+            ...w,
+            cases: w.cases.map((c) => (c.id === live.id ? { ...c, status: "Resolved" as CaseStatus } : c)),
+            feed: [`Case ${live.id} closed — household reported safe`, ...w.feed].slice(0, 6),
+          };
+        }
+        return w;
+      });
+    }
+    syncLiveIncident();
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === liveIncidentKey) syncLiveIncident();
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, [setWorkspace]);
 
   useEffect(() => {
     const t = setInterval(() => {
@@ -282,7 +323,14 @@ export default function EmergencyDashboard() {
                 {visibleCases.map((c) => (
                   <tr key={c.id} className={c.status === "AI guiding" ? "bg-red-50/50" : ""}>
                     <td className="px-5 py-3">
-                      <div className="font-semibold text-ink-800">{c.id}</div>
+                      <div className="font-semibold text-ink-800 flex items-center gap-2">
+                        {c.id}
+                        {c.source === "customer-app" && (
+                          <span className="text-[10px] font-bold uppercase tracking-wide text-red-700 bg-red-100 border border-red-200 rounded-full px-2 py-0.5">
+                            Customer App
+                          </span>
+                        )}
+                      </div>
                       <div className="text-xs text-ink-500 flex items-center gap-1">
                         <MapPin className="w-3 h-3 text-ink-400" /> {c.area} · {c.age}s ago
                       </div>
