@@ -4,9 +4,10 @@ import { useState, useEffect } from "react";
 import { Card, Kpi, SectionTitle, Badge } from "@/components/ui";
 import CountUp from "@/components/CountUp";
 import Typewriter from "@/components/Typewriter";
-import { Monitor, ShieldAlert, Activity, Heart, Thermometer, Wind, Zap } from "lucide-react";
+import { Toast, useToast } from "@/components/Toast";
+import { Monitor, Activity, Thermometer, Truck, Zap } from "lucide-react";
 
-type RegionStatus = { name: string; pressure: number; flow: number; complaints: number; status: "Healthy" | "Attention" | "Critical" };
+type RegionStatus = { name: string; pressure: number; flow: number; complaints: number; status: "Healthy" | "Attention" | "Critical"; crewEnRoute?: boolean };
 
 export default function CommandCenter() {
   const [regions, setRegions] = useState<RegionStatus[]>([
@@ -25,6 +26,14 @@ export default function CommandCenter() {
     "09:10 - Pressure drop warning resolved in Naroda",
     "09:05 - Operator Shift changed (Duty Head: A. Sharma)"
   ]);
+  const toast = useToast();
+
+  function dispatchRegulatorCheck(name: string) {
+    const timestamp = new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    setRegions((prev) => prev.map((r) => (r.name === name ? { ...r, crewEnRoute: true } : r)));
+    setFeed((prev) => [`${timestamp} - Regulator inspection crew dispatched to ${name}`, ...prev].slice(0, 5));
+    toast.show(`Regulator inspection crew dispatched to ${name}. ETA 25 minutes.`);
+  }
 
   useEffect(() => {
     const t = setInterval(() => {
@@ -56,8 +65,11 @@ export default function CommandCenter() {
     return () => clearInterval(t);
   }, []);
 
+  const attention = regions.filter((r) => r.status !== "Healthy").length;
+
   return (
     <div className="space-y-6 reveal">
+      <Toast message={toast.message} onClose={toast.clear} />
       {/* Header Banner */}
       <div className="rounded-2xl bg-gradient-to-br from-ink-900 via-ink-900 to-indigo-900 text-white p-6 relative overflow-hidden shadow-soft">
         <div className="floaty absolute -right-10 -top-10 w-56 h-56 bg-indigo-500/20 rounded-full blur-3xl" />
@@ -74,8 +86,8 @@ export default function CommandCenter() {
 
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 anim-fade-up">
-        <Kpi label="Monitored Zones" value="8 / 8" icon={<Monitor className="w-4 h-4 text-indigo-500" />} />
-        <Kpi label="Active Operations" value="Nominal" accent="text-brand-600" icon={<Activity className="w-4 h-4" />} />
+        <Kpi label="Monitored Zones" value={`${regions.length} / ${regions.length}`} icon={<Monitor className="w-4 h-4 text-indigo-500" />} />
+        <Kpi label="Active Operations" value={attention === 0 ? "Nominal" : `${attention} need attention`} accent={attention === 0 ? "text-brand-600" : "text-amber-600"} icon={<Activity className="w-4 h-4" />} />
         <Kpi label="Supply Uptime (MTD)" value="99.97%" icon={<Zap className="w-4 h-4 text-indigo-500" />} />
         <Kpi label="Atmosphere temp" value="31°C" icon={<Thermometer className="w-4 h-4" />} />
       </div>
@@ -100,6 +112,22 @@ export default function CommandCenter() {
                     </span>
                   </div>
 
+                  {r.status !== "Healthy" && (
+                    <div className="mt-3">
+                      {r.crewEnRoute ? (
+                        <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-sky-700 bg-sky-50 border border-sky-200 rounded-lg px-2.5 py-1.5">
+                          <Truck className="w-3.5 h-3.5" /> Regulator crew en route
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => dispatchRegulatorCheck(r.name)}
+                          className="inline-flex items-center gap-1.5 text-[11px] font-bold text-white bg-amber-600 hover:bg-amber-700 rounded-lg px-2.5 py-1.5 transition-colors"
+                        >
+                          <Truck className="w-3.5 h-3.5" /> Dispatch regulator check
+                        </button>
+                      )}
+                    </div>
+                  )}
                   <div className="grid grid-cols-3 gap-2 mt-4 text-xs">
                     <div>
                       <span className="block text-ink-500">Pressure</span>
