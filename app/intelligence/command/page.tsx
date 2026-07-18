@@ -70,11 +70,10 @@ export default function CommandCenter() {
     <div className="space-y-6 reveal">
       <Toast message={toast.message} onClose={toast.clear} />
       {/* Header Banner */}
-      <div className="rounded-2xl bg-gradient-to-br from-ink-900 via-ink-900 to-indigo-900 text-white p-6 relative overflow-hidden shadow-soft">
-        <div className="floaty absolute -right-10 -top-10 w-56 h-56 bg-indigo-500/20 rounded-full blur-3xl" />
+      <div className="rounded-xl bg-ink-950 text-white p-6 relative overflow-hidden ">
         <div className="relative">
           <p className="text-indigo-300 text-xs font-semibold uppercase tracking-widest">Business Intelligence Suite</p>
-          <h1 className="text-2xl sm:text-3xl font-extrabold mt-1">
+          <h1 className="text-2xl sm:text-3xl font-bold mt-1">
             Operations Command Center
           </h1>
           <p className="text-ink-300 mt-2 text-sm max-w-2xl">
@@ -102,7 +101,7 @@ export default function CommandCenter() {
               const dot = r.status === "Healthy" ? "bg-brand-500" : r.status === "Attention" ? "bg-amber-500" : "bg-red-500 animate-ping";
 
               return (
-                <div key={idx} className={`p-4 rounded-2xl border ${bg} ${border} flex flex-col justify-between`}>
+                <div key={idx} className={`p-4 rounded-xl border ${bg} ${border} flex flex-col justify-between`}>
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-sm text-ink-800">{r.name}</span>
                     <span className="flex items-center gap-1.5">
@@ -130,15 +129,15 @@ export default function CommandCenter() {
                   <div className="grid grid-cols-3 gap-2 mt-4 text-xs">
                     <div>
                       <span className="block text-ink-500">Pressure</span>
-                      <span className="font-extrabold text-ink-800 tabular-nums">{r.pressure} bar</span>
+                      <span className="font-bold text-ink-800 tabular-nums">{r.pressure} bar</span>
                     </div>
                     <div>
                       <span className="block text-ink-500">Flow Rate</span>
-                      <span className="font-extrabold text-ink-800 tabular-nums">{r.flow} SCM/h</span>
+                      <span className="font-bold text-ink-800 tabular-nums">{r.flow} SCM/h</span>
                     </div>
                     <div>
                       <span className="block text-ink-500">Complaints</span>
-                      <span className={`font-extrabold tabular-nums ${r.complaints > 1 ? "text-amber-700" : "text-ink-800"}`}>{r.complaints}</span>
+                      <span className={`font-bold tabular-nums ${r.complaints > 1 ? "text-amber-700" : "text-ink-800"}`}>{r.complaints}</span>
                     </div>
                   </div>
                 </div>

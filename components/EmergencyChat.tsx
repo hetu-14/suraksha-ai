@@ -464,7 +464,7 @@ export default function EmergencyChat() {
   return (
     <>
       <Card className="overflow-hidden flex flex-col h-[600px]">
-        <div className="bg-gradient-to-r from-ink-950 to-ink-900 text-white p-3 flex items-center justify-between gap-2">
+        <div className="bg-ink-950 text-white p-3 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="h-9 w-9 rounded-full bg-brand-500/20 grid place-items-center shrink-0"><Bot className="w-4 h-4 text-brand-300" /></div>
             <div className="min-w-0">
@@ -509,7 +509,7 @@ export default function EmergencyChat() {
         <div ref={boxRef} className="flex-1 overflow-y-auto p-4 space-y-3 bg-ink-50/40">
           {msgs.map((m, i) => (
             <div key={i} className={`flex ${m.role === "bot" ? "justify-start" : "justify-end"}`}>
-              <div className={`px-4 py-2.5 max-w-[86%] text-sm leading-relaxed shadow-sm rounded-2xl ${m.role === "bot" ? "bg-white border border-ink-200 text-ink-800 rounded-tl-md" : "bg-brand-600 text-white rounded-tr-md"}`}>
+              <div className={`px-4 py-2.5 max-w-[86%] text-sm leading-relaxed shadow-sm rounded-xl ${m.role === "bot" ? "bg-white border border-ink-200 text-ink-800 rounded-tl-md" : "bg-brand-600 text-white rounded-tr-md"}`}>
                 {m.role === "bot" && <span className="text-[10px] uppercase tracking-wider text-brand-600 block mb-0.5">{ui.assistant}</span>}
                 {m.text}
                 {m.call && (
@@ -559,13 +559,13 @@ function CallDialog({ num, lang, onClose }: { num: CallNo; lang: Lang; onClose: 
   const ui = UI[lang];
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-ink-950/60 backdrop-blur-sm p-4 animate-fade" onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-xs bg-white rounded-3xl shadow-2xl overflow-hidden pop">
+      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-xs bg-white rounded-xl shadow-2xl overflow-hidden pop">
         <div className="bg-ink-950 text-white pt-7 pb-6 text-center relative">
           <button onClick={onClose} className="absolute top-3 right-3 p-1.5 rounded-lg hover:bg-white/10 text-ink-400"><X className="w-4 h-4" /></button>
           <div className="mx-auto h-16 w-16 rounded-full bg-brand-500/20 grid place-items-center mb-3 animate-ring"><PhoneCall className="w-7 h-7 text-brand-300" /></div>
           <div className="text-sm text-ink-400">{ui.calling}</div>
           <div className="text-lg font-bold px-3">{SERVICE[num][lang]}</div>
-          <div className="text-3xl font-extrabold tracking-wider mt-1">{num}</div>
+          <div className="text-3xl font-bold tracking-wider mt-1">{num}</div>
         </div>
         <div className="p-4 flex gap-3">
           <button onClick={onClose} className="flex-1 rounded-xl border border-ink-200 text-ink-600 font-semibold py-3 text-sm hover:bg-ink-50">{ui.cancel}</button>

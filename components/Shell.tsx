@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, ReactNode } from "react";
 import {
-  ShieldCheck, LayoutDashboard, PhoneCall, Megaphone, Timer, ShieldAlert,
+  LayoutDashboard, PhoneCall, Megaphone, Timer, ShieldAlert,
   ScanEye, ReceiptText, Menu, Bell, LogOut, ChevronRight, Video, Siren,
   Route, HeartPulse, MessageSquare, Award, Building2, Wrench, HardHat,
   Monitor, TrendingUp, Activity, Flame, CalendarDays, Check,
@@ -62,15 +62,14 @@ const NOTIFICATIONS: Record<SuiteRole, Notif[]> = {
 const SUITE_CONFIG: Record<SuiteRole, {
   label: string; sub: string; consoleName: string; accent: string;
   activeBg: string; activeText: string; badgeBg: string; badgeText: string;
-  headerBreadcrumb: string; avatarInitials: string; avatarFrom: string; avatarTo: string;
+  headerBreadcrumb: string; avatarInitials: string; avatarBg: string;
   liveBg: string; liveText: string; liveBorder: string; liveDot: string; livePing: string;
 }> = {
   customer: {
     label: "Customer", sub: "Riddhi Mehta", consoleName: "Customer Experience",
     accent: "text-brand-400", activeBg: "bg-brand-500/15", activeText: "text-brand-300",
     badgeBg: "bg-red-500/20", badgeText: "text-red-300",
-    headerBreadcrumb: "My Account", avatarInitials: "RM",
-    avatarFrom: "from-brand-600", avatarTo: "to-brand-800",
+    headerBreadcrumb: "My Account", avatarInitials: "RM", avatarBg: "bg-brand-600",
     liveBg: "bg-brand-50", liveText: "text-brand-700", liveBorder: "border-brand-200",
     liveDot: "bg-brand-500", livePing: "bg-brand-400",
   },
@@ -78,8 +77,7 @@ const SUITE_CONFIG: Record<SuiteRole, {
     label: "Operations", sub: "Control Room", consoleName: "Safety & Operations",
     accent: "text-amber-400", activeBg: "bg-amber-500/15", activeText: "text-amber-300",
     badgeBg: "bg-red-500/20", badgeText: "text-red-300",
-    headerBreadcrumb: "Operations", avatarInitials: "OP",
-    avatarFrom: "from-amber-600", avatarTo: "to-amber-800",
+    headerBreadcrumb: "Operations", avatarInitials: "OP", avatarBg: "bg-amber-700",
     liveBg: "bg-amber-50", liveText: "text-amber-700", liveBorder: "border-amber-200",
     liveDot: "bg-amber-500", livePing: "bg-amber-400",
   },
@@ -87,8 +85,7 @@ const SUITE_CONFIG: Record<SuiteRole, {
     label: "Management", sub: "Intelligence Hub", consoleName: "Business Intelligence",
     accent: "text-indigo-400", activeBg: "bg-indigo-500/15", activeText: "text-indigo-300",
     badgeBg: "bg-red-500/20", badgeText: "text-red-300",
-    headerBreadcrumb: "Intelligence", avatarInitials: "MG",
-    avatarFrom: "from-indigo-600", avatarTo: "to-indigo-800",
+    headerBreadcrumb: "Intelligence", avatarInitials: "MG", avatarBg: "bg-indigo-600",
     liveBg: "bg-indigo-50", liveText: "text-indigo-700", liveBorder: "border-indigo-200",
     liveDot: "bg-indigo-500", livePing: "bg-indigo-400",
   },
@@ -143,17 +140,12 @@ export default function Shell({
       <aside
         className={`${open ? "flex" : "hidden"} lg:flex w-64 shrink-0 flex-col bg-ink-950 text-ink-300 fixed h-screen z-40`}
       >
-        <div className="px-5 py-5 flex items-center gap-3 border-b border-white/5">
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 grid place-items-center shadow-lg">
-            <ShieldCheck className="w-5 h-5 text-white" />
+        <div className="px-5 py-5 border-b border-white/5">
+          <div className="text-white font-bold text-[17px] tracking-tight leading-none">
+            SuRaksha<span className={cfg.accent}> AI</span>
           </div>
-          <div>
-            <div className="text-white font-extrabold tracking-tight leading-none">
-              SuRaksha<span className={cfg.accent}> AI</span>
-            </div>
-            <div className="text-[10px] uppercase tracking-widest text-ink-500 mt-1">
-              {cfg.consoleName}
-            </div>
+          <div className="text-[11px] uppercase tracking-[0.14em] text-ink-500 mt-1.5">
+            {cfg.consoleName}
           </div>
         </div>
 
@@ -166,7 +158,7 @@ export default function Shell({
                 key={item.href}
                 href={item.href}
                 onClick={() => setOpen(false)}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition ${
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition ${
                   active ? `${cfg.activeBg} ${cfg.activeText}` : "hover:bg-white/5"
                 }`}
               >
@@ -185,11 +177,11 @@ export default function Shell({
         </nav>
 
         <div className="p-3 border-t border-white/5">
-          <div className="rounded-xl bg-white/5 p-3 text-xs mb-2">
+          <div className="rounded-lg bg-white/5 p-3 text-xs mb-2">
             <div className={`${cfg.accent} font-semibold`}>PNGRB-aligned</div>
             <p className="text-ink-500 mt-1 leading-relaxed">Consumer Protection Regulations, 2025.</p>
           </div>
-          <Link href="/" className="flex items-center gap-2 px-3 py-2 rounded-xl text-ink-400 hover:bg-white/5 hover:text-white transition">
+          <Link href="/" className="flex items-center gap-2 px-3 py-2 rounded-lg text-ink-400 hover:bg-white/5 hover:text-white transition">
             <LogOut className="w-4 h-4" /> Switch suite
           </Link>
           <p className="text-[10px] text-ink-600 text-center mt-2">Torrent Gas • Spark Tank 2026</p>
@@ -233,7 +225,7 @@ export default function Shell({
                   <div
                     role="dialog"
                     aria-label="Notifications"
-                    className="absolute right-0 top-12 z-50 w-80 rounded-2xl border border-ink-100 bg-white shadow-xl overflow-hidden"
+                    className="absolute right-0 top-12 z-50 w-80 rounded-xl border border-ink-200 bg-white shadow-float overflow-hidden"
                   >
                     <div className="flex items-center justify-between px-4 py-3 border-b border-ink-100">
                       <span className="text-sm font-bold text-ink-900">
@@ -278,7 +270,7 @@ export default function Shell({
                 )}
               </div>
               <div className="flex items-center gap-2 pl-1">
-                <div className={`h-9 w-9 rounded-full bg-gradient-to-br ${cfg.avatarFrom} ${cfg.avatarTo} grid place-items-center text-white text-sm font-semibold`}>
+                <div className={`h-9 w-9 rounded-full ${cfg.avatarBg} grid place-items-center text-white text-sm font-semibold`}>
                   {cfg.avatarInitials}
                 </div>
                 <div className="hidden sm:block leading-tight">

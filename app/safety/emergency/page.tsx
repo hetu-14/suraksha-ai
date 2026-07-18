@@ -246,12 +246,11 @@ export default function EmergencyDashboard() {
       )}
 
       {/* Header Banner */}
-      <div className="rounded-2xl bg-gradient-to-br from-ink-900 via-ink-900 to-amber-900 text-white p-6 relative overflow-hidden shadow-soft">
-        <div className="floaty absolute -right-10 -top-10 w-56 h-56 bg-amber-500/20 rounded-full blur-3xl" />
+      <div className="rounded-xl bg-ink-950 text-white p-6 relative overflow-hidden ">
         <div className="relative flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
           <div>
             <p className="text-amber-300 text-xs font-semibold uppercase tracking-widest">Safety &amp; Operations Console</p>
-            <h1 className="text-2xl sm:text-3xl font-extrabold mt-1">
+            <h1 className="text-2xl sm:text-3xl font-bold mt-1">
               Emergency Dashboard
             </h1>
             <p className="text-ink-300 mt-2 text-sm max-w-2xl">

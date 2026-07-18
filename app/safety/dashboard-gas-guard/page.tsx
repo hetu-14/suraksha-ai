@@ -199,15 +199,14 @@ export default function DashboardGasGuard() {
   return <div className="space-y-6 reveal">
     {notice && <div className="fixed z-50 bottom-5 right-5 max-w-sm rounded-xl bg-ink-900 text-white shadow-xl px-4 py-3 text-sm flex gap-2 items-start"><CheckCircle2 className="w-4 h-4 text-brand-400 shrink-0 mt-0.5" />{notice}<button onClick={() => setNotice("")} aria-label="Close notification"><X className="w-4 h-4 text-ink-300" /></button></div>}
 
-    {criticalZones.length > 0 && <div className="rounded-2xl bg-red-600 text-white p-4 flex flex-wrap items-center justify-between gap-3 shadow-lg shadow-red-600/30">
+    {criticalZones.length > 0 && <div className="rounded-xl bg-red-600 text-white p-4 flex flex-wrap items-center justify-between gap-3 shadow-lg shadow-red-600/30">
       <div className="flex items-center gap-3"><AlertTriangle className="w-6 h-6 animate-pulse shrink-0" /><div><p className="font-bold">{criticalZones.length} CRITICAL ZONE{criticalZones.length > 1 ? "S" : ""} DETECTED</p><p className="text-red-100 text-xs">Field response is required before the incident can be closed.</p></div></div>
       <button onClick={() => { setFilter("Critical"); setSelectedId(criticalZones[0].id); }} className="text-xs font-bold rounded-lg bg-white text-red-700 px-3 py-2 hover:bg-red-50">Review critical zone</button>
     </div>}
 
-    <div className="rounded-2xl bg-gradient-to-br from-ink-900 via-ink-900 to-red-950 text-white p-6 relative overflow-hidden shadow-soft">
-      <div className="floaty absolute -right-10 -top-10 w-56 h-56 bg-red-500/20 rounded-full blur-3xl" />
+    <div className="rounded-xl bg-ink-950 text-white p-6 relative overflow-hidden ">
       <div className="relative flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-        <div><p className="text-red-300 text-xs font-semibold uppercase tracking-widest">CGD Grid Monitoring</p><h1 className="text-2xl sm:text-3xl font-extrabold mt-1">Gas-Guard Dashboard</h1><p className="text-ink-300 mt-2 text-sm max-w-2xl">Real-time gas safety monitoring, incident triage, isolation control, and field-response coordination across the distribution grid.</p></div>
+        <div><p className="text-red-300 text-xs font-semibold uppercase tracking-widest">CGD Grid Monitoring</p><h1 className="text-2xl sm:text-3xl font-bold mt-1">Gas-Guard Dashboard</h1><p className="text-ink-300 mt-2 text-sm max-w-2xl">Real-time gas safety monitoring, incident triage, isolation control, and field-response coordination across the distribution grid.</p></div>
         <div className="flex flex-wrap gap-2 lg:justify-end"><button onClick={() => setLive((value) => !value)} className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold hover:bg-white/20">{live ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}{live ? "Pause feed" : "Resume feed"}</button><button onClick={downloadReport} className="inline-flex items-center gap-2 rounded-lg bg-white text-ink-800 px-3 py-2 text-xs font-semibold hover:bg-ink-100"><Download className="w-3.5 h-3.5" />Export report</button></div>
       </div>
       <div className="relative mt-5 inline-flex items-center gap-2 text-xs text-ink-200"><span className={`w-2 h-2 rounded-full ${live ? "bg-brand-400 animate-pulse" : "bg-amber-400"}`} />{live ? "Live telemetry updates every 3.5 seconds" : "Telemetry feed paused"}<span className="text-ink-500">•</span><span>{openIncidents.length} active incident{openIncidents.length === 1 ? "" : "s"}</span></div>

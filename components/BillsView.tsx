@@ -52,7 +52,7 @@ export default function BillsView({ customers, live }: { customers: CustomerWith
 
   if (!customer || !bill || !explanation) {
     return (
-      <div className="p-8 text-center text-ink-500 bg-white rounded-2xl border border-ink-100">
+      <div className="p-8 text-center text-ink-500 bg-white rounded-xl border border-ink-100">
         No billing records found.
       </div>
     );
@@ -71,7 +71,7 @@ export default function BillsView({ customers, live }: { customers: CustomerWith
       {/* header + account switcher */}
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
-          <div className="h-11 w-11 rounded-2xl bg-brand-100 grid place-items-center shrink-0">
+          <div className="h-11 w-11 rounded-xl bg-brand-100 grid place-items-center shrink-0">
             <ReceiptText className="w-5 h-5 text-brand-600" />
           </div>
           <div>
@@ -86,7 +86,7 @@ export default function BillsView({ customers, live }: { customers: CustomerWith
       </div>
 
       {/* logged-in account summary */}
-      <div className="bg-white rounded-2xl shadow-soft border border-ink-100 p-4 flex items-center gap-3">
+      <div className="bg-white rounded-xl  border border-ink-100 p-4 flex items-center gap-3">
         <div className="h-10 w-10 rounded-xl bg-brand-100 grid place-items-center text-brand-700 font-bold">
           {customer.name.split(" ").map((w) => w[0]).slice(0, 2).join("")}
         </div>
@@ -99,7 +99,7 @@ export default function BillsView({ customers, live }: { customers: CustomerWith
 
       <div className="grid lg:grid-cols-3 gap-5">
         {/* bill list */}
-        <div className="bg-white rounded-2xl shadow-soft border border-ink-100 overflow-hidden">
+        <div className="bg-white rounded-xl  border border-ink-100 overflow-hidden">
           <div className="p-4 border-b border-ink-100 flex items-center gap-2">
             <ReceiptText className="w-4 h-4 text-brand-600" />
             <h3 className="font-bold text-ink-900">Your bills</h3>
@@ -131,12 +131,11 @@ export default function BillsView({ customers, live }: { customers: CustomerWith
         {/* main */}
         <div className="lg:col-span-2 space-y-5">
           {/* hero */}
-          <div className="rounded-2xl bg-gradient-to-br from-ink-900 to-brand-900 text-white p-6 shadow-soft relative overflow-hidden">
-            <div className="absolute -right-8 -top-8 w-48 h-48 bg-brand-500/20 rounded-full blur-3xl" />
+          <div className="rounded-xl bg-ink-950 text-white p-6  relative overflow-hidden">
             <div className="relative flex items-start justify-between flex-wrap gap-4">
               <div>
                 <div className="text-xs text-brand-300 flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" /> {bill.cycleLabel}</div>
-                <div className="text-4xl sm:text-5xl font-extrabold mt-1 tabular-nums">{inr(animAmount)}</div>
+                <div className="text-4xl sm:text-5xl font-bold mt-1 tabular-nums">{inr(animAmount)}</div>
                 <div className="flex items-center gap-2 mt-2.5">
                   <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${bill.status === "paid" ? "bg-brand-400/20 text-brand-200" : "bg-amber-400/20 text-amber-100"}`}>
                     {bill.status === "paid" ? "Paid" : "Due"}
@@ -173,7 +172,7 @@ export default function BillsView({ customers, live }: { customers: CustomerWith
         onAsk={() => setAskOpen(true)}
         onDownload={() => downloadBillPdf(customer, bill)}
         usageHistory={
-          <div className="bg-white rounded-2xl shadow-soft border border-ink-100 p-5">
+          <div className="bg-white rounded-xl  border border-ink-100 p-5">
             <h3 className="font-bold text-ink-900 mb-3">Consumption history (SCM)</h3>
             <div className="h-[260px] w-full">
               <ResponsiveContainer width="100%" height="100%">
@@ -207,14 +206,14 @@ function CompareChip({ label, pct, sub }: { label: string; pct: number | null; s
   const color = flat ? "text-ink-500" : up ? "text-red-600" : "text-brand-600";
   const chip = flat ? "bg-ink-100 text-ink-400" : up ? "bg-red-50 text-red-500" : "bg-brand-50 text-brand-600";
   return (
-    <div className="bg-white rounded-2xl shadow-soft border border-ink-100 p-4 lift">
+    <div className="bg-white rounded-xl  border border-ink-100 p-4 lift">
       <div className="flex items-center justify-between">
         <span className="text-xs text-ink-500">{label}</span>
         <span className={`h-6 w-6 rounded-lg grid place-items-center ${chip}`}>
           {flat ? <Minus className="w-3.5 h-3.5" /> : up ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
         </span>
       </div>
-      <div className={`text-2xl font-extrabold mt-2 tabular-nums ${color}`}>{pct === null ? "—" : `${Math.abs(pct)}%`}</div>
+      <div className={`text-2xl font-bold mt-2 tabular-nums ${color}`}>{pct === null ? "—" : `${Math.abs(pct)}%`}</div>
       {sub && <div className="text-[11px] text-ink-400 mt-0.5">{sub}</div>}
     </div>
   );

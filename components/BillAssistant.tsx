@@ -310,7 +310,7 @@ export default function BillAssistant({ explanation, bill, onClose }: { explanat
           <div ref={boxRef} className="flex-1 overflow-y-auto p-4 space-y-3 bg-ink-50/40">
             {msgs.map((m, i) => (
               <div key={i} className={`flex ${m.role === "bot" ? "justify-start" : "justify-end"}`}>
-                <div className={`px-3.5 py-2 max-w-[85%] text-sm shadow-sm rounded-2xl ${m.role === "bot" ? "bg-white border border-ink-200 text-ink-800 rounded-tl-sm" : "bg-brand-600 text-white rounded-tr-sm"}`}>
+                <div className={`px-3.5 py-2 max-w-[85%] text-sm shadow-sm rounded-xl ${m.role === "bot" ? "bg-white border border-ink-200 text-ink-800 rounded-tl-sm" : "bg-brand-600 text-white rounded-tr-sm"}`}>
                   {m.role === "bot" && <span className="text-[10px] uppercase tracking-wider text-brand-600 block mb-0.5">Assistant</span>}
                   {m.text}
                 </div>

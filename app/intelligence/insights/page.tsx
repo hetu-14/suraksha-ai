@@ -79,11 +79,10 @@ export default function OperationalInsights() {
       <Toast message={toast.message} onClose={toast.clear} />
 
       {/* Header Banner */}
-      <div className="rounded-2xl bg-gradient-to-br from-ink-900 via-ink-900 to-indigo-900 text-white p-6 relative overflow-hidden shadow-soft">
-        <div className="floaty absolute -right-10 -top-10 w-56 h-56 bg-indigo-500/20 rounded-full blur-3xl" />
+      <div className="rounded-xl bg-ink-950 text-white p-6 relative overflow-hidden ">
         <div className="relative">
           <p className="text-indigo-300 text-xs font-semibold uppercase tracking-widest">Business Intelligence Suite</p>
-          <h1 className="text-2xl sm:text-3xl font-extrabold mt-1">Operational Insights</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold mt-1">Operational Insights</h1>
           <p className="text-ink-300 mt-2 text-sm max-w-2xl">
             AI-generated recommendations with an approval workflow — every approved insight becomes a routed work order,
             every deferral is recorded for the next review.

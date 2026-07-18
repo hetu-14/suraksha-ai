@@ -60,14 +60,12 @@ export default function IntelligenceHome() {
   return (
     <div className="space-y-6 reveal">
       {/* Greeting banner */}
-      <div className="rounded-2xl bg-gradient-to-br from-ink-900 via-ink-900 to-indigo-900 text-white p-6 sm:p-7 relative overflow-hidden shadow-soft">
-        <div className="floaty absolute -right-10 -top-10 w-56 h-56 bg-indigo-500/20 rounded-full blur-3xl" />
-        <div className="floaty-2 absolute -left-16 -bottom-16 w-48 h-48 bg-indigo-400/10 rounded-full blur-3xl" />
+      <div className="rounded-xl bg-ink-950 text-white p-6 sm:p-7 relative overflow-hidden ">
         <div className="relative">
           <p className="text-indigo-300 text-sm font-medium">
             Business Intelligence Hub <span className="font-bold">· executive view</span>
           </p>
-          <h1 className="text-2xl sm:text-3xl font-extrabold mt-1">
+          <h1 className="text-2xl sm:text-3xl font-bold mt-1">
             Data-driven decisions for <span className="text-indigo-300">City Gas Distribution excellence</span>.
           </h1>
           <p className="text-ink-300 mt-2 text-sm max-w-2xl">

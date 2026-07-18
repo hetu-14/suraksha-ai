@@ -64,11 +64,10 @@ export default function SLASentinel() {
     <div className="space-y-6 reveal">
       <Toast message={toast.message} onClose={toast.clear} />
 
-      <header className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-ink-900 via-ink-900 to-violet-950 p-6 text-white shadow-soft">
-        <div className="floaty absolute -right-10 -top-10 h-56 w-56 rounded-full bg-violet-500/20 blur-3xl" />
+      <header className="relative overflow-hidden rounded-xl bg-ink-950 p-6 text-white ">
         <div className="relative">
           <p className="text-xs font-semibold uppercase tracking-widest text-violet-300">CGD compliance decision center</p>
-          <h1 className="mt-1 text-2xl font-extrabold sm:text-3xl">SLA Sentinel</h1>
+          <h1 className="mt-1 text-2xl font-bold sm:text-3xl">SLA Sentinel</h1>
           <p className="mt-2 max-w-2xl text-sm text-ink-300">
             Predict breaches, assign the right team, escalate early, and protect customer trust and compensation exposure.
             This queue is shared live with the Business Intelligence console.
@@ -117,7 +116,7 @@ export default function SLASentinel() {
                     <p className="text-[11px] text-ink-500">{item.consumer} · {item.area} · {item.assigned}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-extrabold text-red-600">
+                    <p className="text-sm font-bold text-red-600">
                       {item.status === "Breached" ? "Breached" : `${Math.max(0, Math.round((item.slaHours - item.elapsedHours) * 60))} min left`}
                     </p>
                     <p className="text-[10px] font-bold text-ink-500">{item.risk}% breach probability</p>
@@ -170,7 +169,7 @@ export default function SLASentinel() {
             </section>
             <section className="rounded-xl border border-brand-200 bg-brand-50 p-4">
               <h3 className="font-bold text-brand-900">AI suggested action</h3>
-              <p className="mt-3 text-sm font-extrabold text-brand-900">Assign {recommendedCrew}</p>
+              <p className="mt-3 text-sm font-bold text-brand-900">Assign {recommendedCrew}</p>
               <p className="mt-1 text-xs text-brand-800">Expected resolution: 2.5 hours · breach risk: {selected.risk}% → 22%</p>
               <div className="mt-4 flex gap-2">
                 <button onClick={assignRecommended} className="flex-1 rounded-lg bg-brand-600 py-2 text-xs font-bold text-white hover:bg-brand-700">Assign crew</button>
@@ -189,7 +188,7 @@ export default function SLASentinel() {
         </Card>
         <Card className={`p-5 ${selected.status === "Breached" || remainingMinutes <= 60 ? "border-red-200 bg-red-50" : "border-amber-200 bg-amber-50"}`}>
           <p className="text-xs font-bold uppercase tracking-wider text-red-700">SLA burn-down timer</p>
-          <p className="mt-2 text-3xl font-extrabold tabular-nums text-red-800">
+          <p className="mt-2 text-3xl font-bold tabular-nums text-red-800">
             {selected.status === "Breached" ? "SLA breached" : `${remainingMinutes} min left`}
           </p>
           <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
@@ -272,7 +271,7 @@ export default function SLASentinel() {
             {[["Assignment", "3 hrs"], ["Field visit", "8 hrs"], ["Resolution", "21 hrs"]].map(([label, value]) => (
               <div key={label} className="rounded-xl bg-ink-50 p-3">
                 <p className="text-[10px] font-bold uppercase tracking-wide text-ink-500">{label}</p>
-                <p className="mt-1 text-lg font-extrabold text-ink-900">{value}</p>
+                <p className="mt-1 text-lg font-bold text-ink-900">{value}</p>
               </div>
             ))}
           </div>
@@ -305,7 +304,7 @@ export default function SLASentinel() {
             ].map(([label, value]) => (
               <div key={label} className="rounded-xl bg-brand-50 p-3">
                 <p className="text-[10px] font-bold uppercase tracking-wide text-brand-700">{label}</p>
-                <p className="mt-1 text-lg font-extrabold text-brand-900">{value}</p>
+                <p className="mt-1 text-lg font-bold text-brand-900">{value}</p>
               </div>
             ))}
           </div>
