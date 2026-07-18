@@ -24,6 +24,13 @@ export default function CustomerHealthScore() {
   const [profile, setProfile] = useState<HealthProfile>(emptyHealthProfile);
   const [connection, setConnection] = useState<ConnectionStatusRecord>(emptyConnectionStatus);
   const [loaded, setLoaded] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!notice) return;
+    const t = window.setTimeout(() => setNotice(null), 4000);
+    return () => window.clearTimeout(t);
+  }, [notice]);
 
   useEffect(() => {
     try {
@@ -64,6 +71,9 @@ export default function CustomerHealthScore() {
   ].filter((item) => item.points !== 0);
 
   function updateProfile(update: Partial<HealthProfile>) {
+    if (update.emergencyContactVerified && !profile.emergencyContactVerified) {
+      setNotice("Emergency contact verified. +3 to your safety readiness.");
+    }
     setProfile((current) => ({ ...current, ...update }));
   }
 
@@ -77,6 +87,8 @@ export default function CustomerHealthScore() {
       <nav aria-label="Health score sections" className="sticky top-3 z-10 flex gap-1 overflow-x-auto rounded-2xl border border-ink-100 bg-white/95 p-1.5 shadow-soft backdrop-blur">
         {([ ["overview", "Overview"], ["details", "Score details"], ["passport", "Safety passport"], ["improve", "Improve score"] ] as const).map(([id, label]) => <button key={id} onClick={() => setActiveTab(id)} className={`shrink-0 rounded-xl px-3.5 py-2 text-sm font-semibold transition ${activeTab === id ? "bg-ink-900 text-white shadow-sm" : "text-ink-500 hover:bg-ink-50 hover:text-ink-900"}`}>{label}</button>)}
       </nav>
+
+      {notice && <div className="flex items-center justify-between gap-3 rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm text-brand-800 anim-fade-up"><span><Check className="w-4 h-4 inline mr-1" />{notice}</span><button onClick={() => setNotice(null)} className="text-xs font-bold">Dismiss</button></div>}
 
       {activeTab === "overview" && <>
         <section className="grid lg:grid-cols-3 gap-5"><Card className="lg:col-span-2 p-5 sm:p-6 bg-gradient-to-br from-brand-50 to-white border-brand-200"><div className="flex flex-wrap items-start justify-between gap-4"><div><span className={`inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider ${readinessTone === "brand" ? "text-brand-700" : "text-amber-700"}`}><ShieldCheck className="w-3.5 h-3.5" /> Overall readiness · {readinessLabel}</span><div className="flex items-end gap-2 mt-2"><span className="text-5xl font-extrabold text-ink-900">{score}</span><span className="text-lg text-ink-500 mb-1">/ 100</span></div><p className="text-sm text-ink-600 mt-2">Inspection valid, no safety alerts, and no active complaints. Next action: <strong>{contactVerified ? "Keep monitoring your safety profile" : "Verify emergency contact"}</strong>.</p></div><div className="rounded-xl bg-white border border-brand-100 p-3 text-xs text-ink-700"><div className="font-bold text-ink-900 mb-2">Readiness signals</div>{["Inspection valid", "No active safety alerts", "No active complaints", contactVerified ? "Emergency contact verified" : "Emergency contact pending"].map((item, index) => <div key={item} className={`flex items-center gap-1.5 mt-1 ${index === 3 && !contactVerified ? "text-amber-700" : ""}`}>{index === 3 && !contactVerified ? <AlertTriangle className="w-3.5 h-3.5" /> : <Check className="w-3.5 h-3.5 text-brand-600" />}{item}</div>)}</div></div></Card><Card className="p-5"><h2 className="font-bold text-ink-900 flex items-center gap-2"><Award className="w-4 h-4 text-amber-500" /> Safety advantages</h2><ul className="mt-4 space-y-2.5 text-sm text-ink-700">{["Valid safety profile", "Emergency ready household", "Preventive inspection tracking", "Reduced household risk", "Safety passport verified"].map((benefit) => <li key={benefit}><Check className="w-4 h-4 inline mr-2 text-brand-600" />{benefit}</li>)}</ul></Card></section>

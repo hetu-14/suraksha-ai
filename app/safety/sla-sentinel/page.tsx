@@ -1,239 +1,59 @@
 "use client";
 
-import { useState } from "react";
-import { Card, Kpi, Badge } from "@/components/ui";
+import { useMemo, useState } from "react";
+import { Badge, Card, Kpi } from "@/components/ui";
 import Typewriter from "@/components/Typewriter";
-import CountUp from "@/components/CountUp";
-import { TrendChart } from "@/components/Charts";
-import {
-  Timer, CheckCircle, AlertTriangle, Clock, TrendingUp,
-  Filter, Download, Search, ChevronDown, Activity,
-  ShieldCheck, Bell, Zap, User, MapPin, Sparkles,
-} from "lucide-react";
+import { useLocalWorkspaceState } from "@/lib/useLocalWorkspaceState";
+import { Activity, AlertTriangle, Bell, Check, CheckCircle2, ChevronRight, Clock, Download, IndianRupee, MapPin, Search, ShieldAlert, Timer, UserRound, UsersRound, Zap } from "lucide-react";
 
-type SLAStatus = "Met" | "At Risk" | "Breached";
-type Priority = "P1" | "P2" | "P3";
+type Status = "Met" | "At Risk" | "Breached" | "Resolved";
+type Ticket = { id: string; type: string; consumer: string; area: string; priority: "P1" | "P2" | "P3"; elapsed: number; sla: number; status: Status; assigned: string; risk: number; reason: string[]; sentiment: "Negative" | "Neutral"; raised: string };
 
-interface SLAItem {
-  id: string;
-  type: string;
-  consumer: string;
-  area: string;
-  priority: Priority;
-  slaHrs: number;
-  elapsedHrs: number;
-  status: SLAStatus;
-  assignedTo: string;
-  raisedAt: string;
-}
-
-const SLA_ITEMS: SLAItem[] = [
-  { id: "SLA-1142", type: "Gas Leak Complaint", consumer: "C-1047 · Rajesh Shah", area: "Bopal", priority: "P1", slaHrs: 2, elapsedHrs: 1.2, status: "Met", assignedTo: "Ramesh Kumar", raisedAt: "Today 09:10 AM" },
-  { id: "SLA-1140", type: "New Connection Install", consumer: "C-4451 · Priya Mehta", area: "Gota", priority: "P2", slaHrs: 48, elapsedHrs: 47.5, status: "At Risk", assignedTo: "Sunil Sharma", raisedAt: "Jul 13 10:00 AM" },
-  { id: "SLA-1139", type: "Meter Fault Complaint", consumer: "C-2831 · Meenal Joshi", area: "Satellite", priority: "P2", slaHrs: 24, elapsedHrs: 26.2, status: "Breached", assignedTo: "Unassigned", raisedAt: "Jul 13 08:30 AM" },
-  { id: "SLA-1137", type: "Safety Inspection Visit", consumer: "C-3341 · Kiran Patel", area: "Naranpura", priority: "P3", slaHrs: 72, elapsedHrs: 14, status: "Met", assignedTo: "Manoj Patel", raisedAt: "Jul 14 02:00 PM" },
-  { id: "SLA-1136", type: "Pressure Irregularity", consumer: "C-0812 · Geeta Nair", area: "Gota", priority: "P1", slaHrs: 4, elapsedHrs: 4.8, status: "Breached", assignedTo: "Unassigned", raisedAt: "Jul 13 04:30 PM" },
-  { id: "SLA-1135", type: "Billing Dispute Callback", consumer: "C-0556 · Farooq Ahmed", area: "Chandkheda", priority: "P3", slaHrs: 48, elapsedHrs: 10, status: "Met", assignedTo: "Support Team", raisedAt: "Jul 14 12:00 PM" },
-  { id: "SLA-1132", type: "Appliance Safety Check", consumer: "C-1922 · Dilip Mehta", area: "Vastral", priority: "P2", slaHrs: 48, elapsedHrs: 22, status: "Met", assignedTo: "Ramesh Kumar", raisedAt: "Jul 13 01:00 PM" },
+const seed: Ticket[] = [
+  { id: "SLA-1136", type: "Pressure Irregularity", consumer: "Geeta Nair · C-0812", area: "Gota", priority: "P1", elapsed: 3.25, sla: 4, status: "At Risk", assigned: "Unassigned", risk: 91, reason: ["No engineer assigned", "Raised 47 hours ago", "Engineer workload high"], sentiment: "Negative", raised: "Today · 07:15 AM" },
+  { id: "SLA-1140", type: "New Connection Install", consumer: "Priya Mehta · C-4451", area: "Gota", priority: "P2", elapsed: 46, sla: 48, status: "At Risk", assigned: "Sunil Sharma", risk: 78, reason: ["Work order documentation pending", "Customer reschedule requested"], sentiment: "Neutral", raised: "Jul 13 · 10:00 AM" },
+  { id: "SLA-1139", type: "Meter Fault", consumer: "Meenal Joshi · C-2831", area: "Satellite", priority: "P2", elapsed: 26, sla: 24, status: "Breached", assigned: "Unassigned", risk: 96, reason: ["No engineer assigned", "Average resolution time exceeds SLA", "Meter test pending"], sentiment: "Negative", raised: "Jul 13 · 08:30 AM" },
+  { id: "SLA-1142", type: "Gas Leak Complaint", consumer: "Rajesh Shah · C-1047", area: "Bopal", priority: "P1", elapsed: 1.2, sla: 2, status: "Met", assigned: "Ramesh Kumar", risk: 35, reason: ["Field team assigned", "Emergency protocol active"], sentiment: "Neutral", raised: "Today · 09:10 AM" },
+  { id: "SLA-1137", type: "Safety Inspection Visit", consumer: "Kiran Patel · C-3341", area: "Naranpura", priority: "P3", elapsed: 14, sla: 72, status: "Met", assigned: "Manoj Patel", risk: 18, reason: ["Appointment confirmed"], sentiment: "Neutral", raised: "Jul 14 · 02:00 PM" },
 ];
 
-const TREND = [
-  { day: "Mon", alerts: 12, resolved: 11 },
-  { day: "Tue", alerts: 8, resolved: 8 },
-  { day: "Wed", alerts: 15, resolved: 13 },
-  { day: "Thu", alerts: 10, resolved: 10 },
-  { day: "Fri", alerts: 7, resolved: 7 },
-  { day: "Sat", alerts: 9, resolved: 8 },
-  { day: "Sun", alerts: 5, resolved: 5 },
-];
-
-const PRIORITY_RULES = [
-  { priority: "P1", sla: "2 hours", type: "Gas Leak / Emergency", color: "text-red-600", bg: "bg-red-50", border: "border-red-200" },
-  { priority: "P2", sla: "24–48 hours", type: "Connection / Meter", color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-200" },
-  { priority: "P3", sla: "72 hours", type: "Routine / Admin", color: "text-sky-600", bg: "bg-sky-50", border: "border-sky-200" },
-];
-
-const STATUS_TONE: Record<SLAStatus, "brand" | "amber" | "red"> = { Met: "brand", "At Risk": "amber", Breached: "red" };
-const PRIORITY_TONE: Record<Priority, "red" | "amber" | "sky"> = { P1: "red", P2: "amber", P3: "sky" };
-
-function SLABar({ elapsed, total, status }: { elapsed: number; total: number; status: SLAStatus }) {
-  const pct = Math.min((elapsed / total) * 100, 100);
-  const color = status === "Met" ? "#10b981" : status === "At Risk" ? "#f59e0b" : "#ef4444";
-  return (
-    <div className="flex items-center gap-2">
-      <div className="flex-1 h-1.5 bg-ink-100 rounded-full overflow-hidden">
-        <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: color }} />
-      </div>
-      <span className="text-[10px] font-mono text-ink-500 shrink-0">{elapsed.toFixed(1)}h / {total}h</span>
-    </div>
-  );
-}
+const tone: Record<Status, "brand" | "amber" | "red" | "sky"> = { Met: "brand", "At Risk": "amber", Breached: "red", Resolved: "sky" };
+const areas = [["Ahmedabad", 34, "red"], ["Baroda", 27, "amber"], ["Rajkot", 19, "amber"], ["Surat", 12, "brand"]] as const;
+function money(n: number) { return `₹${n.toLocaleString("en-IN")}`; }
 
 export default function SLASentinel() {
+  const [tickets, setTickets] = useLocalWorkspaceState<Ticket[]>("suraksha:sla-sentinel", seed);
+  const [selectedId, setSelectedId] = useState(seed[0].id);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"All" | SLAStatus>("All");
+  const [filter, setFilter] = useState<"All" | Status>("All");
+  const [notice, setNotice] = useState<string | null>(null);
+  const selected = tickets.find((item) => item.id === selectedId) ?? tickets[0];
+  const filtered = useMemo(() => tickets.filter((item) => (filter === "All" || item.status === filter) && `${item.id} ${item.consumer} ${item.area}`.toLowerCase().includes(search.toLowerCase())), [tickets, filter, search]);
+  const breached = tickets.filter((item) => item.status === "Breached").length;
+  const atRisk = tickets.filter((item) => item.status === "At Risk").length;
+  const assignedMissing = tickets.filter((item) => item.assigned === "Unassigned").length;
+  const compliance = Math.round((tickets.filter((item) => item.status === "Met" || item.status === "Resolved").length / tickets.length) * 100);
+  const remainingMinutes = Math.max(0, Math.round((selected.sla - selected.elapsed) * 60));
+  const compensationRisk = selected.status === "Breached" ? 4500 : selected.risk >= 80 ? 500 : 0;
+  const isVip = selected.type === "New Connection Install" || selected.consumer.includes("Rajesh Shah");
 
-  const filtered = SLA_ITEMS.filter((s) => {
-    const matchSearch = s.consumer.toLowerCase().includes(search.toLowerCase()) ||
-      s.id.toLowerCase().includes(search.toLowerCase()) ||
-      s.area.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = statusFilter === "All" || s.status === statusFilter;
-    return matchSearch && matchStatus;
-  });
+  function assignAndReduceRisk() { setTickets((current) => current.map((item) => item.id === selected.id ? { ...item, assigned: "Field Team 4", status: "At Risk", risk: 22 } : item)); setNotice(`${selected.id} assigned to Field Team 4. Breach risk reduced to 22%.`); }
+  function assignRecommendedResource() { setTickets((current) => current.map((item) => item.id === selected.id ? { ...item, assigned: "Ramesh Kumar", status: "At Risk", risk: 20 } : item)); setNotice(`${selected.id} assigned to Ramesh Kumar. Expected closure: 1.5 hours.`); }
+  function resolve() { setTickets((current) => current.map((item) => item.id === selected.id ? { ...item, status: "Resolved", risk: 0, assigned: item.assigned === "Unassigned" ? "Field Team 4" : item.assigned } : item)); setNotice(`${selected.id} marked resolved and SLA outcome recorded.`); }
+  function exportQueue() { const rows = ["Ticket,Type,Consumer,Area,Status,Risk,Assigned", ...tickets.map((item) => [item.id, item.type, item.consumer, item.area, item.status, `${item.risk}%`, item.assigned].join(","))]; const url = URL.createObjectURL(new Blob([rows.join("\n")], { type: "text/csv" })); const link = document.createElement("a"); link.href = url; link.download = "sla-sentinel-queue.csv"; link.click(); URL.revokeObjectURL(url); setNotice("SLA queue exported as CSV."); }
 
-  const metCount = SLA_ITEMS.filter((s) => s.status === "Met").length;
-  const atRiskCount = SLA_ITEMS.filter((s) => s.status === "At Risk").length;
-  const breachedCount = SLA_ITEMS.filter((s) => s.status === "Breached").length;
-  const slaScore = Math.round((metCount / SLA_ITEMS.length) * 100);
-
-  return (
-    <div className="space-y-6 reveal">
-      {/* Breach Alert */}
-      {breachedCount > 0 && (
-        <div className="rounded-2xl bg-red-600 text-white p-4 flex items-center justify-between gap-4 anim-fade-up shadow-lg shadow-red-600/30">
-          <div className="flex items-center gap-3">
-            <AlertTriangle className="w-5 h-5 animate-pulse shrink-0" />
-            <div>
-              <p className="font-bold">{breachedCount} SLA BREACH{breachedCount > 1 ? "ES" : ""} DETECTED</p>
-              <p className="text-red-200 text-xs">Action required to prevent PNGRB non-compliance</p>
-            </div>
-          </div>
-          <Badge tone="red">BREACH</Badge>
-        </div>
-      )}
-
-      {/* Header */}
-      <div className="rounded-2xl bg-gradient-to-br from-ink-900 via-ink-900 to-violet-950 text-white p-6 relative overflow-hidden shadow-soft">
-        <div className="floaty absolute -right-10 -top-10 w-56 h-56 bg-violet-500/20 rounded-full blur-3xl" />
-        <div className="relative">
-          <p className="text-violet-300 text-xs font-semibold uppercase tracking-widest">CGD Compliance & SLA</p>
-          <h1 className="text-2xl sm:text-3xl font-extrabold mt-1">
-            <Typewriter speed={40} segments={[{ text: "SLA Sentinel " }, { text: "⏱️", cls: "" }]} />
-          </h1>
-          <p className="text-ink-300 mt-2 text-sm max-w-2xl">
-            Real-time SLA tracking for all consumer complaints and service requests. Ensures PNGRB compliance with intelligent breach alerts and priority routing.
-          </p>
-        </div>
-      </div>
-
-      {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 anim-fade-up">
-        <Kpi label="SLA Compliance Score" value={`${slaScore}%`} sub="Target: 95%+" accent="text-brand-600" icon={<ShieldCheck className="w-4 h-4" />} />
-        <Kpi label="SLA Breached" value={<CountUp to={breachedCount} />} sub="Immediate action" accent="text-red-600" icon={<AlertTriangle className="w-4 h-4 text-red-500 animate-pulse" />} />
-        <Kpi label="At Risk" value={<CountUp to={atRiskCount} />} sub="Within 2 hours of breach" accent="text-amber-600" icon={<Timer className="w-4 h-4" />} />
-        <Kpi label="Met on Time" value={<CountUp to={metCount} />} sub="This week" icon={<CheckCircle className="w-4 h-4" />} />
-      </div>
-
-      <div className="grid lg:grid-cols-3 gap-6 anim-fade-up">
-        {/* Trend Chart */}
-        <Card className="lg:col-span-2 p-5">
-          <h3 className="font-bold text-ink-900 mb-3">Service Requests — Last 7 Days</h3>
-          <TrendChart data={TREND} />
-        </Card>
-
-        {/* SLA Priority Rules */}
-        <Card className="p-5">
-          <h3 className="font-bold text-ink-900 mb-4 flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-violet-500" /> Priority SLA Matrix
-          </h3>
-          <div className="space-y-3">
-            {PRIORITY_RULES.map((r) => (
-              <div key={r.priority} className={`rounded-xl p-3 border ${r.border} ${r.bg}`}>
-                <div className="flex items-center justify-between mb-1">
-                  <span className={`text-xs font-bold ${r.color}`}>{r.priority} — {r.sla}</span>
-                  <Badge tone={PRIORITY_TONE[r.priority as Priority]}>{r.priority}</Badge>
-                </div>
-                <p className="text-[11px] text-ink-600">{r.type}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-4 pt-4 border-t border-ink-100">
-            <p className="text-xs font-semibold text-ink-800 mb-2">AI Auto-Escalation Rules</p>
-            <ul className="text-[11px] text-ink-500 space-y-1.5">
-              <li className="flex gap-1.5"><Bell className="w-3 h-3 text-amber-500 shrink-0 mt-0.5" /> 80% SLA elapsed → Supervisor alert</li>
-              <li className="flex gap-1.5"><Bell className="w-3 h-3 text-red-500 shrink-0 mt-0.5" /> 100% elapsed → Auto-breach + PNGRB log</li>
-              <li className="flex gap-1.5"><Zap className="w-3 h-3 text-violet-500 shrink-0 mt-0.5" /> Unassigned P1 → SMS to field manager</li>
-            </ul>
-          </div>
-        </Card>
-      </div>
-
-      {/* SLA Table */}
-      <Card className="p-6 anim-fade-up">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
-          <h3 className="font-bold text-ink-900 flex items-center gap-2">
-            <Clock className="w-4 h-4 text-violet-500" /> Active SLA Tickets
-          </h3>
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink-400" />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search ID, consumer, area..."
-                className="pl-8 pr-3 py-2 text-xs border border-ink-200 rounded-xl focus:outline-none focus:border-violet-400 bg-white w-52"
-              />
-            </div>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as "All" | SLAStatus)}
-              className="text-xs border border-ink-200 rounded-xl px-3 py-2 bg-white focus:outline-none focus:border-violet-400"
-            >
-              {["All", "Met", "At Risk", "Breached"].map((v) => (
-                <option key={v}>{v}</option>
-              ))}
-            </select>
-            <button className="flex items-center gap-1.5 text-xs border border-ink-200 rounded-xl px-3 py-2 hover:bg-ink-50 transition text-ink-600">
-              <Download className="w-3 h-3" /> Export
-            </button>
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-xs text-ink-500 font-semibold uppercase tracking-wider border-b border-ink-100">
-                {["Ticket", "Type", "Consumer", "Priority", "SLA Progress", "Status", "Assigned", "Raised"].map((h) => (
-                  <th key={h} className="pb-3 pr-4 whitespace-nowrap">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-ink-50">
-              {filtered.map((s) => (
-                <tr key={s.id} className="hover:bg-ink-50/50 transition">
-                  <td className="py-3 pr-4 font-mono text-xs text-ink-600 whitespace-nowrap">{s.id}</td>
-                  <td className="py-3 pr-4 font-medium text-ink-800 whitespace-nowrap max-w-[160px] truncate">{s.type}</td>
-                  <td className="py-3 pr-4 text-ink-600 whitespace-nowrap">
-                    <span className="flex items-center gap-1">
-                      <MapPin className="w-3 h-3 shrink-0" />
-                      <span className="truncate max-w-[120px]">{s.consumer}</span>
-                    </span>
-                  </td>
-                  <td className="py-3 pr-4 whitespace-nowrap">
-                    <Badge tone={PRIORITY_TONE[s.priority]}>{s.priority}</Badge>
-                  </td>
-                  <td className="py-3 pr-4 min-w-[140px]">
-                    <SLABar elapsed={s.elapsedHrs} total={s.slaHrs} status={s.status} />
-                  </td>
-                  <td className="py-3 pr-4 whitespace-nowrap">
-                    <Badge tone={STATUS_TONE[s.status]}>{s.status}</Badge>
-                  </td>
-                  <td className="py-3 pr-4 text-xs text-ink-600 whitespace-nowrap">
-                    <span className="flex items-center gap-1">
-                      <User className="w-3 h-3 shrink-0" /> {s.assignedTo}
-                    </span>
-                  </td>
-                  <td className="py-3 pr-4 text-xs text-ink-400 whitespace-nowrap">{s.raisedAt}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {filtered.length === 0 && (
-            <p className="text-center text-ink-400 py-8 text-sm">No tickets match your search.</p>
-          )}
-        </div>
-      </Card>
-    </div>
-  );
+  return <div className="space-y-6 reveal">
+    {notice && <div className="fixed right-4 top-4 z-50 flex items-center gap-3 rounded-2xl bg-brand-600 px-5 py-3 text-sm font-semibold text-white shadow-xl"><CheckCircle2 className="h-5 w-5" />{notice}<button onClick={() => setNotice(null)}>×</button></div>}
+    <header className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-ink-900 via-ink-900 to-violet-950 p-6 text-white shadow-soft"><div className="floaty absolute -right-10 -top-10 h-56 w-56 rounded-full bg-violet-500/20 blur-3xl" /><div className="relative"><p className="text-xs font-semibold uppercase tracking-widest text-violet-300">CGD compliance decision center</p><h1 className="mt-1 text-2xl font-extrabold sm:text-3xl"><Typewriter speed={40} segments={[{ text: "SLA Sentinel " }, { text: "⏱️" }]} /></h1><p className="mt-2 max-w-2xl text-sm text-ink-300">Predict breaches, assign the right team, escalate early, and protect customer trust and compensation exposure.</p></div></header>
+    <div className="grid grid-cols-2 gap-4 lg:grid-cols-4"><Kpi label="SLA compliance" value={`${compliance}%`} sub="Target 95% · gap 38%" accent="text-amber-600" icon={<ShieldAlert className="h-4 w-4" />} /><Kpi label="Mean resolution time" value="17h" sub="Target 12h" icon={<Timer className="h-4 w-4" />} /><Kpi label="First-time resolution" value="82%" sub="Service quality KPI" accent="text-brand-600" icon={<CheckCircle2 className="h-4 w-4" />} /><Kpi label="Breach forecast" value="5" sub="Next 24h · 2 high risk" accent="text-red-600" icon={<Activity className="h-4 w-4" />} /></div>
+    <Card className="border-red-200 bg-gradient-to-r from-red-50 to-white p-5"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-wider text-red-700">SLA war room</p><h2 className="mt-1 font-bold text-ink-900">{breached} breached · {atRisk} at risk · {assignedMissing} without assignment · 1 VIP customer</h2><p className="mt-1 text-xs text-ink-600">Focus today: stop the next breach before it becomes customer dissatisfaction and compensation exposure.</p></div><Badge tone="red">Act now</Badge></div></Card>
+    <div className="grid gap-5 lg:grid-cols-3"><Card className="p-5 lg:col-span-2"><div className="flex items-center justify-between"><div><p className="text-xs font-bold uppercase tracking-wider text-red-600">Today’s critical actions</p><h2 className="mt-1 font-bold text-ink-900">Priority action queue</h2></div><button onClick={exportQueue} className="inline-flex items-center gap-1 rounded-lg border border-ink-200 px-3 py-2 text-xs font-bold text-ink-700"><Download className="h-3.5 w-3.5" />Export</button></div><div className="mt-4 divide-y divide-ink-100">{[...tickets].filter((item) => item.status === "Breached" || item.status === "At Risk").sort((a, b) => b.risk - a.risk).map((item, index) => <button key={item.id} onClick={() => setSelectedId(item.id)} className={`flex w-full items-center gap-3 p-3 text-left ${selected.id === item.id ? "bg-violet-50" : "hover:bg-ink-50"}`}><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-red-100 text-xs font-bold text-red-700">{index + 1}</span><div className="min-w-0 flex-1"><p className="text-sm font-bold text-ink-900">{item.type}</p><p className="text-[11px] text-ink-500">{item.consumer} · {item.area} · {item.assigned}</p></div><div className="text-right"><p className="text-sm font-extrabold text-red-600">{item.status === "Breached" ? "Breached" : `${Math.max(0, item.sla - item.elapsed).toFixed(0)} min left`}</p><p className="text-[10px] font-bold text-ink-500">{item.risk}% breach probability</p></div><ChevronRight className="h-4 w-4 text-ink-400" /></button>)}</div></Card><Card className="p-5"><h2 className="font-bold text-ink-900">Penalty exposure</h2><div className="mt-4 space-y-3">{[["Breached cases", String(breached)], ["Expected compensation", "₹4,500"], ["Avoidable loss", "₹12,000"]].map(([label, value]) => <div key={label} className="flex justify-between rounded-xl bg-ink-50 p-3 text-sm"><span className="text-ink-600">{label}</span><strong className="text-red-700">{value}</strong></div>)}</div></Card></div>
+    <div className="grid gap-5 lg:grid-cols-3"><Card className="p-5 lg:col-span-2"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-wider text-violet-700">Decision workspace</p><h2 className="mt-1 font-bold text-ink-900">{selected.id} · {selected.type}</h2><p className="mt-1 text-xs text-ink-500">{selected.consumer} · {selected.area} · raised {selected.raised}</p></div><Badge tone={tone[selected.status]}>{selected.risk}% breach probability</Badge></div><div className="mt-4 grid gap-3 sm:grid-cols-2"><section className="rounded-xl border border-amber-200 bg-amber-50 p-4"><h3 className="font-bold text-amber-900">Why SLA is at risk</h3><ul className="mt-3 space-y-2 text-xs text-amber-900">{selected.reason.map((item) => <li key={item}><Check className="mr-1 inline h-3.5 w-3.5" />{item}</li>)}</ul><p className="mt-3 text-xs font-bold">Customer sentiment: {selected.sentiment} · escalation probability high</p></section><section className="rounded-xl border border-brand-200 bg-brand-50 p-4"><h3 className="font-bold text-brand-900">AI suggested action</h3><p className="mt-3 text-sm font-extrabold text-brand-900">Assign Field Team 4</p><p className="mt-1 text-xs text-brand-800">Expected resolution: 2.5 hours · breach risk: {selected.risk}% → 22%</p><div className="mt-4 flex gap-2"><button onClick={assignAndReduceRisk} className="flex-1 rounded-lg bg-brand-600 py-2 text-xs font-bold text-white">Assign team</button><button onClick={resolve} className="flex-1 rounded-lg border border-brand-200 py-2 text-xs font-bold text-brand-800">Mark resolved</button></div></section></div><div className="mt-4 grid grid-cols-5 gap-1 text-center">{["Raised", "Assigned", "Supervisor", "Regional manager", "Breach / compensation"].map((stage, index) => <div key={stage}><div className={`h-2 rounded-full ${index < (selected.status === "Breached" ? 5 : selected.assigned === "Unassigned" ? 1 : 3) ? "bg-red-500" : "bg-ink-100"}`} /><p className="mt-1 text-[9px] leading-tight text-ink-500">{stage}</p></div>)}</div></Card><Card className="p-5"><h2 className="font-bold text-ink-900">SLA aging</h2><div className="mt-4 space-y-3">{[["0–24 hours", 34], ["24–48 hours", 18], ["48–72 hours", 9], ["72+ hours", 3]].map(([label, value]) => <div key={label as string}><div className="flex justify-between text-xs font-semibold text-ink-700"><span>{label}</span><span>{value}</span></div><div className="mt-1 h-2 overflow-hidden rounded-full bg-ink-100"><div className="h-full rounded-full bg-violet-500" style={{ width: `${Number(value) * 2.5}%` }} /></div></div>)}</div></Card></div>
+    <div className="grid gap-5 lg:grid-cols-3"><Card className="p-5"><h2 className="font-bold text-ink-900">Engineer performance</h2><div className="mt-4 space-y-3">{[["Ramesh Kumar", "95%", "brand"], ["Sunil Sharma", "82%", "amber"], ["Manoj Patel", "68%", "red"]].map(([name, value, color]) => <div key={name} className="flex items-center justify-between rounded-xl bg-ink-50 p-3"><span className="text-sm font-semibold text-ink-800">{name}</span><Badge tone={color as "brand" | "amber" | "red"}>{value}</Badge></div>)}</div></Card><Card className="p-5"><h2 className="font-bold text-ink-900">Department performance</h2><div className="mt-4 space-y-3">{[["O&M", "98%"], ["Customer Service", "95%"], ["New Connections", "84%"], ["Projects", "79%"]].map(([name, value]) => <div key={name} className="flex justify-between rounded-xl bg-ink-50 p-3 text-sm"><span>{name}</span><strong>{value}</strong></div>)}</div></Card><Card className="p-5"><h2 className="flex items-center gap-2 font-bold text-ink-900"><MapPin className="h-4 w-4 text-red-600" /> Workload heatmap</h2><div className="mt-4 space-y-3">{areas.map(([area, count, risk]) => <div key={area} className="flex items-center justify-between rounded-xl border border-ink-100 p-3"><span className="font-semibold text-ink-800">{area}</span><Badge tone={risk as "red" | "amber" | "brand"}>{count} pending</Badge></div>)}</div></Card></div>
+    <Card className="p-6"><div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-bold text-ink-900">Live SLA queue</h2><p className="mt-1 text-xs text-ink-500">Select a ticket to investigate, assign, escalate, and close.</p></div><div className="flex gap-2"><div className="relative"><Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ink-400" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Ticket, customer, area" className="w-44 rounded-xl border border-ink-200 py-2 pl-8 pr-3 text-xs" /></div><select value={filter} onChange={(event) => setFilter(event.target.value as "All" | Status)} className="rounded-xl border border-ink-200 px-3 py-2 text-xs"><option>All</option><option>Met</option><option>At Risk</option><option>Breached</option><option>Resolved</option></select></div></div><div className="mt-4 overflow-x-auto"><table className="w-full text-sm"><thead><tr className="border-b border-ink-100 text-left text-[10px] font-bold uppercase tracking-wider text-ink-500">{["Ticket", "Consumer", "SLA", "Risk", "Status", "Assigned"].map((item) => <th key={item} className="px-3 pb-3 first:pl-0">{item}</th>)}</tr></thead><tbody className="divide-y divide-ink-50">{filtered.map((item) => <tr key={item.id} onClick={() => setSelectedId(item.id)} className={`cursor-pointer ${item.id === selected.id ? "bg-violet-50" : "hover:bg-ink-50"}`}><td className="px-3 py-3 first:pl-0"><strong>{item.id}</strong><p className="text-[10px] text-ink-500">{item.type}</p></td><td className="px-3 py-3 text-xs">{item.consumer}<p className="text-[10px] text-ink-500">{item.area}</p></td><td className="px-3 py-3 text-xs">{item.elapsed}h / {item.sla}h</td><td className="px-3 py-3"><Badge tone={item.risk >= 90 ? "red" : item.risk >= 60 ? "amber" : "brand"}>{item.risk}%</Badge></td><td className="px-3 py-3"><Badge tone={tone[item.status]}>{item.status}</Badge></td><td className="px-3 py-3 text-xs">{item.assigned}</td></tr>)}</tbody></table></div></Card>
+    <div className="grid gap-5 lg:grid-cols-3"><Card className={`p-5 ${selected.status === "Breached" || remainingMinutes <= 60 ? "border-red-200 bg-red-50" : "border-amber-200 bg-amber-50"}`}><p className="text-xs font-bold uppercase tracking-wider text-red-700">SLA burn-down timer</p><p className="mt-2 text-3xl font-extrabold text-red-800">{selected.status === "Breached" ? "SLA breached" : `⏳ ${remainingMinutes} min left`}</p><div className="mt-3 grid grid-cols-2 gap-2 text-xs"><div className="rounded-lg bg-white/70 p-2"><p className="text-ink-500">Compensation risk</p><strong className="text-red-700">{money(compensationRisk)}</strong></div><div className="rounded-lg bg-white/70 p-2"><p className="text-ink-500">Manager alert</p><strong className="text-red-700">{selected.risk >= 80 ? "HIGH" : "WATCH"}</strong></div></div></Card><Card className="p-5"><h2 className="font-bold text-ink-900">If nothing happens</h2><p className="mt-1 text-xs text-ink-500">Forward-looking impact for {selected.id}.</p><div className="mt-4 space-y-3 border-l-2 border-red-300 pl-4 text-xs text-ink-700"><p><strong>In {selected.status === "Breached" ? "0" : "1"} hour:</strong> SLA breach {selected.status === "Breached" ? "already recorded" : "likely"}</p><p><strong>In 4 hours:</strong> Customer escalation likely</p><p><strong>In 24 hours:</strong> Executive escalation and compensation review</p></div></Card><Card className="p-5"><h2 className="font-bold text-ink-900">Escalation predictor</h2><p className="mt-3 text-2xl font-extrabold text-red-600">{selected.sentiment === "Negative" ? "High" : "Medium"}</p><ul className="mt-3 space-y-2 text-xs text-ink-700"><li><Check className="mr-1 inline h-3.5 w-3.5 text-red-600" />Negative feedback history</li><li><Check className="mr-1 inline h-3.5 w-3.5 text-red-600" />{Math.round((selected.elapsed / selected.sla) * 100)}% SLA consumed</li><li><Check className="mr-1 inline h-3.5 w-3.5 text-red-600" />Follow-up volume elevated</li></ul></Card></div>
+    <div className="grid gap-5 lg:grid-cols-3"><Card className="p-5"><h2 className="font-bold text-ink-900">Resource recommendation</h2><div className="mt-4 rounded-xl bg-brand-50 p-4"><p className="text-sm font-extrabold text-brand-900">Ramesh Kumar</p><p className="mt-1 text-xs text-brand-800">Low workload · 1.2 km away · expected closure 1.5 hrs</p><p className="mt-2 text-xs font-bold text-brand-800">Breach probability: {selected.risk}% → 20%</p><button onClick={assignRecommendedResource} className="mt-4 w-full rounded-lg bg-brand-600 py-2 text-xs font-bold text-white">Assign recommended resource</button></div></Card><Card className="p-5"><h2 className="font-bold text-ink-900">SLA impact simulator</h2><p className="mt-3 text-sm font-bold text-ink-900">What if Engineer A is assigned now?</p><div className="mt-3 grid grid-cols-2 gap-3"><div className="rounded-xl bg-red-50 p-3"><p className="text-[10px] text-red-700">Current risk</p><p className="text-xl font-extrabold text-red-700">{selected.risk}%</p></div><div className="rounded-xl bg-brand-50 p-3"><p className="text-[10px] text-brand-700">With assignment</p><p className="text-xl font-extrabold text-brand-700">20%</p></div></div><p className="mt-3 text-xs text-ink-600">Expected resolution: 2.3 hours with an available engineer.</p></Card><Card className="p-5"><h2 className="font-bold text-ink-900">Customer & location intelligence</h2><div className="mt-3 rounded-xl bg-ink-50 p-3"><p className="text-xs font-bold text-ink-800">{isVip ? "VIP / commercial consumer" : "Standard consumer"}</p><p className="mt-1 text-xs text-ink-600">{isVip ? "Revenue impact high · prioritize resolution" : "Service impact monitored"}</p></div><div className="mt-3 rounded-xl bg-violet-50 p-3"><p className="text-xs font-bold text-violet-900">{selected.area} recurring pattern</p><p className="mt-1 text-xs text-violet-800">12 complaints in 90 days · most common: pressure issues</p></div></Card></div>
+    <div className="grid gap-5 lg:grid-cols-3"><Card className="p-5 lg:col-span-2"><h2 className="font-bold text-ink-900">Complaint lifecycle analytics</h2><p className="mt-1 text-xs text-ink-500">Engineer assignment is the primary process bottleneck.</p><div className="mt-4 grid grid-cols-3 gap-3 text-center">{[["Assignment", "3 hrs"], ["Field visit", "8 hrs"], ["Resolution", "21 hrs"]].map(([label, value]) => <div key={label} className="rounded-xl bg-ink-50 p-4"><p className="text-[10px] font-bold uppercase tracking-wide text-ink-500">{label}</p><p className="mt-1 text-xl font-extrabold text-ink-900">{value}</p></div>)}</div><div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-800"><strong>Bottleneck:</strong> Engineer assignment · suggested process fix: auto-assign nearest qualified resource for P1/P2 cases.</div></Card><Card className="p-5"><h2 className="font-bold text-ink-900">Zone performance ranking</h2><div className="mt-4 space-y-2">{[["Ahmedabad", "96%"], ["Surat", "92%"], ["Rajkot", "88%"], ["Baroda", "82%"]].map(([zone, score], index) => <div key={zone} className="flex items-center justify-between rounded-lg bg-ink-50 p-2.5 text-xs"><span><strong>{index + 1}.</strong> {zone}</span><strong className={index < 2 ? "text-brand-700" : "text-amber-700"}>{score}</strong></div>)}</div></Card></div>
+    <div className="grid gap-5 lg:grid-cols-3"><Card className="p-5 lg:col-span-2"><h2 className="font-bold text-ink-900">Impact this month</h2><div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">{[["Compensation avoided", "₹18,000"], ["Breaches prevented", "32"], ["Escalations prevented", "19"], ["Compliance improved", "+12%"]].map(([label, value]) => <div key={label} className="rounded-xl bg-brand-50 p-3"><p className="text-[10px] font-bold uppercase tracking-wide text-brand-700">{label}</p><p className="mt-1 text-lg font-extrabold text-brand-900">{value}</p></div>)}</div></Card>{selected.status === "Breached" ? <Card className="border-red-200 bg-red-50 p-5"><h2 className="font-bold text-red-900">Post-breach analysis</h2><p className="mt-3 text-xs text-red-800"><strong>Root cause:</strong> No engineer assigned</p><p className="mt-1 text-xs text-red-800"><strong>Delay:</strong> {Math.round(selected.elapsed - selected.sla)} hours</p><p className="mt-1 text-xs text-red-800"><strong>Preventability:</strong> HIGH</p><p className="mt-3 text-xs font-bold text-red-900">Suggested fix: auto-assignment for P1/P2 cases.</p></Card> : <Card className="p-5"><h2 className="font-bold text-ink-900">Learning loop</h2><p className="mt-3 text-xs text-ink-600">When a case breaches, Sentinel records its root cause, preventability, and recommended process fix for future prevention.</p></Card>}</div>
+  </div>;
 }

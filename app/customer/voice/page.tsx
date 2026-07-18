@@ -39,6 +39,12 @@ export default function VoiceOfCustomer() {
   const [voiceUrl, setVoiceUrl] = useState<string | null>(null);
   const [voiceError, setVoiceError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!notice) return;
+    const t = window.setTimeout(() => setNotice(null), 4000);
+    return () => window.clearTimeout(t);
+  }, [notice]);
   const recorder = useRef<MediaRecorder | null>(null);
   const chunks = useRef<Blob[]>([]);
   const recordingTimer = useRef<number | null>(null);

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Card, SectionTitle } from "@/components/ui";
 import { zones } from "@/lib/data";
-import { Megaphone, CheckCircle2, XCircle, Loader2, MessageCircle, Info } from "lucide-react";
+import { Megaphone, CheckCircle2, XCircle, Loader2, MessageCircle, Info, Mail, PhoneCall, Smartphone, AlertTriangle, MapPin } from "lucide-react";
 
 type SendResult = { phone: string; status: "sent" | "failed"; error?: string };
 type ApiResp = { configured: boolean; provider: string | null; sent: number; total: number; results: SendResult[] };
@@ -82,6 +82,10 @@ export default function SmartNotify() {
           {wa.configured ? `WhatsApp live · ${wa.provider}` : "WhatsApp not configured (demo)"}
         </span>
       </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4"><Card className="p-4"><p className="text-xs text-ink-500">Affected customers</p><p className="mt-1 text-2xl font-extrabold text-ink-900">{zone.n.toLocaleString("en-IN")}</p><p className="text-[11px] text-ink-500">Domestic 91% · Commercial 9%</p></Card><Card className="p-4"><p className="text-xs text-ink-500">Delivery coverage</p><p className="mt-1 text-2xl font-extrabold text-brand-700">95.6%</p><p className="text-[11px] text-ink-500">1,228 delivered · 56 fallback</p></Card><Card className="p-4"><p className="text-xs text-ink-500">Predicted support calls</p><p className="mt-1 text-2xl font-extrabold text-ink-900">82</p><p className="text-[11px] text-ink-500">Commercial impact: medium</p></Card><Card className="p-4"><p className="text-xs text-ink-500">Compliance</p><p className={`mt-1 text-lg font-extrabold ${start && !compliant ? "text-red-600" : "text-brand-700"}`}>{start && !compliant ? "At risk" : "Ready"}</p><p className="text-[11px] text-ink-500">48-hour notice requirement</p></Card></div>
+
+      <Card className="p-5"><div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="font-bold text-ink-900">Notification impact &amp; compliance check</h2><p className="mt-1 text-xs text-ink-500">Plan maintenance, validate notice period, then deliver and audit communication.</p></div><div className="flex gap-2 text-xs font-bold text-ink-700"><span className="rounded-full bg-brand-50 px-3 py-1.5">WhatsApp</span><span className="rounded-full bg-sky-50 px-3 py-1.5">SMS fallback</span><span className="rounded-full bg-ink-50 px-3 py-1.5">Email</span><span className="rounded-full bg-violet-50 px-3 py-1.5">App</span><span className="rounded-full bg-amber-50 px-3 py-1.5">IVR</span></div></div><div className="mt-4 grid gap-3 md:grid-cols-3"><div className="rounded-xl bg-ink-50 p-3 text-xs"><MapPin className="mb-2 h-4 w-4 text-brand-600" /><strong>{zone.name}</strong><p className="mt-1 text-ink-500">Affected area map zone · adjacent wards monitored</p></div><div className="rounded-xl bg-amber-50 p-3 text-xs text-amber-900"><AlertTriangle className="mb-2 h-4 w-4" /><strong>{start && !compliant ? "Non-compliant warning" : "Notice deadline"}</strong><p className="mt-1">{start ? `${Math.max(0, Math.floor(hrs - 48))} hours until 48-hour deadline` : "Select work start to calculate deadline"}</p></div><div className="rounded-xl bg-violet-50 p-3 text-xs text-violet-900"><strong>Delivery-failure AI</strong><p className="mt-1">56 likely misses: invalid mobile, WhatsApp inactive, or DND. SMS fallback begins after 2 hours.</p></div></div></Card>
 
       <div className="grid lg:grid-cols-2 gap-5">
         <Card className="p-5">

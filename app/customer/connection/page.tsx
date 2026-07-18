@@ -46,6 +46,12 @@ export default function ConnectionJourney() {
   const [showDelay, setShowDelay] = useState(false);
   const [activeTab, setActiveTab] = useState<"overview" | "journey" | "documents" | "updates" | "actions">("overview");
   const [notice, setNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!notice) return;
+    const t = window.setTimeout(() => setNotice(null), 4000);
+    return () => window.clearTimeout(t);
+  }, [notice]);
   const completedStages = 3;
   const progress = Math.round((completedStages / stages.length) * 100);
   const blockerCleared = Boolean(status.layout);

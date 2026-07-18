@@ -65,6 +65,12 @@ export default function GasCarePage() {
   const [valveKnown, setValveKnown] = useState(true);
   const [numberSaved, setNumberSaved] = useState(true);
   const [notice, setNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!notice) return;
+    const t = window.setTimeout(() => setNotice(null), 4000);
+    return () => window.clearTimeout(t);
+  }, [notice]);
   const [photoName, setPhotoName] = useState<string | null>(null);
   const [operatorConnected, setOperatorConnected] = useState(false);
   const [valveGuide, setValveGuide] = useState<"yes" | "no" | "unsure" | null>(null);

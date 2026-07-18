@@ -53,6 +53,7 @@ export default function BillIntelligence({ bill, previousBill, customer, explana
       if (typeof saved.cookingFrequency === "number") setCookingFrequency(saved.cookingFrequency);
       if (saved.appliances && typeof saved.appliances === "object") setAppliances((current) => ({ ...current, ...saved.appliances }));
       setAlertEnabled(Boolean(saved.alertEnabled));
+      if (typeof saved.planSaved === "boolean") setPlanSaved(saved.planSaved);
       onAwayChange(Boolean(saved.away));
     } catch {
       // Preferences are optional; a corrupted browser value must never block billing.
@@ -61,11 +62,11 @@ export default function BillIntelligence({ bill, previousBill, customer, explana
 
   useEffect(() => {
     try {
-      window.localStorage.setItem(preferenceKey, JSON.stringify({ usageReduction, cookingFrequency, appliances, alertEnabled, away }));
+      window.localStorage.setItem(preferenceKey, JSON.stringify({ usageReduction, cookingFrequency, appliances, alertEnabled, planSaved, away }));
     } catch {
       // Storage may be unavailable in private browsing; controls still work for this session.
     }
-  }, [alertEnabled, appliances, away, cookingFrequency, preferenceKey, usageReduction]);
+  }, [alertEnabled, appliances, away, cookingFrequency, planSaved, preferenceKey, usageReduction]);
 
   const lateFee = bill.lateFee;
   const billRows = [

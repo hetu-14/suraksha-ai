@@ -83,6 +83,7 @@ export default function SafetyHome() {
         {/* 7 Grid Modules */}
         <h3 className="font-bold text-sm text-ink-500 uppercase tracking-wider mt-4">Safety &amp; Operations Modules</h3>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <Tile href="/safety/emergency" icon={<Siren className="w-5 h-5 text-red-500" />} title="Emergency Dashboard" sub="Live SOS triage & CCTV incident response" badge="LIVE" />
           <Tile href="/safety/dashboard-gas-guard" icon={<Flame className="w-5 h-5 text-red-500" />} title="Dashboard-Gas-Guard" sub="Centralized gas grid safety monitoring" />
           <Tile href="/safety/rev-guard" icon={<ShieldAlert className="w-5 h-5 text-red-600" />} title="Rev-Guard" sub="AI revenue leakage detection & tamper alerts" />
           <Tile href="/safety/sla-sentinel" icon={<Timer className="w-5 h-5 text-violet-500" />} title="SLA Sentinel" sub="PNGRB SLA compliance & breach tracking" />
@@ -96,13 +97,21 @@ export default function SafetyHome() {
   );
 }
 
-function Tile({ href, icon, title, sub }: { href: string; icon: React.ReactNode; title: string; sub: string }) {
+function Tile({ href, icon, title, sub, badge }: { href: string; icon: React.ReactNode; title: string; sub: string; badge?: string }) {
   return (
     <Link href={href}>
       <Card className="p-5 hover:border-brand-300 transition h-full lift">
         <div className="flex items-center justify-between">
           {icon}
-          <ArrowRight className="w-4 h-4 text-ink-300" />
+          <div className="flex items-center gap-2">
+            {badge && (
+              <span className="flex items-center gap-1 text-[10px] font-bold text-red-600">
+                <span className="relative flex h-1.5 w-1.5"><span className="animate-ping absolute h-1.5 w-1.5 rounded-full bg-red-400 opacity-75" /><span className="relative rounded-full h-1.5 w-1.5 bg-red-500" /></span>
+                {badge}
+              </span>
+            )}
+            <ArrowRight className="w-4 h-4 text-ink-300" />
+          </div>
         </div>
         <div className="text-sm font-semibold text-ink-800 mt-3">{title}</div>
         <div className="text-[11px] text-ink-500">{sub}</div>

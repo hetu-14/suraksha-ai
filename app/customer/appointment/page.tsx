@@ -82,6 +82,12 @@ export default function AppointmentBooking() {
   const [cancelTarget, setCancelTarget] = useState<string | null>(null);
   const [cancelReason, setCancelReason] = useState("Timing conflict");
   const [notice, setNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!notice) return;
+    const t = window.setTimeout(() => setNotice(null), 4000);
+    return () => window.clearTimeout(t);
+  }, [notice]);
   const [loaded, setLoaded] = useState(false);
   const [healthNeedsInspection, setHealthNeedsInspection] = useState(true);
 

@@ -4,12 +4,14 @@ import { useState } from "react";
 import { Card, Kpi, SectionTitle, Badge } from "@/components/ui";
 import CountUp from "@/components/CountUp";
 import Typewriter from "@/components/Typewriter";
+import { useLocalWorkspaceState } from "@/lib/useLocalWorkspaceState";
 import { Wrench, CheckCircle2, AlertTriangle, Hammer, ShieldAlert, Cpu } from "lucide-react";
 
 type Asset = { id: string; name: string; health: number; lastChecked: string; nextCheck: string; status: "Healthy" | "Attention" | "Critical" };
+const money = (value: number) => `₹${value.toLocaleString("en-IN")}`;
 
 export default function AssetHealth() {
-  const [assets] = useState<Asset[]>([
+  const [assets, setAssets] = useLocalWorkspaceState<Asset[]>("suraksha:asset-health", [
     { id: "COMP-104", name: "Reciprocating Compressor · Naroda", health: 62, lastChecked: "Jul 10, 2026", nextCheck: "Jul 15, 2026", status: "Attention" },
     { id: "PIPE-382", name: "High-Pressure Carbon Pipeline · Odhav CGS", health: 96, lastChecked: "Jun 24, 2026", nextCheck: "Jul 24, 2026", status: "Healthy" },
     { id: "REG-991", name: "Active Pressure Regulator Valve · Vastral", health: 48, lastChecked: "Jul 11, 2026", nextCheck: "Jul 14, 2026", status: "Critical" },
@@ -18,9 +20,14 @@ export default function AssetHealth() {
   ]);
 
   const [sel, setSel] = useState(0);
+  const [notice, setNotice] = useState<string | null>(null);
+  const selected = assets[sel];
+  const criticality = selected.id.includes("COMP") ? 95 : selected.id.includes("REG") ? 90 : 65;
+  function scheduleMaintenance() { setAssets((current) => current.map((asset, index) => index === sel ? { ...asset, health: Math.min(88, asset.health + 20), status: "Attention", nextCheck: "Jul 18, 2026 · 2:00 PM" } : asset)); setNotice(`${selected.id} maintenance scheduled; health forecast updated.`); }
 
   return (
     <div className="space-y-6 reveal">
+      {notice && <div className="fixed right-4 top-4 z-50 rounded-xl bg-brand-600 px-4 py-3 text-sm font-semibold text-white shadow-xl">{notice}<button className="ml-3" onClick={() => setNotice(null)}>×</button></div>}
       {/* Header Banner */}
       <div className="rounded-2xl bg-gradient-to-br from-ink-900 via-ink-900 to-amber-900 text-white p-6 relative overflow-hidden shadow-soft">
         <div className="floaty absolute -right-10 -top-10 w-56 h-56 bg-amber-500/20 rounded-full blur-3xl" />
@@ -38,10 +45,13 @@ export default function AssetHealth() {
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 anim-fade-up">
         <Kpi label="Total Monitored Assets" value={<CountUp to={2847} />} icon={<Cpu className="w-4 h-4" />} />
-        <Kpi label="Overall Health Rate" value="91%" accent="text-brand-600" icon={<CheckCircle2 className="w-4 h-4" />} />
+        <Kpi label="Portfolio health" value="91%" sub="4 critical assets · 23 attention required" accent="text-brand-600" icon={<CheckCircle2 className="w-4 h-4" />} />
         <Kpi label="Maintenance Warnings" value={<CountUp to={23} />} accent="text-amber-600" icon={<AlertTriangle className="w-4 h-4" />} />
         <Kpi label="Critical Replacements" value={<CountUp to={4} />} accent="text-red-600" icon={<ShieldAlert className="w-4 h-4" />} />
       </div>
+
+      <div className="grid gap-5 lg:grid-cols-3"><Card className="p-5 lg:col-span-2"><h2 className="font-bold text-ink-900">{selected.id} · health explanation & criticality</h2><div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">{[["Vibration",selected.health < 70 ? "45%":"78%"],["Temperature","71%"],["Pressure variation","66%"],["Inspection compliance","92%"]].map(([label,value]) => <div key={label} className="rounded-xl bg-ink-50 p-3"><p className="text-[10px] uppercase text-ink-500">{label}</p><p className="mt-1 text-lg font-extrabold">{value}</p></div>)}</div><p className="mt-4 rounded-xl bg-amber-50 p-3 text-xs text-amber-900">Why health is {selected.health}%: vibration increased 23%, operating temperature exceeded baseline, and bearing wear pattern was detected.</p></Card><Card className="p-5"><p className="text-xs font-bold uppercase text-red-700">Criticality matrix</p><p className="mt-2 text-2xl font-extrabold text-red-700">Very High</p><p className="mt-2 text-xs">Health {selected.health}% · business criticality {criticality}% · mother-station dependency high.</p></Card></div>
+      <div className="grid gap-5 lg:grid-cols-3"><Card className="p-5"><h2 className="font-bold">Next best action</h2><p className="mt-3 text-sm font-extrabold">Bearing replacement</p><p className="mt-1 text-xs text-ink-600">₹12,000 · within 7 days · expected health {selected.health}% → 88%</p><button onClick={scheduleMaintenance} className="mt-4 w-full rounded-lg bg-ink-900 py-2 text-xs font-bold text-white">Schedule 18 Jul · 2–4 PM</button></Card><Card className="p-5"><h2 className="font-bold">If asset fails</h2><div className="mt-3 space-y-2 text-xs"><p>Affected customers: <strong>5,200</strong></p><p>Expected downtime: <strong>8 hours</strong></p><p>Revenue impact: <strong>{money(150000)}</strong></p><p>Station readiness: <strong>−12 points</strong></p></div></Card><Card className="p-5"><h2 className="font-bold">Cost avoidance</h2><p className="mt-3 text-2xl font-extrabold text-brand-700">₹3.08L</p><p className="mt-1 text-xs text-ink-600">Preventive cost ₹12,000 vs potential failure cost ₹3.20L.</p></Card></div>
 
       <div className="grid lg:grid-cols-3 gap-6 anim-fade-up">
         {/* Assets table */}

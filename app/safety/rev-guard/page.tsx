@@ -1,182 +1,152 @@
 "use client";
 
-import { useState } from "react";
-import { Card, Kpi, Badge } from "@/components/ui";
+import { useEffect, useMemo, useState } from "react";
+import { Badge, Card, Kpi } from "@/components/ui";
 import Typewriter from "@/components/Typewriter";
 import CountUp from "@/components/CountUp";
-import { TrendChart, DonutChart } from "@/components/Charts";
-import {
-  ShieldAlert, AlertTriangle, TrendingDown, IndianRupee,
-  MapPin, Search, Eye, Filter, Download, ChevronDown,
-  Activity, Zap, Clock, CheckCircle,
-} from "lucide-react";
+import { DonutChart, TrendChart } from "@/components/Charts";
+import { Activity, Camera, Check, CheckCircle2, ChevronRight, ClipboardCheck, Download, FileSearch, FileText, IndianRupee, MapPin, Network, Search, ShieldAlert } from "lucide-react";
 
 const TREND = [
-  { day: "Mon", alerts: 3, resolved: 2 },
-  { day: "Tue", alerts: 5, resolved: 5 },
-  { day: "Wed", alerts: 2, resolved: 2 },
-  { day: "Thu", alerts: 7, resolved: 6 },
-  { day: "Fri", alerts: 4, resolved: 4 },
-  { day: "Sat", alerts: 8, resolved: 7 },
-  { day: "Sun", alerts: 3, resolved: 3 },
+  { day: "Mon", alerts: 3, resolved: 2 }, { day: "Tue", alerts: 5, resolved: 5 }, { day: "Wed", alerts: 2, resolved: 2 },
+  { day: "Thu", alerts: 7, resolved: 6 }, { day: "Fri", alerts: 4, resolved: 4 }, { day: "Sat", alerts: 8, resolved: 7 }, { day: "Sun", alerts: 3, resolved: 3 },
 ];
 
 const TAMPER_TYPES = [
-  { name: "Meter Bypass", value: 34, color: "#ef4444" },
-  { name: "Slow Meter", value: 28, color: "#f59e0b" },
-  { name: "Seal Tampering", value: 22, color: "#8b5cf6" },
-  { name: "Unauthorized Tap", value: 16, color: "#0ea5e9" },
+  { name: "Meter Bypass", value: 34, color: "#ef4444" }, { name: "Slow Meter", value: 28, color: "#f59e0b" },
+  { name: "Seal Tampering", value: 22, color: "#8b5cf6" }, { name: "Unauthorized Tap", value: 16, color: "#0ea5e9" },
 ];
 
-type AlertStatus = "Open" | "Investigating" | "Resolved";
+const lifecycle = ["Detected", "Assigned", "Field Visit", "Evidence Collected", "Action Taken", "Recovered"] as const;
+type Lifecycle = typeof lifecycle[number];
+type Severity = "High" | "Medium" | "Low";
 
-interface TamperAlert {
-  id: string;
-  consumer: string;
-  area: string;
-  type: string;
-  loss: number;
-  severity: "High" | "Medium" | "Low";
-  status: AlertStatus;
-  detectedAt: string;
+type Case = {
+  id: string; consumer: string; account: string; area: string; type: string; loss: number; severity: Severity; stage: Lifecycle; detectedAt: string;
+  score: number; consumption: number; neighbourhood: number; drop: number; confidence: number; pastAlerts: number; previousVerification: string;
+  timeline: string[]; inspections: string[]; complaints: string[]; evidence: string[];
+};
+
+const CASES: Case[] = [
+  { id: "RG-0921", consumer: "Rajesh Shah", account: "C-1047", area: "Naranpura", type: "Meter Bypass", loss: 18400, severity: "High", stage: "Detected", detectedAt: "Today · 08:32 AM", score: 92, consumption: 12, neighbourhood: 48, drop: 62, confidence: 94, pastAlerts: 3, previousVerification: "Yes · Nov 2025", timeline: ["Jul 2025 · Consumption began declining", "Jan 2026 · Below expected seasonal range", "Today · AI anomaly alert generated"], inspections: ["Nov 2025 · Meter verification completed", "Aug 2024 · Safety inspection passed"], complaints: ["No supply complaints in last 12 months"], evidence: ["Consumption anomaly detected", "Previous 12-month pattern broken", "Meter inspection pending", "Neighbourhood variance high"] },
+  { id: "RG-0920", consumer: "Meenal Joshi", account: "C-2831", area: "Satellite", type: "Seal Tampering", loss: 7200, severity: "Medium", stage: "Evidence Collected", detectedAt: "Yesterday · 04:15 PM", score: 81, consumption: 21, neighbourhood: 46, drop: 44, confidence: 89, pastAlerts: 1, previousVerification: "Yes · Feb 2026", timeline: ["Feb 2026 · Meter verified", "Yesterday · Seal variance flagged", "Today · Photo evidence reviewed"], inspections: ["Feb 2026 · Meter verification completed"], complaints: ["Mar 2026 · Billing query resolved"], evidence: ["Seal mismatch observed", "Consumption anomaly detected", "Field image verification complete"] },
+  { id: "RG-0918", consumer: "Farooq Ahmed", account: "C-0556", area: "Chandkheda", type: "Slow Meter", loss: 9850, severity: "Medium", stage: "Assigned", detectedAt: "Jul 13 · 11:02 AM", score: 78, consumption: 28, neighbourhood: 53, drop: 39, confidence: 86, pastAlerts: 0, previousVerification: "No", timeline: ["Apr 2026 · Meter variance detected", "Jul 13 · Case assigned to field team"], inspections: ["No inspection in previous 18 months"], complaints: ["No complaint history"], evidence: ["Meter reading variance detected", "Consumption trend below cohort"] },
+  { id: "RG-0915", consumer: "Kiran Patel", account: "C-3341", area: "Naranpura", type: "Unauthorized Tap", loss: 23100, severity: "High", stage: "Field Visit", detectedAt: "Jul 12 · 06:50 AM", score: 96, consumption: 9, neighbourhood: 51, drop: 75, confidence: 97, pastAlerts: 2, previousVerification: "Yes · Sep 2025", timeline: ["Sep 2025 · Prior field verification", "Jul 12 · Repeated anomaly detected", "Today · Inspector visit scheduled"], inspections: ["Sep 2025 · Connection verification completed"], complaints: ["No supply complaints in last 12 months"], evidence: ["Repeat pattern detected", "Neighbourhood variance high", "Potential unauthorized tap route"] },
+  { id: "RG-0912", consumer: "Geeta Nair", account: "C-0812", area: "Gota", type: "Meter Bypass", loss: 5600, severity: "Low", stage: "Recovered", detectedAt: "Jul 10 · 09:20 AM", score: 62, consumption: 37, neighbourhood: 49, drop: 21, confidence: 78, pastAlerts: 0, previousVerification: "No", timeline: ["Jul 10 · Alert generated", "Jul 12 · Meter replaced", "Jul 14 · Recovery recorded"], inspections: ["Jul 12 · Meter test failed and replacement completed"], complaints: ["No complaint history"], evidence: ["Meter reading variance detected", "Recovery payment recorded"] },
+  { id: "RG-0908", consumer: "Dilip Mehta", account: "C-1922", area: "Vastral", type: "Slow Meter", loss: 11350, severity: "High", stage: "Recovered", detectedAt: "Jul 08 · 03:45 PM", score: 88, consumption: 18, neighbourhood: 45, drop: 58, confidence: 92, pastAlerts: 1, previousVerification: "Yes · Dec 2025", timeline: ["Jul 08 · Alert generated", "Jul 09 · Meter tested", "Jul 11 · Recovery recorded"], inspections: ["Jul 09 · Slow meter confirmed and replaced"], complaints: ["No complaint history"], evidence: ["Meter test failure confirmed", "Consumption pattern restored after replacement"] },
+];
+
+const areaRisk = [{ area: "Naranpura", alerts: 6, risk: "High" }, { area: "Satellite", alerts: 4, risk: "Medium" }, { area: "Chandkheda", alerts: 3, risk: "Medium" }, { area: "Bopal", alerts: 2, risk: "Watch" }];
+const severityTone: Record<Severity, "red" | "amber" | "sky"> = { High: "red", Medium: "amber", Low: "sky" };
+type RevGuardTab = "overview" | "investigate" | "operations" | "analytics";
+const storageKey = "suraksha:rev-guard:workspace";
+
+function currency(value: number) { return `₹${value.toLocaleString("en-IN")}`; }
+
+function WorkspaceTab({ active, label, sub, onClick }: { active: boolean; label: string; sub: string; onClick: () => void }) {
+  return <button onClick={onClick} className={`shrink-0 rounded-xl px-4 py-2.5 text-left transition ${active ? "bg-ink-900 text-white shadow-sm" : "text-ink-500 hover:bg-ink-50 hover:text-ink-900"}`}><span className="block text-sm font-bold">{label}</span><span className={`mt-0.5 block text-[10px] ${active ? "text-ink-300" : "text-ink-400"}`}>{sub}</span></button>;
 }
 
-const ALERTS: TamperAlert[] = [
-  { id: "RG-0921", consumer: "C-1047 · Rajesh Shah", area: "Bopal", type: "Meter Bypass", loss: 18400, severity: "High", status: "Open", detectedAt: "Today 08:32 AM" },
-  { id: "RG-0920", consumer: "C-2831 · Meenal Joshi", area: "Satellite", type: "Seal Tampering", loss: 7200, severity: "Medium", status: "Investigating", detectedAt: "Yesterday 4:15 PM" },
-  { id: "RG-0918", consumer: "C-0556 · Farooq Ahmed", area: "Chandkheda", type: "Slow Meter", loss: 9850, severity: "Medium", status: "Investigating", detectedAt: "Jul 13 11:02 AM" },
-  { id: "RG-0915", consumer: "C-3341 · Kiran Patel", area: "Naranpura", type: "Unauthorized Tap", loss: 23100, severity: "High", status: "Open", detectedAt: "Jul 12 06:50 AM" },
-  { id: "RG-0912", consumer: "C-0812 · Geeta Nair", area: "Gota", type: "Meter Bypass", loss: 5600, severity: "Low", status: "Resolved", detectedAt: "Jul 10 09:20 AM" },
-  { id: "RG-0908", consumer: "C-1922 · Dilip Mehta", area: "Vastral", type: "Slow Meter", loss: 11300, severity: "High", status: "Resolved", detectedAt: "Jul 08 03:45 PM" },
-];
-
-const SEVERITY_TONE: Record<string, "red" | "amber" | "sky"> = { High: "red", Medium: "amber", Low: "sky" };
-const STATUS_TONE: Record<AlertStatus, "red" | "amber" | "brand"> = { Open: "red", Investigating: "amber", Resolved: "brand" };
-
 export default function RevGuard() {
+  const [activeTab, setActiveTab] = useState<RevGuardTab>("overview");
+  const [cases, setCases] = useState(CASES);
+  const [recoveredRevenue, setRecoveredRevenue] = useState(48200);
+  const [selectedId, setSelectedId] = useState(CASES[0].id);
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<"All" | AlertStatus>("All");
+  const [filter, setFilter] = useState<"All" | Severity>("All");
+  const [notice, setNotice] = useState<string | null>(null);
+  const [loaded, setLoaded] = useState(false);
+  const selected = cases.find((item) => item.id === selectedId) ?? cases[0];
+  const filtered = useMemo(() => cases.filter((item) => (filter === "All" || item.severity === filter) && `${item.id} ${item.consumer} ${item.area}`.toLowerCase().includes(search.toLowerCase())), [cases, filter, search]);
+  const totalLoss = cases.reduce((sum, item) => sum + item.loss, 0);
+  const detectedRevenue = 75500;
+  const pendingRecovery = Math.max(0, detectedRevenue - recoveredRevenue);
+  const recoveryRate = (recoveredRevenue / detectedRevenue) * 100;
+  const nextStage = lifecycle[lifecycle.indexOf(selected.stage) + 1];
 
-  const filtered = ALERTS.filter((a) => {
-    const matchSearch = a.consumer.toLowerCase().includes(search.toLowerCase()) ||
-      a.area.toLowerCase().includes(search.toLowerCase()) ||
-      a.id.toLowerCase().includes(search.toLowerCase());
-    const matchFilter = filter === "All" || a.status === filter;
-    return matchSearch && matchFilter;
-  });
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(window.localStorage.getItem(storageKey) ?? "null") as { cases?: Case[]; recoveredRevenue?: number } | null;
+      if (saved?.cases && Array.isArray(saved.cases)) setCases(saved.cases);
+      if (typeof saved?.recoveredRevenue === "number") setRecoveredRevenue(saved.recoveredRevenue);
+    } catch { /* The live workspace remains available without browser storage. */ }
+    setLoaded(true);
+  }, []);
 
-  const totalLoss = ALERTS.reduce((s, a) => s + a.loss, 0);
-  const openCount = ALERTS.filter((a) => a.status === "Open").length;
-  const resolvedCount = ALERTS.filter((a) => a.status === "Resolved").length;
+  useEffect(() => {
+    if (!loaded) return;
+    try { window.localStorage.setItem(storageKey, JSON.stringify({ cases, recoveredRevenue })); } catch { /* Browser storage is optional for the demo. */ }
+  }, [cases, loaded, recoveredRevenue]);
 
-  return (
-    <div className="space-y-6 reveal">
-      {/* Header */}
-      <div className="rounded-2xl bg-gradient-to-br from-ink-900 via-ink-900 to-red-950 text-white p-6 relative overflow-hidden shadow-soft">
-        <div className="floaty absolute -right-10 -top-10 w-56 h-56 bg-red-500/20 rounded-full blur-3xl" />
-        <div className="relative">
-          <p className="text-red-300 text-xs font-semibold uppercase tracking-widest">CGD & Safety Suite</p>
-          <h1 className="text-2xl sm:text-3xl font-extrabold mt-1">
-            <Typewriter speed={40} segments={[{ text: "Rev-Guard " }, { text: "⚠️", cls: "" }]} />
-          </h1>
-          <p className="text-ink-300 mt-2 text-sm max-w-2xl">
-            AI-driven revenue leakage detection system — identifies meter tampering, unauthorized connections, and billing anomalies in real time.
-          </p>
-        </div>
-      </div>
+  function advanceCase() {
+    if (!nextStage) return;
+    setCases((current) => current.map((item) => item.id === selected.id ? { ...item, stage: nextStage } : item));
+    if (nextStage === "Recovered") setRecoveredRevenue((current) => Math.min(detectedRevenue, current + selected.loss));
+    setNotice(`${selected.id} moved to ${nextStage}.`);
+  }
 
-      {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 anim-fade-up">
-        <Kpi label="Open Alerts" value={<CountUp to={openCount} />} sub="Requiring action" accent="text-red-600" icon={<ShieldAlert className="w-4 h-4 text-red-500 animate-pulse" />} />
-        <Kpi label="Estimated Revenue Loss" value={`₹${(totalLoss / 1000).toFixed(1)}K`} sub="This month" accent="text-red-600" icon={<IndianRupee className="w-4 h-4" />} />
-        <Kpi label="Resolved This Week" value={<CountUp to={resolvedCount} />} sub="Cases closed" icon={<CheckCircle className="w-4 h-4" />} />
-        <Kpi label="Detection Accuracy" value="97.3%" sub="AI model confidence" accent="text-brand-600" icon={<Activity className="w-4 h-4" />} />
-      </div>
+  function downloadQueue() {
+    const rows = ["Case ID,Consumer,Area,Type,Potential Loss,Risk Score,Lifecycle", ...cases.map((item) => [item.id, item.consumer, item.area, item.type, item.loss, item.score, item.stage].map((value) => `\"${String(value).replaceAll("\"", "\"\"")}\"`).join(","))];
+    const url = URL.createObjectURL(new Blob([rows.join("\n")], { type: "text/csv" }));
+    const link = document.createElement("a"); link.href = url; link.download = "rev-guard-investigation-queue.csv"; link.click(); URL.revokeObjectURL(url);
+    setNotice("Investigation queue exported as CSV.");
+  }
 
-      <div className="grid lg:grid-cols-3 gap-6 anim-fade-up">
-        {/* Trend Chart */}
-        <Card className="lg:col-span-2 p-5">
-          <h3 className="font-bold text-ink-900 mb-3">Tamper Alerts — Last 7 Days</h3>
-          <TrendChart data={TREND} />
-        </Card>
+  function downloadCasePack() {
+    const content = ["REV-GUARD CASE PACK", "", `Case: ${selected.id}`, `Consumer: ${selected.consumer} (${selected.account})`, `Area: ${selected.area}`, `Risk score: ${selected.score}/100`, `Potential revenue exposure: ${currency(selected.loss)}`, `Lifecycle: ${selected.stage}`, "", "AI SUMMARY", `Consumption dropped ${selected.drop}% while similar households average ${selected.neighbourhood} SCM. Confidence: ${selected.confidence}%.`, "", "EVIDENCE", ...selected.evidence.map((item) => `• ${item}`), "", "RECOMMENDED ACTION", "• Field inspection within 48 hours", "• Meter testing", "• Customer contact"].join("\n");
+    const url = URL.createObjectURL(new Blob([content], { type: "text/plain" }));
+    const link = document.createElement("a"); link.href = url; link.download = `${selected.id}-case-pack.txt`; link.click(); URL.revokeObjectURL(url);
+    setNotice(`${selected.id} case pack downloaded.`);
+  }
 
-        {/* Donut */}
-        <Card className="p-5">
-          <h3 className="font-bold text-ink-900 mb-3">Tamper Type Breakdown</h3>
-          <DonutChart data={TAMPER_TYPES} />
-        </Card>
-      </div>
+  return <div className={`space-y-6 reveal revguard-${activeTab}`}>
+    {notice && <div className="fixed right-4 top-4 z-50 flex max-w-sm items-center gap-3 rounded-2xl bg-brand-600 px-5 py-3 text-sm font-semibold text-white shadow-xl"><CheckCircle2 className="h-5 w-5" />{notice}<button onClick={() => setNotice(null)} className="ml-auto text-white/80">×</button></div>}
+    <header className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-ink-900 via-ink-900 to-red-950 p-6 text-white shadow-soft"><div className="floaty absolute -right-10 -top-10 h-56 w-56 rounded-full bg-red-500/20 blur-3xl" /><div className="relative"><p className="text-xs font-semibold uppercase tracking-widest text-red-300">CGD revenue protection command center</p><h1 className="mt-1 text-2xl font-extrabold sm:text-3xl"><Typewriter speed={40} segments={[{ text: "Rev-Guard " }, { text: "⚠️" }]} /></h1><p className="mt-2 max-w-2xl text-sm text-ink-300">Prioritize leakage risk, explain every alert, coordinate field action, and track recovered revenue from one operational workspace.</p></div></header>
 
-      {/* Alert Table */}
-      <Card className="p-6 anim-fade-up">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
-          <h3 className="font-bold text-ink-900 flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-red-500" /> Revenue Leakage Alerts
-          </h3>
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink-400" />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search by ID, name, area..."
-                className="pl-8 pr-3 py-2 text-xs border border-ink-200 rounded-xl focus:outline-none focus:border-red-400 bg-white w-52"
-              />
-            </div>
-            <select
-              value={filter}
-              onChange={(e) => setFilter(e.target.value as "All" | AlertStatus)}
-              className="text-xs border border-ink-200 rounded-xl px-3 py-2 bg-white focus:outline-none focus:border-red-400"
-            >
-              {["All", "Open", "Investigating", "Resolved"].map((v) => (
-                <option key={v}>{v}</option>
-              ))}
-            </select>
-            <button className="flex items-center gap-1.5 text-xs border border-ink-200 rounded-xl px-3 py-2 hover:bg-ink-50 transition text-ink-600">
-              <Download className="w-3 h-3" /> Export
-            </button>
-          </div>
-        </div>
+    <div className="grid grid-cols-2 gap-4 lg:grid-cols-4"><Kpi label="Revenue detected" value={currency(detectedRevenue)} sub="Potential revenue leakage" accent="text-red-600" icon={<IndianRupee className="h-4 w-4" />} /><Kpi label="Recovered" value={currency(recoveredRevenue)} sub="Recovered this month" accent="text-brand-600" icon={<CheckCircle2 className="h-4 w-4" />} /><Kpi label="Recovery rate" value={`${recoveryRate.toFixed(1)}%`} sub="Recovered ÷ detected" accent="text-brand-600" icon={<Activity className="h-4 w-4" />} /><Kpi label="Pending recovery" value={currency(pendingRecovery)} sub="Actionable collection value" icon={<FileSearch className="h-4 w-4" />} /></div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-xs text-ink-500 font-semibold uppercase tracking-wider border-b border-ink-100">
-                {["Alert ID", "Consumer", "Area", "Type", "Est. Loss", "Severity", "Status", "Detected"].map((h) => (
-                  <th key={h} className="pb-3 pr-4 whitespace-nowrap">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-ink-50">
-              {filtered.map((a) => (
-                <tr key={a.id} className="hover:bg-ink-50/50 transition">
-                  <td className="py-3 pr-4 font-mono text-xs text-ink-600 whitespace-nowrap">{a.id}</td>
-                  <td className="py-3 pr-4 font-medium text-ink-800 whitespace-nowrap">{a.consumer}</td>
-                  <td className="py-3 pr-4 text-ink-600 whitespace-nowrap">
-                    <span className="flex items-center gap-1">
-                      <MapPin className="w-3 h-3" /> {a.area}
-                    </span>
-                  </td>
-                  <td className="py-3 pr-4 text-ink-700 whitespace-nowrap">{a.type}</td>
-                  <td className="py-3 pr-4 font-bold text-red-600 tabular-nums whitespace-nowrap">
-                    ₹{a.loss.toLocaleString("en-IN")}
-                  </td>
-                  <td className="py-3 pr-4 whitespace-nowrap">
-                    <Badge tone={SEVERITY_TONE[a.severity]}>{a.severity}</Badge>
-                  </td>
-                  <td className="py-3 pr-4 whitespace-nowrap">
-                    <Badge tone={STATUS_TONE[a.status]}>{a.status}</Badge>
-                  </td>
-                  <td className="py-3 pr-4 text-xs text-ink-400 whitespace-nowrap">{a.detectedAt}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {filtered.length === 0 && (
-            <p className="text-center text-ink-400 py-8 text-sm">No alerts match your search.</p>
-          )}
-        </div>
-      </Card>
-    </div>
-  );
+    <nav aria-label="Rev-Guard workspace sections" className="sticky top-3 z-10 flex gap-1 overflow-x-auto rounded-2xl border border-ink-100 bg-white/95 p-1.5 shadow-soft backdrop-blur"><WorkspaceTab active={activeTab === "overview"} label="Executive view" sub="Recovery & prevention" onClick={() => setActiveTab("overview")} /><WorkspaceTab active={activeTab === "investigate"} label="Investigate" sub="AI case workspace" onClick={() => setActiveTab("investigate")} /><WorkspaceTab active={activeTab === "operations"} label="Operations" sub="Priority & field queue" onClick={() => setActiveTab("operations")} /><WorkspaceTab active={activeTab === "analytics"} label="Analytics" sub="Patterns & model review" onClick={() => setActiveTab("analytics")} /></nav>
+    <style jsx global>{`
+      .revguard-overview > nav ~ div,
+      .revguard-investigate > nav ~ div,
+      .revguard-operations > nav ~ div,
+      .revguard-analytics > nav ~ div { display: none; }
+      .revguard-overview > nav + div,
+      .revguard-overview > nav + div + div { display: grid; }
+      .revguard-investigate > nav + div + div + div,
+      .revguard-investigate > nav + div + div + div + div,
+      .revguard-investigate > nav + div + div + div + div + div { display: grid; }
+      .revguard-investigate > nav + div + div + div + div + div + div + div + div + div + div + div { display: block; }
+      .revguard-operations > nav + div + div + div + div + div + div,
+      .revguard-operations > nav + div + div + div + div + div + div + div { display: grid; }
+      .revguard-analytics > nav + div + div + div + div + div + div + div + div { display: grid; }
+      .revguard-analytics > nav + div + div + div + div + div + div + div + div + div { display: block; }
+      .revguard-analytics > nav + div + div + div + div + div + div + div + div + div + div { display: grid; }
+    `}</style>
+
+    <div className="grid gap-5 lg:grid-cols-3"><Card className="p-5 lg:col-span-2"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-wider text-brand-700">Executive monthly summary</p><h2 className="mt-1 font-bold text-ink-900">Revenue protection performance</h2><p className="mt-1 text-xs text-ink-500">Decision-ready measures for operations, finance, and safety leadership.</p></div><Badge tone="brand">4.2 days avg. resolution</Badge></div><div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">{[["Cases detected", "42"], ["Cases closed", "31"], ["Revenue saved", "₹6.8L"], ["Repeat offenders", "3"]].map(([label, value]) => <div key={label} className="rounded-xl bg-ink-50 p-3"><p className="text-[10px] font-bold uppercase tracking-wide text-ink-500">{label}</p><p className="mt-1 text-lg font-extrabold text-ink-900">{value}</p></div>)}</div></Card><Card className="border-violet-200 bg-violet-50 p-5"><div className="flex items-center gap-2"><Activity className="h-4 w-4 text-violet-700" /><h2 className="font-bold text-violet-950">Preventive intelligence</h2></div><p className="mt-3 text-2xl font-extrabold text-violet-900">28 customers</p><p className="mt-1 text-xs leading-relaxed text-violet-800">Likely to become tampering suspects within 60 days based on early consumption, location, and meter-age signals.</p><button onClick={() => setNotice("Preventive-risk cohort opened for review.")} className="mt-4 text-xs font-bold text-violet-800 hover:underline">Review high-risk consumers <ChevronRight className="inline h-3.5 w-3.5" /></button></Card></div>
+
+    <div className="grid gap-5 lg:grid-cols-3"><Card className="p-5 lg:col-span-2"><div className="flex items-center justify-between"><div><h2 className="font-bold text-ink-900">Root cause analysis</h2><p className="mt-1 text-xs text-ink-500">What the revenue-protection programme should address next.</p></div><Badge tone="amber">Prevention focus</Badge></div><div className="mt-4 space-y-3">{[["Meter accessibility issues", 45, "bg-red-500"], ["Old meter infrastructure", 20, "bg-amber-500"], ["Illegal extensions", 18, "bg-violet-500"], ["Seal damage", 10, "bg-sky-500"], ["Unknown", 7, "bg-ink-400"]].map(([label, value, tone]) => <div key={label as string}><div className="flex justify-between text-xs font-semibold text-ink-700"><span>{label}</span><span>{value}%</span></div><div className="mt-1.5 h-2 overflow-hidden rounded-full bg-ink-100"><div className={`h-full rounded-full ${tone}`} style={{ width: `${value}%` }} /></div></div>)}</div></Card><Card className="p-5"><h2 className="font-bold text-ink-900">Inspector productivity</h2><p className="mt-1 text-xs text-ink-500">This month’s field conversion.</p><div className="mt-4 grid grid-cols-2 gap-3">{[["Alerts generated", "25"], ["Inspections conducted", "18"], ["Cases closed", "13"], ["Revenue recovered", "₹1.8L"]].map(([label, value]) => <div key={label} className="rounded-xl bg-brand-50 p-3"><p className="text-[10px] font-bold uppercase tracking-wide text-brand-700">{label}</p><p className="mt-1 font-extrabold text-brand-900">{value}</p></div>)}</div></Card></div>
+
+    <div className="grid gap-5 lg:grid-cols-3"><Card className="p-5 lg:col-span-2"><div className="flex items-start justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-wider text-red-600">AI investigation workspace</p><h2 className="mt-1 font-bold text-ink-900">{selected.id} · {selected.consumer}</h2><p className="mt-1 text-xs text-ink-500">{selected.account} · {selected.area} · detected {selected.detectedAt}</p></div><Badge tone={severityTone[selected.severity]}>Risk score {selected.score}/100</Badge></div><div className="mt-5 grid gap-3 sm:grid-cols-2"><section className="rounded-xl border border-red-100 bg-red-50 p-4"><h3 className="flex items-center gap-2 text-sm font-bold text-red-900"><ShieldAlert className="h-4 w-4" /> Why alert generated</h3><ul className="mt-3 space-y-2 text-xs text-red-800"><li><Check className="mr-1 inline h-3.5 w-3.5" />Consumption dropped {selected.drop}%</li><li><Check className="mr-1 inline h-3.5 w-3.5" />Neighbourhood average remained stable</li><li><Check className="mr-1 inline h-3.5 w-3.5" />Previous 12-month pattern broken</li><li><Check className="mr-1 inline h-3.5 w-3.5" />Meter reading variance detected</li></ul><p className="mt-3 border-t border-red-200 pt-3 text-xs font-bold">Confidence: {selected.confidence}%</p></section><section className="rounded-xl border border-brand-100 bg-brand-50 p-4"><h3 className="flex items-center gap-2 text-sm font-bold text-brand-900"><Activity className="h-4 w-4" /> AI case summary</h3><p className="mt-3 text-xs leading-relaxed text-brand-900">Customer consumption fell {selected.drop}% while similar households remain stable. The pattern is consistent with prior {selected.type.toLowerCase()} cases. A field inspection should be completed within 48 hours.</p><div className="mt-3 rounded-lg bg-white/80 p-2.5 text-[11px] text-brand-800"><strong>Recommended action:</strong> Site inspection, meter testing, and customer contact.</div></section></div><section className="mt-4 rounded-xl border border-ink-100 bg-white p-4"><div className="flex items-center justify-between"><div><h3 className="text-sm font-bold text-ink-900">Consumption pattern · last 12 months</h3><p className="text-[11px] text-ink-500">Normal household use versus the anomaly that triggered this case.</p></div><span className="text-xs font-bold text-red-600">−{selected.drop}% drop</span></div><div className="mt-4 grid grid-cols-12 items-end gap-1.5" aria-label="12 month consumption pattern">{[64, 61, 66, 63, 68, 65, 62, 66, 64, 61, 29, 24].map((value, index) => <div key={index} className="text-center"><div className={`mx-auto w-full max-w-7 rounded-t ${index > 9 ? "bg-red-500" : "bg-brand-400"}`} style={{ height: `${value}px` }} /><span className="mt-1 block text-[9px] text-ink-400">{index === 10 ? "Drop" : index === 11 ? "Alert" : `M${index + 1}`}</span></div>)}</div></section></Card>
+      <Card className="p-5"><h2 className="font-bold text-ink-900">Field team actions</h2><p className="mt-1 text-xs text-ink-500">AI recommends an action-ready response.</p><div className="mt-4 space-y-3">{["Site inspection required", "Meter testing required", "Customer contact required"].map((item) => <div key={item} className="flex items-center gap-2 rounded-lg bg-ink-50 p-3 text-xs font-semibold text-ink-700"><Check className="h-4 w-4 text-brand-600" />{item}</div>)}</div><div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3"><p className="text-[10px] font-bold uppercase tracking-wide text-amber-700">Priority</p><p className="mt-1 text-sm font-extrabold text-amber-900">Within 48 hours</p></div><button onClick={advanceCase} disabled={!nextStage} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-ink-900 py-2.5 text-sm font-bold text-white disabled:opacity-40">{nextStage ? <><ClipboardCheck className="h-4 w-4" />Mark {nextStage}</> : <><CheckCircle2 className="h-4 w-4" />Case recovered</>}</button><button onClick={downloadCasePack} className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-ink-200 py-2.5 text-xs font-bold text-ink-700 hover:bg-ink-50"><Download className="h-3.5 w-3.5" />Download case pack</button></Card></div>
+
+    <div className="grid gap-5 lg:grid-cols-3"><Card className="p-5 lg:col-span-2"><div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-bold text-ink-900">Field evidence available</h2><p className="mt-1 text-xs text-ink-500">A defensible investigation pack for case review and recovery action.</p></div><Badge tone="brand">4 evidence sources</Badge></div><div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">{([[Camera, "Site photos", "Available"], [FileText, "Inspection report", "Pending visit"], [Activity, "Consumption graph", "Available"], [MapPin, "Location history", "Available"]] as Array<[typeof Camera, string, string]>).map(([EvidenceIcon, label, status]) => <div key={label} className="rounded-xl border border-ink-100 bg-ink-50 p-3"><EvidenceIcon className="h-4 w-4 text-brand-600" /><p className="mt-2 text-xs font-bold text-ink-800">{label}</p><p className="mt-1 text-[10px] text-ink-500">{status}</p></div>)}</div></Card><Card className={`p-5 ${selected.type === "Unauthorized Tap" ? "border-red-200 bg-red-50" : "border-amber-200 bg-amber-50"}`}><div className="flex items-center gap-2"><ShieldAlert className={`h-4 w-4 ${selected.type === "Unauthorized Tap" ? "text-red-600" : "text-amber-700"}`} /><h2 className="font-bold text-ink-900">Safety + revenue link</h2></div><p className="mt-3 text-xs font-bold text-ink-800">{selected.type === "Unauthorized Tap" ? "Safety risk: HIGH" : "Safety risk: Review required"}</p><p className="mt-1 text-xs leading-relaxed text-ink-700">{selected.type === "Unauthorized Tap" ? "Potential improper pipeline modification increases both revenue exposure and household safety risk." : "Field verification confirms whether the revenue anomaly also requires a safety intervention."}</p><p className="mt-3 text-sm font-extrabold text-red-700">Revenue exposure: {currency(selected.loss)}</p></Card></div>
+
+    <div className="grid gap-5 xl:grid-cols-3"><Card className="p-5 xl:col-span-2"><div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-bold text-ink-900">Case lifecycle</h2><p className="mt-1 text-xs text-ink-500">Each case progresses through a documented recovery workflow.</p></div><Badge tone={severityTone[selected.severity]}>{selected.type}</Badge></div><div className="mt-5 grid grid-cols-3 gap-2 sm:grid-cols-6">{lifecycle.map((stage, index) => { const active = lifecycle.indexOf(selected.stage); return <div key={stage} className="text-center"><span className={`mx-auto grid h-8 w-8 place-items-center rounded-full text-xs font-bold ${index <= active ? "bg-brand-500 text-white" : "bg-ink-100 text-ink-400"}`}>{index < active ? <Check className="h-4 w-4" /> : index + 1}</span><p className={`mt-1 text-[10px] leading-tight ${index <= active ? "font-semibold text-ink-700" : "text-ink-400"}`}>{stage}</p></div>; })}</div><div className="mt-5 grid gap-3 md:grid-cols-2"><section className="rounded-xl border border-ink-100 p-4"><h3 className="text-xs font-bold uppercase tracking-wide text-ink-500">Evidence</h3><ul className="mt-3 space-y-2 text-xs text-ink-700">{selected.evidence.map((item) => <li key={item}><Check className="mr-1 inline h-3.5 w-3.5 text-brand-600" />{item}</li>)}</ul></section><section className="rounded-xl border border-ink-100 p-4"><h3 className="text-xs font-bold uppercase tracking-wide text-ink-500">Risk score factors</h3><div className="mt-3 space-y-2 text-xs">{[["Revenue impact", "40%"], ["Tampering probability", "35%"], ["Customer history", "15%"], ["Location risk", "10%"]].map(([label, value]) => <div key={label} className="flex justify-between text-ink-700"><span>{label}</span><strong>{value}</strong></div>)}</div></section></div></Card>
+      <Card className="p-5"><h2 className="font-bold text-ink-900">Neighbourhood comparison</h2><div className="mt-4 space-y-3"><div className="rounded-xl bg-ink-50 p-3"><p className="text-[10px] font-bold uppercase tracking-wide text-ink-500">Customer consumption</p><p className="mt-1 text-xl font-extrabold text-ink-900">{selected.consumption} SCM</p></div><div className="rounded-xl bg-brand-50 p-3"><p className="text-[10px] font-bold uppercase tracking-wide text-brand-700">Similar households</p><p className="mt-1 text-xl font-extrabold text-brand-800">{selected.neighbourhood} SCM</p></div><div className="rounded-xl bg-red-50 p-3"><p className="text-[10px] font-bold uppercase tracking-wide text-red-700">Variance</p><p className="mt-1 text-xl font-extrabold text-red-700">−{Math.round((1 - selected.consumption / selected.neighbourhood) * 100)}%</p></div></div></Card></div>
+
+    <div className="grid gap-5 lg:grid-cols-3"><Card className="p-5 lg:col-span-2"><div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-bold text-ink-900">Inspector priority queue</h2><p className="mt-1 text-xs text-ink-500">Top cases ranked by revenue impact, tampering probability, history, and location risk.</p></div><button onClick={downloadQueue} className="inline-flex items-center gap-1.5 rounded-lg border border-ink-200 px-3 py-2 text-xs font-bold text-ink-700"><Download className="h-3.5 w-3.5" />Export queue</button></div><div className="mt-4 divide-y divide-ink-100">{[...cases].sort((a, b) => b.score - a.score).slice(0, 5).map((item, index) => <button key={item.id} onClick={() => { setSelectedId(item.id); setActiveTab("investigate"); }} className={`flex w-full items-center gap-3 p-3 text-left ${selected.id === item.id ? "bg-brand-50" : "hover:bg-ink-50"}`}><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-ink-100 text-xs font-bold text-ink-600">{index + 1}</span><div className="min-w-0 flex-1"><p className="text-sm font-bold text-ink-900">{item.consumer}</p><p className="text-[11px] text-ink-500">{item.area} · {item.type} · {item.id}</p></div><div className="text-right"><p className="text-sm font-extrabold text-red-600">{currency(item.loss)}</p><p className="text-[10px] font-bold text-ink-500">Score {item.score}/100</p></div><ChevronRight className="h-4 w-4 text-ink-400" /></button>)}</div></Card>
+      <Card className="p-5"><h2 className="flex items-center gap-2 font-bold text-ink-900"><MapPin className="h-4 w-4 text-red-600" /> High-risk areas</h2><p className="mt-1 text-xs text-ink-500">Location intelligence for targeted deployment.</p><div className="mt-4 space-y-3">{areaRisk.map((item) => <div key={item.area} className="flex items-center justify-between rounded-xl border border-ink-100 p-3"><div><p className="text-sm font-bold text-ink-800">{item.area}</p><p className="text-xs text-ink-500">{item.alerts} active alerts</p></div><Badge tone={item.risk === "High" ? "red" : item.risk === "Medium" ? "amber" : "sky"}>{item.risk}</Badge></div>)}</div></Card></div>
+
+    <div className="grid gap-5 lg:grid-cols-3"><Card className="p-5 lg:col-span-2"><div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-bold text-ink-900">Alert investigation queue</h2><p className="mt-1 text-xs text-ink-500">Select an alert to open its customer timeline, evidence, history, and AI explanation.</p></div><div className="flex gap-2"><div className="relative"><Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ink-400" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Name, ID, area" className="w-40 rounded-xl border border-ink-200 bg-white py-2 pl-8 pr-3 text-xs outline-none focus:border-red-400" /></div><select value={filter} onChange={(event) => setFilter(event.target.value as "All" | Severity)} className="rounded-xl border border-ink-200 bg-white px-3 py-2 text-xs outline-none"><option>All</option><option>High</option><option>Medium</option><option>Low</option></select></div></div><div className="mt-4 overflow-x-auto"><table className="w-full text-sm"><thead><tr className="border-b border-ink-100 text-left text-[10px] font-bold uppercase tracking-wider text-ink-500">{["Case", "Area", "Potential loss", "Risk score", "Lifecycle"].map((item) => <th key={item} className="px-3 pb-3 first:pl-0">{item}</th>)}</tr></thead><tbody className="divide-y divide-ink-50">{filtered.map((item) => <tr key={item.id} onClick={() => setSelectedId(item.id)} className={`cursor-pointer ${selected.id === item.id ? "bg-brand-50" : "hover:bg-ink-50"}`}><td className="px-3 py-3 first:pl-0"><p className="font-bold text-ink-800">{item.consumer}</p><p className="text-[10px] text-ink-500">{item.id} · {item.type}</p></td><td className="px-3 py-3 text-xs text-ink-600">{item.area}</td><td className="px-3 py-3 text-xs font-bold text-red-600">{currency(item.loss)}</td><td className="px-3 py-3"><Badge tone={severityTone[item.severity]}>{item.score}/100</Badge></td><td className="px-3 py-3 text-xs font-semibold text-ink-600">{item.stage}</td></tr>)}</tbody></table>{filtered.length === 0 && <p className="py-8 text-center text-sm text-ink-400">No alerts match this search.</p>}</div></Card>
+      <Card className="p-5"><h2 className="font-bold text-ink-900">Customer risk profile</h2><div className="mt-4 space-y-3 text-sm"><div className="rounded-xl bg-ink-50 p-3"><p className="text-xs text-ink-500">Past alerts</p><p className="mt-1 font-extrabold text-ink-900">{selected.pastAlerts}</p></div><div className="rounded-xl bg-ink-50 p-3"><p className="text-xs text-ink-500">Previous verification</p><p className="mt-1 font-bold text-ink-900">{selected.previousVerification}</p></div><div className={`rounded-xl p-3 ${selected.pastAlerts > 1 ? "bg-red-50 text-red-800" : "bg-brand-50 text-brand-800"}`}><p className="text-xs font-bold">{selected.pastAlerts > 1 ? "Repeat pattern detected" : "No repeat pattern detected"}</p></div></div><h3 className="mt-5 text-xs font-bold uppercase tracking-wide text-ink-500">Customer timeline</h3><div className="mt-3 space-y-3">{selected.timeline.map((item) => <p key={item} className="border-l-2 border-brand-300 pl-3 text-xs text-ink-700">{item}</p>)}</div><h3 className="mt-5 text-xs font-bold uppercase tracking-wide text-ink-500">Inspection & complaint history</h3><div className="mt-3 space-y-2 text-xs text-ink-700">{[...selected.inspections, ...selected.complaints].map((item) => <p key={item}><Check className="mr-1 inline h-3.5 w-3.5 text-brand-600" />{item}</p>)}</div></Card></div>
+
+    <div className="grid gap-5 lg:grid-cols-3"><Card className="p-5 lg:col-span-2"><h2 className="font-bold text-ink-900">Detection trend · last 7 days</h2><p className="mt-1 text-xs text-ink-500">Kept for operational context; investigation and recovery remain the primary focus.</p><div className="mt-4"><TrendChart data={TREND} /></div></Card><Card className="p-5"><h2 className="font-bold text-ink-900">Tamper categories</h2><p className="mt-1 text-xs text-ink-500">Detection distribution</p><div className="mt-3"><DonutChart data={TAMPER_TYPES} /></div></Card></div>
+
+    <Card className="border-brand-200 bg-brand-50/60 p-5"><div className="flex flex-wrap items-center justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-wider text-brand-700">Equivalent impact</p><p className="mt-1 font-bold text-ink-900">{currency(totalLoss)} detected this month equals approximately 75 households’ monthly PNG revenue.</p><p className="mt-1 text-xs text-ink-600">Recovery tracking turns estimated risk into a measurable operational outcome.</p></div><div className="flex items-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-bold text-brand-800"><IndianRupee className="h-4 w-4" />Pending: ₹11,300</div></div></Card>
+    <div className="grid gap-5 lg:grid-cols-3"><Card className="p-5"><h2 className="font-bold text-ink-900">Financial impact</h2><div className="mt-4 space-y-3">{[["Current loss", "₹75,500"], ["Annualized impact", "₹9.06L"], ["Potential recovery", "₹6.2L"]].map(([label, value]) => <div key={label} className="flex items-center justify-between rounded-xl bg-ink-50 p-3"><span className="text-xs text-ink-600">{label}</span><strong className="text-sm text-ink-900">{value}</strong></div>)}</div></Card><Card className="p-5"><h2 className="font-bold text-ink-900">Alert validation</h2><p className="mt-1 text-xs text-ink-500">Transparent false-positive monitoring for model governance.</p><div className="mt-4 grid grid-cols-3 gap-2 text-center">{[["Generated", "100", "bg-ink-50 text-ink-800"], ["Validated", "88", "bg-brand-50 text-brand-800"], ["False positives", "12", "bg-red-50 text-red-700"]].map(([label, value, tone]) => <div key={label} className={`rounded-xl p-3 ${tone}`}><p className="text-lg font-extrabold">{value}</p><p className="mt-1 text-[10px] font-bold">{label}</p></div>)}</div><p className="mt-3 text-xs font-bold text-brand-700">Verified-alert rate: 88%</p></Card><Card className="p-5"><h2 className="flex items-center gap-2 font-bold text-ink-900"><Network className="h-4 w-4 text-violet-600" /> Repeat-offender network</h2><p className="mt-3 text-sm font-bold text-ink-900">Common contractor pattern found</p><p className="mt-1 text-xs leading-relaxed text-ink-600">One installation contractor appears across four linked investigations in Naranpura and Satellite.</p><div className="mt-4 flex flex-wrap gap-2">{["RG-0921", "RG-0915", "RG-0887", "RG-0874"].map((id) => <span key={id} className="rounded-full bg-violet-50 px-2.5 py-1 text-[10px] font-bold text-violet-800">{id}</span>)}</div><button onClick={() => setNotice("Contractor network investigation opened.")} className="mt-4 text-xs font-bold text-violet-700 hover:underline">View linked cases <ChevronRight className="inline h-3.5 w-3.5" /></button></Card></div>
+
+    <Card className="border-ink-200 bg-white p-5"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-wider text-ink-500">Selected consumer profile</p><h2 className="mt-1 font-bold text-ink-900">{selected.consumer} · Risk score {selected.score}/100</h2></div><Badge tone={selected.score >= 90 ? "red" : "amber"}>{selected.severity} priority</Badge></div><div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">{[["Past alerts", String(selected.pastAlerts)], ["Previous violations", String(Math.max(0, selected.pastAlerts - 1))], ["Billing volatility", selected.drop >= 50 ? "High" : "Medium"], ["Neighbourhood risk", selected.area === "Naranpura" ? "High" : "Medium"], ["Recommended action", "Field inspection"]].map(([label, value]) => <div key={label} className="rounded-xl bg-ink-50 p-3"><p className="text-[10px] font-bold uppercase tracking-wide text-ink-500">{label}</p><p className="mt-1 text-xs font-extrabold text-ink-900">{value}</p></div>)}</div></Card>
+  </div>;
 }
