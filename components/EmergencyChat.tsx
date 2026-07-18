@@ -14,6 +14,14 @@ type Lang = "en" | "hi" | "gu";
 type L<T> = Record<Lang, T>;
 type CallNo = "1906" | "101" | "108";
 
+function preferredLanguage(): Lang {
+  if (typeof navigator === "undefined") return "en";
+  const language = navigator.language.toLowerCase();
+  if (language.startsWith("gu")) return "gu";
+  if (language.startsWith("hi")) return "hi";
+  return "en";
+}
+
 const LANGS: { code: Lang; label: string; stt: string }[] = [
   { code: "en", label: "EN", stt: "en-IN" },
   { code: "hi", label: "हिं", stt: "hi-IN" },
@@ -248,7 +256,8 @@ function guToDeva(s: string) {
 type Msg = { role: "bot" | "user"; text: string; call?: CallNo };
 
 export default function EmergencyChat() {
-  const [lang, setLang] = useState<Lang>("en");
+  const initialLanguage = preferredLanguage();
+  const [lang, setLang] = useState<Lang>(initialLanguage);
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [muted, setMuted] = useState(false);
@@ -262,7 +271,7 @@ export default function EmergencyChat() {
   const boxRef = useRef<HTMLDivElement>(null);
   const recRef = useRef<any>(null);
   const mutedRef = useRef(false);
-  const langRef = useRef<Lang>("en");
+  const langRef = useRef<Lang>(initialLanguage);
   const voiceRef = useRef<SpeechSynthesisVoice | null>(null);
   const rot = useRef<Record<string, number>>({});
   const lastReply = useRef("");
@@ -372,14 +381,14 @@ export default function EmergencyChat() {
 
   // greeting + STT
   useEffect(() => {
-    setMsgs([{ role: "bot", text: GREET.en }]);
-    lastReply.current = GREET.en;
+    setMsgs([{ role: "bot", text: GREET[langRef.current] }]);
+    lastReply.current = GREET[langRef.current];
     setTimeout(() => speak(GREET[langRef.current]), 600);
 
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (SR) {
       const r = new SR();
-      r.continuous = false; r.interimResults = true; r.maxAlternatives = 1; r.lang = "en-IN";
+      r.continuous = false; r.interimResults = true; r.maxAlternatives = 1; r.lang = LANGS.find((item) => item.code === langRef.current)!.stt;
       r.onresult = (e: any) => {
         let interim = "", final = "";
         for (let i = e.resultIndex; i < e.results.length; i++) {

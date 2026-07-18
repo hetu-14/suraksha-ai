@@ -43,26 +43,26 @@ export function buildHealthFactors(profile: HealthProfile, connection: Connectio
 
   return [
     {
-      id: "safety", name: "Safety compliance", score: safetyScore, weight: 30, tone: "brand",
+      id: "safety", name: "Safety compliance", score: safetyScore, weight: 35, tone: "brand",
       evidence: ["Safety inspection passed", "No leak alerts", "No emergency incidents", profile.safetySurveyComplete ? "Safety guidance viewed" : "Safety guidance not yet completed"],
       action: profile.safetySurveyComplete ? undefined : "Complete the safety guidance in GasGuard.",
     },
     {
-      id: "payment", name: "Payment reliability", score: 88, weight: 20, tone: "brand",
+      id: "payment", name: "Payment reliability", score: 88, weight: 10, tone: "brand",
       evidence: ["Last 12 bills paid on time", "No outstanding dues", "Payment method verified"],
     },
     {
-      id: "equipment", name: "Equipment health", score: equipmentScore, weight: 20, tone: profile.preventiveInspectionBooked ? "brand" : "amber",
+      id: "equipment", name: "Equipment health", score: equipmentScore, weight: 25, tone: profile.preventiveInspectionBooked ? "brand" : "amber",
       evidence: ["Regulator age is within range", "Last inspection recorded", profile.preventiveInspectionBooked ? "Preventive inspection scheduled" : "Maintenance history is current"],
       action: profile.preventiveInspectionBooked ? undefined : "Kitchen regulator inspection is due in 45 days.",
     },
     {
-      id: "usage", name: "Usage stability", score: 75, weight: 15, tone: "amber",
+      id: "usage", name: "Usage stability", score: 75, weight: 10, tone: "amber",
       evidence: ["Stable consumption overall", "Slight increase in the last two cycles", "No leak indicators detected"],
       action: "Continue monitoring the next billing cycle in WhyMyBill.",
     },
     {
-      id: "readiness", name: "Safety readiness", score: readinessScore, weight: 15, tone: readinessScore >= 75 ? "brand" : "amber",
+      id: "readiness", name: "Safety readiness", score: readinessScore, weight: 20, tone: readinessScore >= 75 ? "brand" : "amber",
       evidence: [profile.emergencyContactVerified ? "Emergency contact verified" : "Emergency contact requires verification", connection.layout ? "Connection documentation complete" : "Connection layout approval pending", connection.siteAccess ? "Site access scheduled" : "Site access can be scheduled"],
       action: profile.emergencyContactVerified ? undefined : "Verify your emergency contact to improve this score.",
     },

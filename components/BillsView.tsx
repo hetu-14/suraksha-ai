@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import {
-  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell,
+  ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
 } from "recharts";
 import {
   ReceiptText, Download, ArrowUpRight, ArrowDownRight, Minus, Database, HardDrive, Calendar,
@@ -58,11 +58,11 @@ export default function BillsView({ customers, live }: { customers: CustomerWith
     );
   }
 
-  const chartData = bills.map((b) => {
+  const chartData = bills.map((b, index) => {
     const label = b.cycleLabel ?? "";
     const name = label.includes(" 20") ? label.replace(" 20", " '") : label;
     const isWinterMonth = b.periodEnd ? [11, 12, 1, 2].includes(new Date(b.periodEnd).getUTCMonth() + 1) : false;
-    return { name, units: b.unitsScm ?? 0, id: b.id, winter: isWinterMonth };
+    return { name, units: b.unitsScm ?? 0, area: b.areaAverageScm ?? null, previousYear: bills[index - 6]?.unitsScm ?? null, id: b.id, winter: isWinterMonth };
   });
   const verdictTone = explanation.verdict === "leak" ? "red" : explanation.verdict === "under" ? "sky" : "brand";
 
@@ -177,18 +177,19 @@ export default function BillsView({ customers, live }: { customers: CustomerWith
             <h3 className="font-bold text-ink-900 mb-3">Consumption history (SCM)</h3>
             <div className="h-[260px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
+                  <LineChart data={chartData} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#eef2f6" vertical={false} />
                   <XAxis dataKey="name" tick={{ fontSize: 10, fill: "#94a3b8" }} axisLine={false} tickLine={false} interval={0} angle={-12} dy={8} />
                   <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
-                  <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid #e2e8f0", fontSize: 12 }} cursor={{ fill: "#f1f5f9" }} />
-                  <Bar dataKey="units" radius={[6, 6, 0, 0]} onClick={(d: { id?: string }) => d?.id && setBillId(d.id)}>
-                    {chartData.map((d) => <Cell key={d.id} cursor="pointer" fill={d.id === bill.id ? (verdictTone === "red" ? "#ef4444" : verdictTone === "sky" ? "#0ea5e9" : "#10b981") : d.winter ? "#fcd9b6" : "#cbd5e1"} />)}
-                  </Bar>
-                </BarChart>
+                    <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid #e2e8f0", fontSize: 12 }} />
+                    <Legend iconType="circle" wrapperStyle={{ fontSize: 11 }} />
+                    <Line type="monotone" dataKey="units" name="Your usage" stroke={verdictTone === "red" ? "#ef4444" : verdictTone === "sky" ? "#0ea5e9" : "#10b981"} strokeWidth={3} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                    <Line type="monotone" dataKey="area" name="Area average" stroke="#94a3b8" strokeWidth={2} strokeDasharray="5 4" dot={false} connectNulls />
+                    <Line type="monotone" dataKey="previousYear" name="Previous year" stroke="#f59e0b" strokeWidth={2} dot={false} connectNulls />
+                  </LineChart>
               </ResponsiveContainer>
             </div>
-            <div className="flex items-center gap-4 mt-2 text-xs text-ink-500"><span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-brand-500" /> Selected</span><span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm" style={{ background: "#fcd9b6" }} /> Winter cycle</span><span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-ink-300" /> Other</span></div>
+            <p className="mt-2 text-xs text-ink-500">Seasonal overlay compares your usage with available area averages and the same position last year.</p>
           </div>
         }
       />
