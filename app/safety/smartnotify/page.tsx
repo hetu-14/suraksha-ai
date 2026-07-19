@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Card, SectionTitle } from "@/components/ui";
 import { zones } from "@/lib/data";
+import { recordActivity } from "@/lib/activity";
 import { Megaphone, CheckCircle2, XCircle, Loader2, MessageCircle, Info, Mail, PhoneCall, Smartphone, AlertTriangle, MapPin } from "lucide-react";
 
 type SendResult = { phone: string; status: "sent" | "failed"; error?: string };
@@ -49,6 +50,7 @@ export default function SmartNotify() {
       if (data.configured) {
         setResp(data);
         setSending(false);
+        logNoticeSent("WhatsApp API");
         return;
       }
     } catch {
@@ -69,8 +71,14 @@ export default function SmartNotify() {
       if (p >= 100) {
         clearInterval(t);
         setSending(false);
+        logNoticeSent("simulated delivery");
       }
     }, 100);
+  }
+
+  function logNoticeSent(channel: string) {
+    recordActivity("safety", { module: "Auto-Notify", title: `48-hour notice sent · ${zone.name}`, detail: `${zone.n.toLocaleString("en-IN")} customers notified via ${channel}; delivery proof stored for the PNGRB audit log.`, href: "/safety/smartnotify", tone: "brand" });
+    recordActivity("intelligence", { module: "Auto-Notify", title: `Interruption notice logged · ${zone.name}`, detail: `${zone.n.toLocaleString("en-IN")} customers received the mandated 48-hour advance notice — compliance evidence recorded.`, href: "/intelligence", tone: "brand" });
   }
 
   return (

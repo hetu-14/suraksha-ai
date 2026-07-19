@@ -6,6 +6,7 @@ import CountUp from "@/components/CountUp";
 import { DonutChart, TrendChart } from "@/components/Charts";
 import { useLocalWorkspaceState } from "@/lib/useLocalWorkspaceState";
 import { readLiveIncident, liveIncidentKey } from "@/lib/ops";
+import { recordActivity } from "@/lib/activity";
 import OperatorHandoff, { type HandoffEntry } from "@/components/OperatorHandoff";
 import {
   Siren, Timer, Truck, CheckCircle2, MapPin, Video, ShieldAlert,
@@ -178,6 +179,7 @@ export default function EmergencyDashboard() {
       cases: w.cases.map((c) => (c.id === id ? { ...c, status: "Dispatched" as CaseStatus, crew } : c)),
       feed: [`Crew ${crew} dispatched manually to ${id}`, ...w.feed].slice(0, 6),
     }));
+    recordActivity("safety", { module: "Emergency", title: `Crew ${crew} dispatched · ${id}`, detail: "Manual dispatch from the emergency dashboard; case stays open until field closure.", href: "/safety/emergency", tone: "amber", priority: "high" });
   }
 
   function resolveCase(id: string) {
@@ -186,6 +188,8 @@ export default function EmergencyDashboard() {
       cases: w.cases.map((c) => (c.id === id ? { ...c, status: "Resolved" as CaseStatus } : c)),
       feed: [`Case ${id} resolved`, ...w.feed].slice(0, 6),
     }));
+    recordActivity("safety", { module: "Emergency", title: `Case ${id} resolved`, detail: "Field closure confirmed; the incident record is retained for review.", href: "/safety/emergency", tone: "brand" });
+    recordActivity("intelligence", { module: "Emergency", title: `Emergency case ${id} closed`, detail: "Response completed by the control room — closure feeds the safety KPI trend.", href: "/intelligence", tone: "brand" });
   }
 
   function acknowledgeCctv(id: string) {

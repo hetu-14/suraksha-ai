@@ -7,6 +7,7 @@ import {
   Mic, Pause, Send, ThumbsDown, ThumbsUp, UserRound, UsersRound, Volume2, Smile, Meh, Frown,
 } from "lucide-react";
 import { Card, Kpi } from "@/components/ui";
+import { recordActivity } from "@/lib/activity";
 
 type Status = "Received" | "Under Review" | "Assigned" | "Action Taken" | "Closed" | "Implemented";
 type Satisfaction = "yes" | "partial" | "no" | undefined;
@@ -54,6 +55,8 @@ export default function VoiceOfCustomer() {
       if (Array.isArray(saved?.feedback)) setFeedback(saved.feedback);
       if (saved?.votes && typeof saved.votes === "object") setVotes(saved.votes);
       if (saved?.downVotes && typeof saved.downVotes === "object") setDownVotes(saved.downVotes);
+      const requestedTab = new URLSearchParams(window.location.search).get("tab");
+      if (requestedTab === "share" || requestedTab === "community" || requestedTab === "mine") setTab(requestedTab);
     } catch { /* Fresh profile uses the seeded feedback journey. */ }
   }, []);
 
@@ -86,6 +89,8 @@ export default function VoiceOfCustomer() {
       timeline: isSafety ? [{ label: "Received", date: "Now" }, { label: "Safety escalation", date: "Now" }, { label: "Assigned", date: "Now" }] : [{ label: "Received", date: "Now" }],
     };
     setFeedback((current) => [item, ...current]);
+    recordActivity("customer", { module: "Voice of Customer", title: `Feedback ${item.id} submitted`, detail: `${item.category} · assigned to ${item.owner} · priority ${item.priority}.`, href: "/customer/voice", tone: isSafety ? "red" : "brand", priority: isSafety ? "high" : "normal" });
+    if (isSafety) recordActivity("safety", { module: "Voice of Customer", title: `Safety-flagged feedback · ${item.id}`, detail: `Customer GJ-559210 reported: "${item.text.slice(0, 80)}" — routed to GasGuard Safety Team.`, href: "/safety/sla-sentinel", tone: "red", priority: "high" });
     setSubmitted(item);
     setText("");
     setVoiceUrl(null);
@@ -134,6 +139,7 @@ export default function VoiceOfCustomer() {
   }
 
   function rate(itemId: string, satisfaction: Satisfaction) {
+    if (satisfaction === "no") recordActivity("customer", { module: "Voice of Customer", title: `${itemId} reopened for review`, detail: "You marked this issue as unresolved — the Customer Resolution Team has been assigned.", href: "/customer/voice", tone: "amber", priority: "high" });
     setFeedback((current) => current.map((item) => item.id === itemId
       ? satisfaction === "no"
         ? { ...item, satisfaction, status: "Under Review", owner: "Customer Resolution Team", timeline: [...item.timeline, { label: "Reopened after recheck", date: "Now" }] }
@@ -142,6 +148,13 @@ export default function VoiceOfCustomer() {
   }
 
   function escalate(kind: "review" | "callback" | "grievance") {
+    recordActivity("customer", {
+      module: "Voice of Customer",
+      title: kind === "review" ? "Review requested" : kind === "callback" ? "Callback requested" : "Grievance raised",
+      detail: kind === "review" ? "The Customer Resolution Team will reassess your feedback." : kind === "callback" ? "A customer-care specialist will contact you within one business day." : "Your grievance is tracked under the PNGRB consumer-protection timeline.",
+      href: "/customer/voice",
+      tone: "amber",
+    });
     setNotice(kind === "review" ? "Review requested. The Customer Resolution Team will reassess your feedback." : kind === "callback" ? "Callback requested. A customer-care specialist will contact you within one business day." : "Grievance raised. You will receive a tracking update in this dashboard.");
   }
 

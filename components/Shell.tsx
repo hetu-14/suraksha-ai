@@ -1,14 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, ReactNode } from "react";
 import {
   LayoutDashboard, PhoneCall, Megaphone, Timer, ShieldAlert,
   ScanEye, ReceiptText, Menu, Bell, LogOut, ChevronRight, Video, Siren,
   Route, HeartPulse, MessageSquare, Award, Building2, Wrench, HardHat,
-  Monitor, TrendingUp, Activity, Flame, CalendarDays, Check,
+  Monitor, TrendingUp, Activity, Flame, CalendarDays, Check, Search,
 } from "lucide-react";
+import GlobalSearch from "@/components/GlobalSearch";
+import { timeAgo, useActivityFeed } from "@/lib/activity";
 
 export type NavItem = { href: string; label: string; icon: keyof typeof ICONS; badge?: string };
 
@@ -37,27 +39,6 @@ const ICONS = {
 };
 
 type SuiteRole = "customer" | "safety" | "intelligence";
-
-type Notif = { id: string; title: string; detail: string; time: string; read: boolean; tone: "amber" | "red" | "brand" };
-
-const NOTIFICATIONS: Record<SuiteRole, Notif[]> = {
-  customer: [
-    { id: "c1", title: "Inspection due in 45 days", detail: "Schedule your annual safety inspection to keep your Safety Passport current.", time: "2h ago", read: false, tone: "amber" },
-    { id: "c2", title: "Bill of ₹1,980 due in 4 days", detail: "GJ-559210 · pay before Jul 22 to avoid a late fee.", time: "6h ago", read: false, tone: "brand" },
-    { id: "c3", title: "TrustPoints: +100 for safety training", detail: "Leak-safety awareness module completed.", time: "Yesterday", read: true, tone: "brand" },
-    { id: "c4", title: "Site survey completed", detail: "Your new-connection application moved to the next stage.", time: "2 days ago", read: true, tone: "amber" },
-  ],
-  safety: [
-    { id: "s1", title: "Critical PPM at Naranpura Inlet Line", detail: "Zone Z-04 crossed the critical methane threshold — field response required.", time: "3m ago", read: false, tone: "red" },
-    { id: "s2", title: "New SOS · EMG-2231 · Maninagar Sec 12", detail: "AI dispatcher is guiding the caller; crew dispatch pending.", time: "8m ago", read: false, tone: "red" },
-    { id: "s3", title: "T-7714 breached — Meter fault, Satellite", detail: "Compensation payout window is now active. Open SLA Sentinel to assign a crew.", time: "22m ago", read: false, tone: "amber" },
-    { id: "s4", title: "Contractor audit overdue", detail: "2 vendors have certifications expiring this week.", time: "Yesterday", read: true, tone: "amber" },
-  ],
-  intelligence: [
-    { id: "i1", title: "Weekly revenue report ready", detail: "Revenue Guard flagged 142 high-risk accounts this week.", time: "1h ago", read: false, tone: "brand" },
-    { id: "i2", title: "SLA compliance at 94.2% (MTD)", detail: "0.8 points below the 95% target — 1 breach and 4 at-risk tickets in the live queue.", time: "5h ago", read: true, tone: "amber" },
-  ],
-};
 
 const SUITE_CONFIG: Record<SuiteRole, {
   label: string; sub: string; consoleName: string; accent: string;
@@ -101,14 +82,24 @@ export default function Shell({
   children: ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
-  const [notifs, setNotifs] = useState<Notif[]>(NOTIFICATIONS[role]);
+  const [searchOpen, setSearchOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
   const cfg = SUITE_CONFIG[role];
-  const unread = notifs.filter((n) => !n.read).length;
+  const { events, unread, markRead, markAllRead } = useActivityFeed(role);
 
-  useEffect(() => { setNotifs(NOTIFICATIONS[role]); }, [role]);
+  useEffect(() => {
+    function onKey(event: KeyboardEvent) {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setSearchOpen((value) => !value);
+      }
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
 
   useEffect(() => {
     if (!notifOpen) return;
@@ -203,6 +194,18 @@ export default function Shell({
               </nav>
             </div>
             <div className="flex items-center gap-2 sm:gap-3">
+              <button
+                onClick={() => setSearchOpen(true)}
+                className="hidden sm:flex items-center gap-2 rounded-lg border border-ink-200 bg-white/70 px-3 py-1.5 text-xs text-ink-500 hover:border-ink-300 hover:text-ink-700"
+                aria-label="Search everything"
+              >
+                <Search className="w-3.5 h-3.5" />
+                Search
+                <kbd className="rounded border border-ink-200 bg-ink-50 px-1 text-[10px] font-semibold text-ink-400">Ctrl K</kbd>
+              </button>
+              <button onClick={() => setSearchOpen(true)} className="sm:hidden p-2 rounded-lg hover:bg-ink-100" aria-label="Search everything">
+                <Search className="w-5 h-5 text-ink-600" />
+              </button>
               <span className={`hidden sm:flex items-center gap-2 text-xs font-medium ${cfg.liveText} ${cfg.liveBg} px-3 py-1.5 rounded-full border ${cfg.liveBorder}`}>
                 <span className="relative flex h-2 w-2">
                   <span className={`animate-ping absolute h-2 w-2 rounded-full ${cfg.livePing} opacity-75`} />
@@ -216,52 +219,65 @@ export default function Shell({
                   onClick={() => setNotifOpen((v) => !v)}
                   aria-haspopup="true"
                   aria-expanded={notifOpen}
-                  aria-label="Notifications"
+                  aria-label={unread > 0 ? `Notifications, ${unread} unread` : "Notifications"}
                 >
                   <Bell className="w-5 h-5 text-ink-600" />
-                  {unread > 0 && <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500" />}
+                  {unread > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">
+                      {unread > 9 ? "9+" : unread}
+                    </span>
+                  )}
                 </button>
                 {notifOpen && (
                   <div
                     role="dialog"
                     aria-label="Notifications"
-                    className="absolute right-0 top-12 z-50 w-80 rounded-xl border border-ink-200 bg-white shadow-float overflow-hidden"
+                    className="absolute right-0 top-12 z-50 w-[22rem] rounded-xl border border-ink-200 bg-white shadow-float overflow-hidden"
                   >
                     <div className="flex items-center justify-between px-4 py-3 border-b border-ink-100">
                       <span className="text-sm font-bold text-ink-900">
                         Notifications{unread > 0 && <span className="ml-1.5 text-xs font-semibold text-ink-500">({unread} unread)</span>}
                       </span>
                       {unread > 0 && (
-                        <button
-                          onClick={() => setNotifs((current) => current.map((n) => ({ ...n, read: true })))}
-                          className="text-xs font-semibold text-ink-500 hover:text-ink-900"
-                        >
+                        <button onClick={markAllRead} className="text-xs font-semibold text-ink-500 hover:text-ink-900">
                           Mark all read
                         </button>
                       )}
                     </div>
                     <div className="max-h-80 overflow-y-auto divide-y divide-ink-50">
-                      {notifs.length === 0 && (
+                      {events.length === 0 && (
                         <p className="px-4 py-8 text-center text-sm text-ink-400">You&apos;re all caught up.</p>
                       )}
-                      {notifs.map((n) => (
+                      {events.map((n) => (
                         <button
                           key={n.id}
-                          onClick={() => setNotifs((current) => current.map((item) => (item.id === n.id ? { ...item, read: true } : item)))}
+                          onClick={() => {
+                            markRead(n.id);
+                            setNotifOpen(false);
+                            router.push(n.href);
+                          }}
                           className={`w-full text-left flex items-start gap-2.5 px-4 py-3 hover:bg-ink-50 transition ${n.read ? "" : "bg-ink-50/60"}`}
                         >
                           <span
                             className={`mt-1.5 h-2 w-2 rounded-full shrink-0 ${
-                              n.read ? "bg-ink-200" : n.tone === "red" ? "bg-red-500" : n.tone === "amber" ? "bg-amber-500" : "bg-brand-500"
+                              n.read ? "bg-ink-200" : n.tone === "red" ? "bg-red-500" : n.tone === "amber" ? "bg-amber-500" : n.tone === "sky" ? "bg-sky-500" : "bg-brand-500"
                             }`}
                           />
-                          <span className="min-w-0">
+                          <span className="min-w-0 flex-1">
                             <span className="flex items-center gap-1.5">
                               <span className="text-xs font-bold text-ink-900 truncate">{n.title}</span>
+                              {n.priority === "critical" && !n.read && (
+                                <span className="shrink-0 rounded-full bg-red-100 px-1.5 py-0.5 text-[9px] font-bold text-red-700">CRITICAL</span>
+                              )}
                               {n.read && <Check className="w-3 h-3 text-ink-400 shrink-0" />}
                             </span>
                             <span className="block text-[11px] text-ink-500 mt-0.5 leading-relaxed">{n.detail}</span>
-                            <span className="block text-[10px] text-ink-400 mt-1">{n.time}</span>
+                            <span className="mt-1 flex items-center justify-between gap-2">
+                              <span className="text-[10px] text-ink-400">{n.module} · {timeAgo(n.at)}</span>
+                              <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-ink-500">
+                                Open <ChevronRight className="w-3 h-3" />
+                              </span>
+                            </span>
                           </span>
                         </button>
                       ))}
@@ -284,6 +300,8 @@ export default function Shell({
 
         <main className="px-4 sm:px-6 lg:px-8 py-6 max-w-[1400px] mx-auto animate-fade">{children}</main>
       </div>
+
+      <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { Badge, Card, Kpi } from "@/components/ui";
 import { Toast, useToast } from "@/components/Toast";
 import { useLocalWorkspaceState } from "@/lib/useLocalWorkspaceState";
 import { slaTickets, slaMetrics, escalationCrew, inrLakh, type SlaTicket, type SlaStatus } from "@/lib/ops";
+import { recordActivity } from "@/lib/activity";
 import { Activity, Check, CheckCircle2, ChevronRight, Download, MapPin, Search, ShieldAlert, Timer } from "lucide-react";
 
 const tone: Record<SlaStatus, "brand" | "amber" | "red" | "sky"> = { Met: "brand", "At Risk": "amber", Breached: "red", Resolved: "sky" };
@@ -36,6 +37,7 @@ export default function SLASentinel() {
     setTickets((current) => current.map((item) => item.id === selected.id
       ? { ...item, assigned: recommendedCrew, status: item.status === "Breached" ? "Breached" : "At Risk", risk: Math.min(item.risk, 22), reasons: ["Priority crew assigned", "Expected closure within 2.5 hours"] }
       : item));
+    recordActivity("safety", { module: "SLA Sentinel", title: `${selected.id} escalated to ${recommendedCrew}`, detail: `${selected.type} · ${selected.area} · breach risk reduced to 22% after priority routing.`, href: "/safety/sla-sentinel", tone: "amber" });
     toast.show(`${selected.id} assigned to ${recommendedCrew}. Breach risk reduced to 22%.`);
   }
 
@@ -43,6 +45,8 @@ export default function SLASentinel() {
     setTickets((current) => current.map((item) => item.id === selected.id
       ? { ...item, status: "Resolved", risk: 0, assigned: item.assigned === "Unassigned" ? recommendedCrew : item.assigned }
       : item));
+    recordActivity("safety", { module: "SLA Sentinel", title: `${selected.id} resolved within SLA`, detail: `${selected.type} · ${selected.area} · outcome recorded for PNGRB compliance.`, href: "/safety/sla-sentinel", tone: "brand" });
+    recordActivity("intelligence", { module: "SLA Sentinel", title: `Breach prevented · ${selected.id}`, detail: `${selected.type} in ${selected.area} closed before the ${selected.cat} deadline${compensationRisk ? ` — ₹${compensationRisk.toLocaleString("en-IN")} compensation avoided` : ""}.`, href: "/intelligence/sla", tone: "brand" });
     toast.show(`${selected.id} marked resolved and SLA outcome recorded.`);
   }
 

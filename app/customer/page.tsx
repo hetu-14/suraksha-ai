@@ -5,6 +5,10 @@ import Link from "next/link";
 import { Badge, Card, Kpi } from "@/components/ui";
 import CountUp from "@/components/CountUp";
 import { currentCustomer, inr } from "@/lib/data";
+import { recordActivity, timeAgo, useActivityFeed } from "@/lib/activity";
+import { ensureInspectionBooked } from "@/lib/appointments";
+import { emptyHealthProfile, healthProfileStorageKey, normalizeHealthProfile, type HealthProfile } from "@/lib/healthScore";
+import { ledgerPoints, storageKey as trustPointsKey, type Ledger } from "@/lib/trustPoints";
 import {
   Award, Bell, Calendar, CheckCircle2, ChevronRight, CircleAlert,
   ClipboardCheck, Flame, HeartPulse, Phone, ReceiptText,
@@ -13,26 +17,23 @@ import {
 
 type Toast = { message: string } | null;
 type AttentionAction = "contact" | "inspection" | "bill";
-type DashboardState = { contactVerified: boolean; inspectionBooked: boolean; billCleared: boolean };
-type UpdateItem = { id: string; text: string; time: string; warning?: boolean; read: boolean };
 
 const STORAGE_KEY = "suraksha-customer-dashboard";
-const INITIAL_UPDATES: UpdateItem[] = [
-  { id: "survey", text: "Site survey completed", time: "Today", read: false },
-  { id: "feedback", text: "Feedback resolved", time: "Yesterday", read: false },
-  { id: "training", text: "Leak safety training completed", time: "2 days ago", read: true },
-  { id: "inspection", text: "Inspection due in 45 days", time: "3 days ago", warning: true, read: false },
-  { id: "points", text: "TrustPoints earned +100", time: "4 days ago", read: true },
-];
 
 export default function CustomerHome() {
-  const [contactVerified, setContactVerified] = useState(false);
-  const [inspectionBooked, setInspectionBooked] = useState(false);
+  // Contact and inspection state live in the shared health profile, so an
+  // action completed here is instantly reflected in Health Score, TrustPoints,
+  // and GasGuard — and vice versa.
+  const [profile, setProfile] = useState<HealthProfile>(emptyHealthProfile);
   const [billCleared, setBillCleared] = useState(false);
   const [toast, setToast] = useState<Toast>(null);
-  const [updates, setUpdates] = useState<UpdateItem[]>(INITIAL_UPDATES);
   const [hydrated, setHydrated] = useState(false);
+  const [trustPoints, setTrustPoints] = useState(1840);
+  const [missionsDone, setMissionsDone] = useState(1);
   const [notificationFilter, setNotificationFilter] = useState<"All" | "Unread">("All");
+  const { events, unread: unreadUpdates, markRead, markAllRead, dismiss } = useActivityFeed("customer");
+  const contactVerified = profile.emergencyContactVerified;
+  const inspectionBooked = profile.preventiveInspectionBooked;
   const dueBill = currentCustomer.bills.find((bill) => bill.status === "Due");
   const activeBill = billCleared ? undefined : dueBill;
   const readiness = contactVerified ? 100 : 75;
@@ -41,11 +42,12 @@ export default function CustomerHome() {
   useEffect(() => {
     try {
       const saved = window.localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const state = JSON.parse(saved) as Partial<DashboardState>;
-        setContactVerified(Boolean(state.contactVerified));
-        setInspectionBooked(Boolean(state.inspectionBooked));
-        setBillCleared(Boolean(state.billCleared));
+      if (saved) setBillCleared(Boolean((JSON.parse(saved) as { billCleared?: boolean }).billCleared));
+      setProfile(normalizeHealthProfile(JSON.parse(window.localStorage.getItem(healthProfileStorageKey) ?? "null")));
+      const trust = JSON.parse(window.localStorage.getItem(trustPointsKey) ?? "null");
+      if (trust && Array.isArray(trust.ledger)) {
+        setTrustPoints(ledgerPoints(trust.ledger as Ledger[]));
+        if (Array.isArray(trust.completedMissions)) setMissionsDone(trust.completedMissions.length);
       }
     } catch {
       window.localStorage.removeItem(STORAGE_KEY);
@@ -56,14 +58,22 @@ export default function CustomerHome() {
 
   useEffect(() => {
     if (!hydrated) return;
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ contactVerified, inspectionBooked, billCleared }));
-  }, [billCleared, contactVerified, hydrated, inspectionBooked]);
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ billCleared }));
+  }, [billCleared, hydrated]);
 
   useEffect(() => {
     if (!toast) return;
     const timeout = window.setTimeout(() => setToast(null), 4000);
     return () => window.clearTimeout(timeout);
   }, [toast]);
+
+  function persistProfile(update: Partial<HealthProfile>) {
+    setProfile((current) => {
+      const next = { ...current, ...update };
+      try { window.localStorage.setItem(healthProfileStorageKey, JSON.stringify(next)); } catch { /* session stays usable */ }
+      return next;
+    });
+  }
 
   const attention = useMemo(() => {
     const items: { key: AttentionAction; title: string; detail: string; icon: React.ReactNode }[] = [];
@@ -73,38 +83,31 @@ export default function CustomerHome() {
     return items;
   }, [activeBill, contactVerified, inspectionBooked]);
   const nextAction = attention[0];
-  const unreadUpdates = updates.filter((update) => !update.read).length;
-  const visibleUpdates = notificationFilter === "Unread" ? updates.filter((update) => !update.read) : updates;
+  const visibleUpdates = notificationFilter === "Unread" ? events.filter((event) => !event.read) : events;
 
   function completeAction(action: AttentionAction) {
     if (action === "contact") {
-      setContactVerified(true);
+      persistProfile({ emergencyContactVerified: true });
+      recordActivity("customer", { module: "Health Score", title: "Emergency contact verified", detail: "Safety readiness +3 · your emergency profile is now complete.", href: "/customer/health" });
       setToast({ message: "Emergency contact verified. Your Safety Readiness increased by 3 points." });
     }
     if (action === "inspection") {
-      setInspectionBooked(true);
-      setToast({ message: "Inspection visit requested for 18 Jul at 10:00 AM." });
+      const { created, appointment } = ensureInspectionBooked();
+      persistProfile({ preventiveInspectionBooked: true });
+      recordActivity("customer", { module: "Appointments", title: created ? "Safety inspection booked" : "Safety inspection confirmed", detail: `${appointment.id} · ${appointment.date} · ${appointment.slot} · ${appointment.engineer}. Equipment health score will rise once completed.`, href: "/customer/appointment" });
+      setToast({ message: `Inspection visit ${created ? "booked" : "confirmed"} for ${appointment.date} · ${appointment.slot}. Track it in Appointments.` });
     }
     if (action === "bill") {
       setBillCleared(true);
-      setToast({ message: "Bill marked as paid for this dashboard session." });
+      recordActivity("customer", { module: "Billing", title: `Payment of ${inr(dueBill?.amount ?? 0)} recorded`, detail: "Jan–Feb 2026 bill settled on time · payment reliability stays at 12 on-time bills.", href: "/customer/explainbill" });
+      setToast({ message: `Payment of ${inr(dueBill?.amount ?? 0)} recorded. Your payment reliability score stays on track.` });
     }
   }
 
   function resetDashboard() {
-    setContactVerified(false);
-    setInspectionBooked(false);
+    persistProfile({ emergencyContactVerified: false, preventiveInspectionBooked: false });
     setBillCleared(false);
-    setUpdates(INITIAL_UPDATES);
     setToast({ message: "Dashboard restored to its current household action list." });
-  }
-
-  function markUpdateRead(id: string) {
-    setUpdates((items) => items.map((item) => item.id === id ? { ...item, read: true } : item));
-  }
-
-  function dismissUpdate(id: string) {
-    setUpdates((items) => items.filter((item) => item.id !== id));
   }
 
   return <div className="space-y-6 pb-4 reveal">
@@ -144,17 +147,17 @@ export default function CustomerHome() {
 
     <div className="grid gap-5 xl:grid-cols-[1.55fr_.85fr]">
       <Card className="p-5 sm:p-6"><div className="flex items-center justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-wider text-brand-700">At a glance</p><h2 className="mt-1 text-lg font-bold text-ink-900">Household snapshot</h2></div><span className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-3 py-1.5 text-xs font-bold text-brand-700"><span className="h-1.5 w-1.5 rounded-full bg-brand-500" />Healthy</span></div><div className="mt-5 grid gap-3 sm:grid-cols-2"><Snapshot label="Safety" value="Good" detail="No gas leak signals" tone="brand" /><Snapshot label="Billing" value={activeBill ? `${inr(activeBill.amount)} due` : "Normal"} detail={activeBill ? "Payment due in 4 days" : "No payment pending"} tone={activeBill ? "amber" : "brand"} /><Snapshot label="Connection" value="Active" detail="Supply operating normally" tone="brand" /><Snapshot label="Emergency readiness" value={contactVerified ? "Complete" : "Needs attention"} detail={contactVerified ? "Contact is verified" : "Verify your contact"} tone={contactVerified ? "brand" : "amber"} /></div></Card>
-      <Card className="p-5 sm:p-6"><div className="flex items-center gap-2"><TriangleAlert className="h-4 w-4 text-amber-600" /><div><p className="text-xs font-bold uppercase tracking-wider text-amber-700">Risk summary</p><h2 className="mt-1 text-lg font-bold text-ink-900">What to watch</h2></div></div><div className="mt-5 space-y-3"><Risk label="Leak risk" value="Low" tone="brand" /><Risk label="Equipment risk" value="Medium" tone="amber" /><Risk label="Payment risk" value={activeBill ? "Medium" : "Low"} tone={activeBill ? "amber" : "brand"} /><Risk label="Service risk" value="Low" tone="brand" /></div><Link href="/customer/health" className="mt-5 inline-flex items-center gap-1 text-xs font-bold text-brand-700 hover:text-brand-800">View safety details <ChevronRight className="w-3.5 h-3.5" /></Link></Card>
+      <Card className="p-5 sm:p-6"><div className="flex items-center gap-2"><TriangleAlert className="h-4 w-4 text-amber-600" /><div><p className="text-xs font-bold uppercase tracking-wider text-amber-700">Risk summary</p><h2 className="mt-1 text-lg font-bold text-ink-900">What to watch</h2></div></div><div className="mt-5 space-y-3"><Risk label="Leak risk" value="Low" tone="brand" /><Risk label="Equipment risk" value={inspectionBooked ? "Low" : "Medium"} tone={inspectionBooked ? "brand" : "amber"} /><Risk label="Payment risk" value={activeBill ? "Medium" : "Low"} tone={activeBill ? "amber" : "brand"} /><Risk label="Service risk" value="Low" tone="brand" /></div><Link href="/customer/health" className="mt-5 inline-flex items-center gap-1 text-xs font-bold text-brand-700 hover:text-brand-800">View safety details <ChevronRight className="w-3.5 h-3.5" /></Link></Card>
     </div>
 
     <div className="grid gap-5 lg:grid-cols-3">
       <Card className="overflow-hidden border-red-100 p-5 sm:p-6"><div className="flex items-start justify-between gap-3"><div className="flex items-center gap-2"><div className="grid h-9 w-9 place-items-center rounded-xl bg-red-50 text-red-600"><Siren className="h-4 w-4" /></div><div><p className="text-xs font-bold uppercase tracking-wider text-red-700">Preparedness</p><h2 className="mt-0.5 text-lg font-bold text-ink-900">Emergency readiness</h2></div></div><div className="relative grid h-14 w-14 place-items-center rounded-full" style={{ background: `conic-gradient(#10b981 ${readiness * 3.6}deg, #e2e8f0 0deg)` }}><div className="grid h-11 w-11 place-items-center rounded-full bg-white"><span className="text-xs font-bold text-ink-800">{readiness}%</span></div></div></div><div className="mt-5 space-y-2"><Readiness label="Gas-Guard activated" complete /><Readiness label="Safety training completed" complete /><Readiness label="Emergency contact" complete={contactVerified} /><Readiness label="Inspection valid" complete /></div>{!contactVerified ? <button onClick={() => completeAction("contact")} className="mt-5 w-full rounded-xl bg-ink-900 py-2.5 text-xs font-bold text-white transition hover:bg-ink-800">Complete emergency profile</button> : <div className="mt-5 rounded-xl bg-brand-50 px-3 py-2.5 text-center text-xs font-bold text-brand-700">You are ready for a faster emergency response.</div>}</Card>
       <Card className="overflow-hidden border-sky-100 p-5 sm:p-6"><div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><div className="grid h-9 w-9 place-items-center rounded-xl bg-sky-50 text-sky-600"><Calendar className="h-4 w-4" /></div><div><p className="text-xs font-bold uppercase tracking-wider text-sky-700">Plan ahead</p><h2 className="mt-0.5 text-lg font-bold text-ink-900">Upcoming timeline</h2></div></div><span className="rounded-full bg-sky-50 px-2.5 py-1 text-[11px] font-bold text-sky-700">3 dates</span></div><div className="mt-5"><Upcoming date="18 Jul" title={inspectionBooked ? "Regulator inspection visit" : "Inspection slot available"} detail="10:00 AM · Home service" accent="sky" /><Upcoming date="25 Jul" title={activeBill ? "Gas bill due" : "Bill settled"} detail={activeBill ? `${inr(activeBill.amount)} · Set a reminder` : "No payment pending"} accent={activeBill ? "amber" : "brand"} /><Upcoming date="16 Jan 2027" title="Inspection renewal" detail="Current certificate valid" accent="ink" /></div>{!inspectionBooked && <button onClick={() => completeAction("inspection")} className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-sky-700 hover:text-sky-800">Book the 18 Jul visit <ChevronRight className="h-3.5 w-3.5" /></button>}</Card>
-      <Card className="overflow-hidden border-violet-100 p-5 sm:p-6"><div className="flex items-start justify-between gap-3"><div className="flex items-center gap-2"><div className="grid h-9 w-9 place-items-center rounded-xl bg-violet-50 text-violet-600"><Bell className="h-4 w-4" /></div><div><p className="text-xs font-bold uppercase tracking-wider text-violet-700">Notification center</p><h2 className="mt-0.5 text-lg font-bold text-ink-900">Updates for you</h2></div></div>{unreadUpdates > 0 && <button onClick={() => setUpdates((items) => items.map((item) => ({ ...item, read: true })))} className="rounded-lg bg-violet-50 px-2.5 py-1.5 text-[11px] font-bold text-violet-700 hover:bg-violet-100">Mark all read</button>}</div><div className="mt-4 flex gap-1 rounded-xl bg-ink-50 p-1"><button onClick={() => setNotificationFilter("All")} className={`flex-1 rounded-lg px-2 py-1.5 text-xs font-bold transition ${notificationFilter === "All" ? "bg-white text-ink-800 shadow-sm" : "text-ink-400"}`}>All <span className="ml-1 text-[10px]">{updates.length}</span></button><button onClick={() => setNotificationFilter("Unread")} className={`flex-1 rounded-lg px-2 py-1.5 text-xs font-bold transition ${notificationFilter === "Unread" ? "bg-white text-ink-800 shadow-sm" : "text-ink-400"}`}>Unread <span className="ml-1 text-[10px]">{unreadUpdates}</span></button></div><div className="mt-3 max-h-64 overflow-y-auto pr-1">{visibleUpdates.length ? visibleUpdates.map((update) => <Update key={update.id} {...update} onClick={() => markUpdateRead(update.id)} onDismiss={() => dismissUpdate(update.id)} />) : <div className="rounded-xl bg-ink-50 px-3 py-6 text-center text-xs text-ink-500">No unread updates. You&apos;re all caught up.</div>}</div></Card>
+      <Card className="overflow-hidden border-violet-100 p-5 sm:p-6"><div className="flex items-start justify-between gap-3"><div className="flex items-center gap-2"><div className="grid h-9 w-9 place-items-center rounded-xl bg-violet-50 text-violet-600"><Bell className="h-4 w-4" /></div><div><p className="text-xs font-bold uppercase tracking-wider text-violet-700">Notification center</p><h2 className="mt-0.5 text-lg font-bold text-ink-900">Updates for you</h2></div></div>{unreadUpdates > 0 && <button onClick={markAllRead} className="rounded-lg bg-violet-50 px-2.5 py-1.5 text-[11px] font-bold text-violet-700 hover:bg-violet-100">Mark all read</button>}</div><div className="mt-4 flex gap-1 rounded-xl bg-ink-50 p-1"><button onClick={() => setNotificationFilter("All")} className={`flex-1 rounded-lg px-2 py-1.5 text-xs font-bold transition ${notificationFilter === "All" ? "bg-white text-ink-800 shadow-sm" : "text-ink-400"}`}>All <span className="ml-1 text-[10px]">{events.length}</span></button><button onClick={() => setNotificationFilter("Unread")} className={`flex-1 rounded-lg px-2 py-1.5 text-xs font-bold transition ${notificationFilter === "Unread" ? "bg-white text-ink-800 shadow-sm" : "text-ink-400"}`}>Unread <span className="ml-1 text-[10px]">{unreadUpdates}</span></button></div><div className="mt-3 max-h-64 overflow-y-auto pr-1">{visibleUpdates.length ? visibleUpdates.map((event) => <Update key={event.id} title={event.title} module={event.module} time={timeAgo(event.at)} warning={event.tone === "amber" || event.tone === "red"} read={event.read} href={event.href} onClick={() => markRead(event.id)} onDismiss={() => dismiss(event.id)} />) : <div className="rounded-xl bg-ink-50 px-3 py-6 text-center text-xs text-ink-500">No unread updates. You&apos;re all caught up.</div>}</div></Card>
     </div>
 
     <div className="grid gap-5 xl:grid-cols-[1.25fr_.75fr]">
-      <Card className="p-5 sm:p-6"><div className="flex items-center gap-2"><Sparkles className="h-4 w-4 text-amber-600" /><div><p className="text-xs font-bold uppercase tracking-wider text-amber-700">Your progress</p><h2 className="mt-1 text-lg font-bold text-ink-900">Building a safer, smarter household</h2></div></div><div className="mt-5 grid gap-5 md:grid-cols-3"><Progress label="Safety readiness" value={safetyScore} target={90} suffix="%" /><Progress label="TrustPoints" value={1840} target={2500} suffix="" /><Progress label="Safety missions" value={contactVerified ? 2 : 1} target={5} suffix=" completed" /></div></Card>
+      <Card className="p-5 sm:p-6"><div className="flex items-center gap-2"><Sparkles className="h-4 w-4 text-amber-600" /><div><p className="text-xs font-bold uppercase tracking-wider text-amber-700">Your progress</p><h2 className="mt-1 text-lg font-bold text-ink-900">Building a safer, smarter household</h2></div></div><div className="mt-5 grid gap-5 md:grid-cols-3"><Progress label="Safety readiness" value={safetyScore} target={90} suffix="%" /><Progress label="TrustPoints" value={trustPoints} target={2500} suffix="" /><Progress label="Safety missions" value={missionsDone} target={5} suffix=" completed" /></div></Card>
       <Card className="p-5 sm:p-6 bg-violet-50/50 border-violet-100"><div className="flex items-center gap-2"><Award className="h-4 w-4 text-violet-600" /><p className="text-xs font-bold uppercase tracking-wider text-violet-700">You said, we did</p></div><h2 className="mt-2 text-lg font-bold text-ink-900">WhyMyBill AI launched</h2><p className="mt-2 text-sm leading-relaxed text-ink-600">Created from customer feedback asking for simpler, clearer bill explanations.</p><Link href="/customer/voice" className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-violet-700 hover:text-violet-800">See community improvements <ChevronRight className="w-3.5 h-3.5" /></Link></Card>
     </div>
 
@@ -190,8 +193,8 @@ function Upcoming({ date, title, detail, accent }: { date: string; title: string
   return <div className="relative flex gap-3 py-2.5 last:pb-0"><div className="relative flex w-14 shrink-0 flex-col items-center"><span className={`w-full rounded-lg border px-1 py-1.5 text-center text-[11px] font-bold ${colors[accent]}`}>{date}</span><span className="absolute -bottom-3 h-3 border-l border-dashed border-ink-200 last:hidden" /></div><div className="min-w-0 pt-0.5"><p className="text-sm font-semibold text-ink-700">{title}</p><p className="mt-0.5 text-[11px] text-ink-400">{detail}</p></div></div>;
 }
 
-function Update({ text, time, warning = false, read, onClick, onDismiss }: UpdateItem & { onClick: () => void; onDismiss: () => void }) {
-  return <div className={`group flex gap-2.5 rounded-xl px-2 py-2.5 transition hover:bg-ink-50 ${read ? "opacity-60" : ""}`}><button onClick={onClick} className="flex min-w-0 flex-1 gap-2.5 text-left"><span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${warning ? "bg-amber-500" : "bg-brand-500"}`} /><span className="min-w-0"><span className="block text-sm font-medium text-ink-700">{text}{!read && <span className="ml-2 inline-block h-1.5 w-1.5 rounded-full bg-violet-500 align-middle" />}</span><span className="mt-0.5 block text-[11px] text-ink-400">{time}</span></span></button><button onClick={onDismiss} className="h-6 w-6 shrink-0 rounded-md text-ink-300 opacity-0 transition hover:bg-ink-100 hover:text-ink-600 group-hover:opacity-100 focus:opacity-100" aria-label={`Dismiss ${text}`}><X className="m-auto h-3.5 w-3.5" /></button></div>;
+function Update({ title, module: moduleName, time, warning, read, href, onClick, onDismiss }: { title: string; module: string; time: string; warning: boolean; read: boolean; href: string; onClick: () => void; onDismiss: () => void }) {
+  return <div className={`group flex gap-2.5 rounded-xl px-2 py-2.5 transition hover:bg-ink-50 ${read ? "opacity-60" : ""}`}><Link href={href} onClick={onClick} className="flex min-w-0 flex-1 gap-2.5 text-left"><span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${warning ? "bg-amber-500" : "bg-brand-500"}`} /><span className="min-w-0"><span className="block text-sm font-medium text-ink-700">{title}{!read && <span className="ml-2 inline-block h-1.5 w-1.5 rounded-full bg-violet-500 align-middle" />}</span><span className="mt-0.5 block text-[11px] text-ink-400">{moduleName} · {time}</span></span></Link><button onClick={onDismiss} className="h-6 w-6 shrink-0 rounded-md text-ink-300 opacity-0 transition hover:bg-ink-100 hover:text-ink-600 group-hover:opacity-100 focus:opacity-100" aria-label={`Dismiss ${title}`}><X className="m-auto h-3.5 w-3.5" /></button></div>;
 }
 
 function Progress({ label, value, target, suffix }: { label: string; value: number; target: number; suffix: string }) {

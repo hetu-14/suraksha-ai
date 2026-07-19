@@ -10,6 +10,7 @@ import {
 import { Card, Kpi } from "@/components/ui";
 import { healthProfileStorageKey, normalizeHealthProfile, type HealthProfile } from "@/lib/healthScore";
 import { computeTier, ledgerPoints, storageKey, type Ledger } from "@/lib/trustPoints";
+import { recordActivity } from "@/lib/activity";
 
 type Redemption = { rewardId: string; requestId: string; requestedAt: string; status: "Requested" | "Fulfilment in progress" };
 type Profile = { completedMissions: string[]; redeemed: string[]; riskRewarded: boolean; gasGuardActive: boolean; redemptions: Redemption[]; ledger: Ledger[] };
@@ -93,7 +94,11 @@ export default function TrustPoints() {
       completedMissions: [...current.completedMissions, ...missing.map((mission) => mission.id)],
       ledger: [...missing.map((mission) => ({ id: `mission-${mission.id}`, date: "Today", action: mission.title, points: mission.reward, category: "Safety missions" })), ...current.ledger],
     }));
-    setNotice(`${missing.map((mission) => mission.reward).reduce((sum, reward) => sum + reward, 0)} verified mission points added.`);
+    const rewardTotal = missing.map((mission) => mission.reward).reduce((sum, reward) => sum + reward, 0);
+    for (const mission of missing) {
+      recordActivity("customer", { id: `trust-${mission.id}`, module: "TrustPoints", title: `+${mission.reward} points · ${mission.title}`, detail: `Verified from ${mission.source} and added to your safety ledger.`, href: "/customer/trustpoints" });
+    }
+    setNotice(`${rewardTotal} verified mission points added.`);
   }, [billAlerts, health, loaded, profile.completedMissions, profile.gasGuardActive]);
 
   const points = useMemo(() => ledgerPoints(profile.ledger), [profile.ledger]);
@@ -109,6 +114,7 @@ export default function TrustPoints() {
   function rewardRiskReduction() {
     if (profile.riskRewarded) return;
     setProfile((current) => ({ ...current, riskRewarded: true, ledger: [{ id: "risk-reduction", date: "Today", action: "Reduced leak risk from 62% to 18%", points: 150, category: "Risk reduction" }, ...current.ledger] }));
+    recordActivity("customer", { module: "TrustPoints", title: "+150 points · leak risk reduced", detail: "Your household leak risk dropped from 62% to 18% — rewarded for safer behaviour.", href: "/customer/trustpoints" });
     setNotice("150 points added for reducing your gas safety risk.");
   }
 
@@ -118,6 +124,7 @@ export default function TrustPoints() {
     if (points < reward.points) { setNotice(`You need ${reward.points - points} more points for ${reward.title}.`); return; }
     const requestId = `TP-${Math.floor(10000 + Math.random() * 89999)}`;
     setProfile((current) => ({ ...current, redeemed: [...current.redeemed, id], redemptions: [{ rewardId: id, requestId, requestedAt: "Today", status: "Requested" }, ...current.redemptions], ledger: [{ id: `redeem-${id}`, date: "Today", action: `Redeemed: ${reward.title}`, points: -reward.points, category: "Redemptions" }, ...current.ledger] }));
+    recordActivity("customer", { module: "TrustPoints", title: `Reward requested · ${reward.title}`, detail: `${requestId} · ${reward.points} points redeemed. Our team will confirm fulfilment.`, href: "/customer/trustpoints" });
     setNotice(`${reward.title} has been requested as ${requestId}. Our team will contact you with the next step.`);
   }
 

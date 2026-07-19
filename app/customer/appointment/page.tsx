@@ -6,15 +6,11 @@ import { Badge, Card, Kpi } from "@/components/ui";
 import { connectionStorageKey, normalizeConnectionStatus } from "@/lib/connectionStatus";
 import { healthProfileStorageKey, normalizeHealthProfile } from "@/lib/healthScore";
 import { downloadServiceReportPdf } from "@/lib/serviceReportPdf";
+import { recordActivity } from "@/lib/activity";
+import { appointmentsStorageKey as storageKey, appointmentStatusFlow as statusFlow, starterAppointments, type Appointment, type AppointmentStatus, type ServiceId } from "@/lib/appointments";
 import { AlertTriangle, BarChart3, Calendar, Check, CheckCircle2, ChevronRight, Clock3, CookingPot, Download, FileText, Link2, MessageCircle, Navigation, Phone, RefreshCw, Settings2, ShieldAlert, ShieldCheck, ShowerHead, Star, Truck, UserRound, Waves, X, type LucideIcon } from "lucide-react";
 
-type ServiceId = "inspection" | "stove" | "geyser" | "pressure" | "leak" | "meter" | "regulator" | "connection";
-type AppointmentStatus = "Booked" | "Assigned" | "En Route" | "Reached" | "Started" | "Completed" | "Cancelled";
-type Appointment = { id: string; serviceId: ServiceId; service: string; date: string; slot: string; engineer: string; status: AppointmentStatus; reason: string; cost: string; createdAt: string; cancellationReason?: string };
 type ServiceCategory = "Safety" | "Meter" | "Appliance" | "Connection" | "Emergency";
-
-const storageKey = "suraksha:appointments:GJ-559210";
-const statusFlow: AppointmentStatus[] = ["Booked", "Assigned", "En Route", "Reached", "Started", "Completed"];
 const days = ["Today · Jul 17", "Tomorrow · Jul 18", "Sun · Jul 19", "Mon · Jul 20", "Tue · Jul 21", "Wed · Jul 22", "Thu · Jul 23"];
 const slots = ["09:00 – 10:00", "10:00 – 11:00", "11:00 – 12:00", "12:00 – 01:00", "02:00 – 03:00", "03:00 – 04:00", "04:00 – 05:00", "05:00 – 06:00"];
 const baseBlocked: Record<string, string[]> = { "Today · Jul 17": ["09:00 – 10:00", "10:00 – 11:00", "11:00 – 12:00", "12:00 – 01:00", "02:00 – 03:00", "03:00 – 04:00"], "Tomorrow · Jul 18": ["10:00 – 11:00"], "Sun · Jul 19": ["12:00 – 01:00", "04:00 – 05:00"] };
@@ -48,7 +44,6 @@ const engineers = [
   { name: "Manoj Patel", specialty: "Appliance Technician", visits: 241, experience: "4 years", rating: 4.9, initials: "MP", phone: "+919876522106", certifications: ["Gas Appliance Certified", "PNG Specialist"] },
 ];
 
-const starterAppointments: Appointment[] = [{ id: "APT-2847", serviceId: "inspection", service: "Annual Safety Inspection", engineer: "Ramesh Kumar", date: "Mon · Jul 20", slot: "10:00 – 11:00", status: "Assigned", reason: "Annual safety check due", cost: "₹0 · covered", createdAt: "Jul 14" }];
 const pastAppointments = [
   { id: "APT-2631", service: "Meter Check", engineer: "Sunil Sharma", date: "Jun 12, 2026", finding: "Gas pressure normal · no meter issue detected", rating: 5 },
   { id: "APT-2502", service: "Gas Appliance Repair", engineer: "Manoj Patel", date: "May 05, 2026", finding: "Stove burner cleaned · operation restored", rating: 4 },
@@ -154,13 +149,34 @@ export default function AppointmentBooking() {
     if (selectedService === "inspection" || selectedService === "regulator") {
       try { const health = normalizeHealthProfile(JSON.parse(window.localStorage.getItem(healthProfileStorageKey) ?? "null")); window.localStorage.setItem(healthProfileStorageKey, JSON.stringify({ ...health, preventiveInspectionBooked: true })); setHealthNeedsInspection(false); } catch { /* The appointment remains confirmed. */ }
     }
+    recordActivity("customer", {
+      module: "Appointments",
+      title: reschedulingId ? `${service.label} rescheduled` : `${service.label} booked`,
+      detail: `${booking.id} · ${selectedDay} · ${selectedSlot} · ${assignedEngineer.name}`,
+      href: "/customer/appointment",
+    });
     setNotice(reschedulingId ? "Your appointment has been rescheduled and the engineer has been notified." : "Appointment booked. You will receive confirmation and engineer updates here.");
     setReschedulingId(null); setSelectedSlot(null); setStep(1); setActiveTab("visits");
   }
 
   function beginReschedule(appointment: Appointment) { setReschedulingId(appointment.id); setSelectedService(appointment.serviceId); setSelectedDay(appointment.date); setSelectedSlot(null); setStep(2); setActiveTab("book"); window.scrollTo({ top: 0, behavior: "smooth" }); }
-  function cancelAppointment() { if (!cancelTarget) return; setAppointments((current) => current.map((item) => item.id === cancelTarget ? { ...item, status: "Cancelled", cancellationReason: cancelReason } : item)); setNotice("Appointment cancelled. You can book a new slot whenever you need one."); setCancelTarget(null); }
-  function advanceStatus(id: string) { setAppointments((current) => current.map((item) => { const at = statusFlow.indexOf(item.status); return item.id === id && at >= 0 && at < statusFlow.length - 1 ? { ...item, status: statusFlow[at + 1] } : item; })); }
+  function cancelAppointment() {
+    if (!cancelTarget) return;
+    const target = appointments.find((item) => item.id === cancelTarget);
+    setAppointments((current) => current.map((item) => item.id === cancelTarget ? { ...item, status: "Cancelled", cancellationReason: cancelReason } : item));
+    if (target) recordActivity("customer", { module: "Appointments", title: `${target.service} cancelled`, detail: `${target.id} · ${cancelReason}. Book a new slot whenever you need one.`, href: "/customer/appointment", tone: "amber" });
+    setNotice("Appointment cancelled. You can book a new slot whenever you need one.");
+    setCancelTarget(null);
+  }
+  function advanceStatus(id: string) {
+    setAppointments((current) => current.map((item) => {
+      const at = statusFlow.indexOf(item.status);
+      if (item.id !== id || at < 0 || at >= statusFlow.length - 1) return item;
+      const next = statusFlow[at + 1];
+      if (next === "Completed") recordActivity("customer", { module: "Appointments", title: `${item.service} completed`, detail: `${item.id} · ${item.engineer} finished the visit. Your service report is ready in History.`, href: "/customer/appointment", tone: "brand" });
+      return { ...item, status: next };
+    }));
+  }
 
   return <div className="space-y-6 reveal">
     {notice && <div className="fixed top-4 right-4 z-50 max-w-sm bg-brand-600 text-white px-5 py-3 rounded-xl shadow-xl flex items-start gap-3 anim-fade-up"><CheckCircle2 className="w-5 h-5 shrink-0" /><span className="text-sm font-semibold flex-1">{notice}</span><button onClick={() => setNotice(null)} aria-label="Dismiss message"><X className="w-4 h-4" /></button></div>}

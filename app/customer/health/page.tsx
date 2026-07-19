@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { Card, Kpi } from "@/components/ui";
 import { buildHealthFactors, emptyHealthProfile, healthProfileStorageKey, normalizeHealthProfile, overallHealthScore, type HealthFactor, type HealthProfile } from "@/lib/healthScore";
+import { recordActivity } from "@/lib/activity";
 import { connectionStorageKey, emptyConnectionStatus, normalizeConnectionStatus, type ConnectionStatusRecord } from "@/lib/connectionStatus";
 
 const history = [
@@ -72,6 +73,7 @@ export default function CustomerHealthScore() {
   function updateProfile(update: Partial<HealthProfile>) {
     if (update.emergencyContactVerified && !profile.emergencyContactVerified) {
       setNotice("Emergency contact verified. +3 to your safety readiness.");
+      recordActivity("customer", { module: "Health Score", title: "Emergency contact verified", detail: "Safety readiness +3 · TrustPoints mission will be verified in your ledger.", href: "/customer/health" });
     }
     setProfile((current) => ({ ...current, ...update }));
   }
