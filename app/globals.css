@@ -142,6 +142,29 @@ body { background: var(--background); color: #2b2a27; }
   animation:orbitPulse 2.5s ease-in-out infinite;
 }
 
+/* ─── Ecosystem radar ─── */
+@keyframes ecoSpin { to { transform: rotate(360deg); } }
+.eco-sweep     { animation: ecoSpin 11s linear infinite; will-change: transform; }
+.eco-spin-slow { animation: ecoSpin 36s linear infinite; }
+.eco-spin-rev  { animation: ecoSpin 26s linear infinite reverse; }
+@keyframes ecoDash { to { stroke-dashoffset: -28; } }
+.eco-flow { animation: ecoDash 1.15s linear infinite; }
+@keyframes ecoBreath {
+  0%,100% { transform: scale(1); }
+  50%     { transform: scale(1.05); }
+}
+.eco-core-breath { animation: ecoBreath 4.5s ease-in-out infinite; }
+@keyframes ecoDotPulse {
+  0%,100% { opacity: 0.55; transform: scale(1); }
+  50%     { opacity: 1;    transform: scale(1.3); }
+}
+.eco-dot { animation: ecoDotPulse 2.6s ease-in-out infinite; }
+@keyframes ecoNodeBreath {
+  0%,100% { transform: scale(1); }
+  50%     { transform: scale(1.035); }
+}
+.eco-node-breath { animation: ecoNodeBreath 5s ease-in-out infinite; }
+
 /* ─── GLITCH ─── */
 @keyframes g1 {
   0%,100% { clip-path:inset(0 0 100% 0); transform:translate(0); }
@@ -374,4 +397,7 @@ body { background: var(--background); color: #2b2a27; }
   }
   html { scroll-behavior:auto; }
   * { cursor:auto !important; }
+  /* Ecosystem radar: progressive disclosure is information design, not
+     decoration — hidden capability pills must stay hidden. */
+  .eco-pill[aria-hidden="true"] { opacity:0 !important; pointer-events:none !important; }
 }
