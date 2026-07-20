@@ -84,7 +84,7 @@ export default function OperationalInsights() {
       <div className="rounded-xl bg-ink-950 text-white p-6 relative overflow-hidden ">
         <div className="relative">
           <p className="text-indigo-300 text-xs font-semibold uppercase tracking-widest">Business Intelligence Suite</p>
-          <h1 className="text-2xl sm:text-3xl font-bold mt-1">Operational Insights</h1>
+          <h1 className="text-fluid-h1 font-bold mt-1">Operational Insights</h1>
           <p className="text-ink-300 mt-2 text-sm max-w-2xl">
             AI-generated recommendations with an approval workflow — every approved insight becomes a routed work order,
             every deferral is recorded for the next review.
@@ -129,7 +129,7 @@ export default function OperationalInsights() {
                     <p className="mt-2"><span className="font-bold text-ink-800">Recommended: </span><span className="text-ink-600">{ins.action}</span></p>
                     <p className="mt-1"><span className="font-bold text-ink-800">Impact: </span><span className="text-ink-600">{ins.impact}</span></p>
                     <p className="mt-1"><span className="font-bold text-ink-800">Owner: </span><span className="text-ink-600">{ins.owner}</span></p>
-                    <div className="mt-2 flex items-center gap-1.5 text-[11px] text-ink-500">
+                    <div className="mt-2 flex items-center gap-1.5 text-xs text-ink-500">
                       <span className="w-12 h-1.5 rounded-full bg-ink-200 overflow-hidden inline-block">
                         <span className="block h-full bg-indigo-500" style={{ width: `${ins.confidence}%` }} />
                       </span>

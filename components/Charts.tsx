@@ -6,7 +6,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
 } from "recharts";
 
-const axis = { fontSize: 11, fill: "#94a3b8" };
+const axis = { fontSize: 12, fill: "#94a3b8" };
 
 /** Tracks a media query so chart internals (legends, margins, tick density)
  *  can adapt — ResponsiveContainer only solves width, not information density. */
@@ -45,7 +45,7 @@ export function TrendChart({ data }: { data: { day: string; alerts: number; reso
         <XAxis dataKey="day" tick={axis} axisLine={false} tickLine={false} interval={narrow ? "preserveStartEnd" : 0} minTickGap={narrow ? 12 : 5} />
         <YAxis tick={axis} axisLine={false} tickLine={false} width={narrow ? 34 : 42} />
         <Tooltip contentStyle={tooltipStyle} />
-        <Legend iconType="circle" wrapperStyle={{ fontSize: narrow ? 11 : 12, paddingTop: 4 }} />
+        <Legend iconType="circle" wrapperStyle={{ fontSize: 12, paddingTop: 4 }} />
         <Line type="monotone" dataKey="alerts" stroke="#ef4444" strokeWidth={2} dot={false} name="Alerts" {...touchProps} />
         <Line type="monotone" dataKey="resolved" stroke="#10b981" strokeWidth={2} dot={false} name="Resolved" {...touchProps} />
       </LineChart>
@@ -67,7 +67,7 @@ export function DonutChart({ data }: { data: { name: string; value: number; colo
               {data.map((d, i) => <Cell key={i} fill={d.color} />)}
             </Pie>
             <Tooltip contentStyle={tooltipStyle} />
-            {!narrow && <Legend iconType="circle" wrapperStyle={{ fontSize: 11 }} />}
+            {!narrow && <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />}
           </PieChart>
         </ResponsiveContainer>
       </div>
@@ -123,7 +123,7 @@ export function FingerprintChart({ normal, actual }: { normal: number[]; actual:
         <XAxis dataKey="name" tick={axis} axisLine={false} tickLine={false} minTickGap={narrow ? 10 : 5} />
         <YAxis tick={axis} axisLine={false} tickLine={false} width={narrow ? 34 : 42} />
         <Tooltip contentStyle={tooltipStyle} />
-        <Legend iconType="circle" wrapperStyle={{ fontSize: narrow ? 11 : 12, paddingTop: 4 }} />
+        <Legend iconType="circle" wrapperStyle={{ fontSize: 12, paddingTop: 4 }} />
         <Line type="monotone" dataKey="expected" stroke="#cbd5e1" strokeWidth={2} strokeDasharray="5 4" dot={false} name="Expected" {...touchProps} />
         <Line type="monotone" dataKey="actual" stroke="#ef4444" strokeWidth={2} dot={{ r: 3 }} name="Actual" {...touchProps} />
       </LineChart>

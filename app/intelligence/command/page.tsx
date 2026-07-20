@@ -73,7 +73,7 @@ export default function CommandCenter() {
       <div className="rounded-xl bg-ink-950 text-white p-6 relative overflow-hidden ">
         <div className="relative">
           <p className="text-indigo-300 text-xs font-semibold uppercase tracking-widest">Business Intelligence Suite</p>
-          <h1 className="text-2xl sm:text-3xl font-bold mt-1">
+          <h1 className="text-fluid-h1 font-bold mt-1">
             Operations Command Center
           </h1>
           <p className="text-ink-300 mt-2 text-sm max-w-2xl">
@@ -105,7 +105,7 @@ export default function CommandCenter() {
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-sm text-ink-800">{r.name}</span>
                     <span className="flex items-center gap-1.5">
-                      <span className={`text-[10px] font-bold uppercase tracking-wide ${r.status === "Healthy" ? "text-brand-700" : r.status === "Attention" ? "text-amber-700" : "text-red-700"}`}>{r.status}</span>
+                      <span className={`text-xs font-bold uppercase tracking-wide ${r.status === "Healthy" ? "text-brand-700" : r.status === "Attention" ? "text-amber-700" : "text-red-700"}`}>{r.status}</span>
                       <span className={`h-2.5 w-2.5 rounded-full ${dot}`} />
                     </span>
                   </div>
@@ -113,13 +113,13 @@ export default function CommandCenter() {
                   {r.status !== "Healthy" && (
                     <div className="mt-3">
                       {r.crewEnRoute ? (
-                        <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-sky-700 bg-sky-50 border border-sky-200 rounded-lg px-2.5 py-1.5">
+                        <span className="inline-flex items-center gap-1.5 text-xs font-bold text-sky-700 bg-sky-50 border border-sky-200 rounded-lg px-2.5 py-1.5">
                           <Truck className="w-3.5 h-3.5" /> Regulator crew en route
                         </span>
                       ) : (
                         <button
                           onClick={() => dispatchRegulatorCheck(r.name)}
-                          className="inline-flex items-center gap-1.5 text-[11px] font-bold text-white bg-amber-600 hover:bg-amber-700 rounded-lg px-2.5 py-1.5 transition-colors"
+                          className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 rounded-lg px-2.5 py-1.5 transition-colors"
                         >
                           <Truck className="w-3.5 h-3.5" /> Dispatch regulator check
                         </button>

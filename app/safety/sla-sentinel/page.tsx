@@ -72,7 +72,7 @@ export default function SLASentinel() {
       <header className="relative overflow-hidden rounded-xl bg-ink-950 p-6 text-white ">
         <div className="relative">
           <p className="text-xs font-semibold uppercase tracking-widest text-violet-300">CGD compliance decision center</p>
-          <h1 className="mt-1 text-2xl font-bold sm:text-3xl">SLA Sentinel</h1>
+          <h1 className="mt-1 text-fluid-h1 font-bold">SLA Sentinel</h1>
           <p className="mt-2 max-w-2xl text-sm text-ink-300">
             Predict breaches, assign the right team, escalate early, and protect customer trust and compensation exposure.
             This queue is shared live with the Business Intelligence console.
@@ -118,13 +118,13 @@ export default function SLASentinel() {
                   <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-red-100 text-xs font-bold text-red-700">{index + 1}</span>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-bold text-ink-900">{item.type}</p>
-                    <p className="text-[11px] text-ink-500">{item.consumer} · {item.area} · {item.assigned}</p>
+                    <p className="text-xs text-ink-500">{item.consumer} · {item.area} · {item.assigned}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-bold text-red-600">
                       {item.status === "Breached" ? "Breached" : `${Math.max(0, Math.round((item.slaHours - item.elapsedHours) * 60))} min left`}
                     </p>
-                    <p className="text-[10px] font-bold text-ink-500">{item.risk}% breach probability</p>
+                    <p className="text-xs font-bold text-ink-500">{item.risk}% breach probability</p>
                   </div>
                   <ChevronRight className="h-4 w-4 text-ink-400" />
                 </button>
@@ -148,7 +148,7 @@ export default function SLASentinel() {
               </div>
             ))}
           </div>
-          <p className="mt-3 text-[11px] text-ink-500">₹4,500 is the PNGRB-mandated payout per missed emergency deadline.</p>
+          <p className="mt-3 text-xs text-ink-500">₹4,500 is the PNGRB-mandated payout per missed emergency deadline.</p>
         </Card>
       </div>
 
@@ -182,11 +182,11 @@ export default function SLASentinel() {
               </div>
             </section>
           </div>
-          <div className="mt-4 grid grid-cols-5 gap-1 text-center">
+          <div className="mt-4 grid grid-cols-3 gap-1.5 text-center xs:grid-cols-5">
             {["Raised", "Assigned", "Supervisor", "Regional manager", "Breach / compensation"].map((stage, index) => (
               <div key={stage}>
                 <div className={`h-2 rounded-full ${index < (selected.status === "Breached" ? 5 : selected.assigned === "Unassigned" ? 1 : 3) ? "bg-red-500" : "bg-ink-100"}`} />
-                <p className="mt-1 text-[10px] leading-tight text-ink-500">{stage}</p>
+                <p className="mt-1 text-xs leading-tight text-ink-500">{stage}</p>
               </div>
             ))}
           </div>
@@ -268,7 +268,7 @@ export default function SLASentinel() {
           <div className="mt-4 grid grid-cols-3 gap-3 text-center">
             {[["Assignment", "3 hrs"], ["Field visit", "8 hrs"], ["Resolution", "21 hrs"]].map(([label, value]) => (
               <div key={label} className="rounded-xl bg-ink-50 p-3">
-                <p className="text-[10px] font-bold uppercase tracking-wide text-ink-500">{label}</p>
+                <p className="text-xs font-bold uppercase tracking-wide text-ink-500">{label}</p>
                 <p className="mt-1 text-lg font-bold text-ink-900">{value}</p>
               </div>
             ))}
@@ -301,7 +301,7 @@ export default function SLASentinel() {
               ["Compliance (MTD)", `${slaMetrics.complianceMTD}%`],
             ].map(([label, value]) => (
               <div key={label} className="rounded-xl bg-brand-50 p-3">
-                <p className="text-[10px] font-bold uppercase tracking-wide text-brand-700">{label}</p>
+                <p className="text-xs font-bold uppercase tracking-wide text-brand-700">{label}</p>
                 <p className="mt-1 text-lg font-bold text-brand-900">{value}</p>
               </div>
             ))}

@@ -41,7 +41,7 @@ export default function RecommendationsPanel({ role, limit = 4, className = "" }
           <h2 className="mt-0.5 text-lg font-bold text-ink-900">Recommended actions</h2>
         </div>
       </div>
-      <span className="rounded-full bg-ink-50 px-2.5 py-1 text-[11px] font-bold text-ink-600">{recommendations.length} open</span>
+      <span className="rounded-full bg-ink-50 px-2.5 py-1 text-xs font-bold text-ink-600">{recommendations.length} open</span>
     </div>
 
     {visible.length === 0 ? (
@@ -61,8 +61,8 @@ function RecommendationCard({ rec, accentBar, open, onToggle, onDismiss, onSnooz
       <span className="min-w-0 flex-1">
         <span className="flex flex-wrap items-center gap-2">
           <span className="text-sm font-bold text-ink-900">{rec.title}</span>
-          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${PRIORITY_STYLE[rec.priority]}`}>{rec.priority}</span>
-          <span className="text-[10px] font-bold uppercase tracking-wide text-ink-400">{rec.module}</span>
+          <span className={`rounded-full px-2 py-0.5 text-xs font-bold uppercase tracking-wide ${PRIORITY_STYLE[rec.priority]}`}>{rec.priority}</span>
+          <span className="text-xs font-bold uppercase tracking-wide text-ink-400">{rec.module}</span>
         </span>
         <span className="mt-1 block text-xs leading-relaxed text-ink-600">{rec.reason}</span>
       </span>
@@ -72,7 +72,7 @@ function RecommendationCard({ rec, accentBar, open, onToggle, onDismiss, onSnooz
     {open && <div className="border-t border-ink-100 bg-ink-50/50 px-4 py-3">
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-wide text-ink-400">Evidence</p>
+          <p className="text-xs font-bold uppercase tracking-wide text-ink-400">Evidence</p>
           <ul className="mt-1.5 space-y-1">
             {rec.evidence.map((item) => <li key={item} className="flex gap-1.5 text-xs text-ink-700"><Check className="mt-0.5 h-3 w-3 shrink-0 text-ink-400" />{item}</li>)}
           </ul>
@@ -80,7 +80,7 @@ function RecommendationCard({ rec, accentBar, open, onToggle, onDismiss, onSnooz
         <div className="space-y-2">
           {rec.impacts.map((impact) => <div key={impact.label} className="text-xs"><span className="font-bold text-ink-800">{impact.label}: </span><span className="text-ink-600">{impact.value}</span></div>)}
           <div className="text-xs"><span className="font-bold text-ink-800">Expected outcome: </span><span className="text-ink-600">{rec.outcome}</span></div>
-          <div className="flex items-center gap-1.5 text-[11px] text-ink-500">
+          <div className="flex items-center gap-1.5 text-xs text-ink-500">
             <span className="inline-block h-1.5 w-14 overflow-hidden rounded-full bg-ink-100"><span className={`block h-full ${accentBar}`} style={{ width: `${rec.confidence}%` }} /></span>
             {rec.confidence}% confidence
           </div>

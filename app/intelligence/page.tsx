@@ -71,7 +71,7 @@ export default function IntelligenceHome() {
           <p className="text-indigo-300 text-sm font-medium">
             Business Intelligence Hub <span className="font-bold">· executive view</span>
           </p>
-          <h1 className="text-2xl sm:text-3xl font-bold mt-1">
+          <h1 className="text-fluid-h1 font-bold mt-1">
             Data-driven decisions for <span className="text-indigo-300">City Gas Distribution excellence</span>.
           </h1>
           <p className="text-ink-300 mt-2 text-sm max-w-2xl">
@@ -113,8 +113,8 @@ export default function IntelligenceHome() {
             {BRIEFING.map((b) => (
               <div key={b.area} className="rounded-xl border border-ink-100 bg-ink-50/50 p-4 flex flex-col">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold uppercase tracking-wide text-ink-500">{b.area}</span>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${b.priority === "High" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"}`}>
+                  <span className="text-xs font-bold uppercase tracking-wide text-ink-500">{b.area}</span>
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${b.priority === "High" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"}`}>
                     {b.priority} priority
                   </span>
                 </div>
@@ -122,13 +122,13 @@ export default function IntelligenceHome() {
                 <p className="text-xs mt-2.5"><span className="font-bold text-ink-800">Recommended: </span><span className="text-ink-600">{b.action}</span></p>
                 <p className="text-xs mt-1.5"><span className="font-bold text-ink-800">Impact: </span><span className="text-ink-600">{b.impact}</span></p>
                 <div className="mt-3 pt-3 border-t border-ink-100 flex items-center justify-between mt-auto">
-                  <span className="flex items-center gap-1.5 text-[11px] text-ink-500">
+                  <span className="flex items-center gap-1.5 text-xs text-ink-500">
                     <span className="w-12 h-1.5 rounded-full bg-ink-100 overflow-hidden inline-block">
                       <span className="block h-full bg-indigo-500" style={{ width: `${b.confidence}%` }} />
                     </span>
                     {b.confidence}% confidence
                   </span>
-                  <Link href={b.href} className="text-[11px] font-bold text-indigo-700 hover:text-indigo-900 inline-flex items-center gap-1 transition-colors">
+                  <Link href={b.href} className="text-xs font-bold text-indigo-700 hover:text-indigo-900 inline-flex items-center gap-1 transition-colors">
                     {b.cta} <ArrowRight className="w-3 h-3" />
                   </Link>
                 </div>
@@ -165,7 +165,7 @@ function Tile({ href, icon, title, sub }: { href: string; icon: React.ReactNode;
           <ArrowRight className="w-4 h-4 text-ink-300" />
         </div>
         <div className="text-sm font-semibold text-ink-800 mt-3">{title}</div>
-        <div className="text-[11px] text-ink-500">{sub}</div>
+        <div className="text-xs text-ink-500">{sub}</div>
       </Card>
     </Link>
   );

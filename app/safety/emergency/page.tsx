@@ -253,7 +253,7 @@ export default function EmergencyDashboard() {
         <div className="relative flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
           <div>
             <p className="text-amber-300 text-xs font-semibold uppercase tracking-widest">Safety &amp; Operations Console</p>
-            <h1 className="text-2xl sm:text-3xl font-bold mt-1">
+            <h1 className="text-fluid-h1 font-bold mt-1">
               Emergency Dashboard
             </h1>
             <p className="text-ink-300 mt-2 text-sm max-w-2xl">
@@ -310,65 +310,57 @@ export default function EmergencyDashboard() {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-ink-50 text-ink-500 text-xs uppercase tracking-wide">
-                <tr>
-                  <th className="text-left font-semibold px-5 py-3">Case ID</th>
-                  <th className="text-left font-semibold px-3 py-3">Severity</th>
-                  <th className="text-left font-semibold px-3 py-3">Status</th>
-                  <th className="text-right font-semibold px-5 py-3">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-ink-100">
-                {visibleCases.map((c) => (
-                  <tr key={c.id} className={c.status === "AI guiding" ? "bg-red-50/50" : ""}>
-                    <td className="px-5 py-3">
-                      <div className="font-semibold text-ink-800 flex items-center gap-2">
-                        {c.id}
-                        {c.source === "customer-app" && (
-                          <span className="text-[10px] font-bold uppercase tracking-wide text-red-700 bg-red-100 border border-red-200 rounded-full px-2 py-0.5">
-                            Customer App
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-xs text-ink-500 flex items-center gap-1">
-                        <MapPin className="w-3 h-3 text-ink-400" /> {c.area} · {c.age}s ago
-                      </div>
-                    </td>
-                    <td className="px-3 py-3">
-                      <Badge tone={c.severity === "High" ? "red" : "amber"}>{c.severity}</Badge>
-                    </td>
-                    <td className="px-3 py-3 font-medium">
-                      <span className={`inline-flex items-center gap-1.5 ${statusText[c.status]}`}>
-                        {c.status} {c.crew && `(${c.crew})`}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3 text-right">
-                      <div className="flex flex-wrap justify-end gap-2">
-                        {c.status === "AI guiding" && (
-                          <button onClick={() => acknowledgeCase(c.id)} className="text-xs font-semibold border border-ink-200 hover:bg-ink-50 rounded-lg px-3 py-1.5">
-                            Acknowledge
-                          </button>
-                        )}
-                        {(c.status === "AI guiding" || c.status === "Acknowledged") && (
-                          <button onClick={() => dispatchCrew(c.id)} className="text-xs font-semibold text-white bg-red-600 px-3 py-1.5 rounded-lg hover:bg-red-700">
-                            Dispatch Crew
-                          </button>
-                        )}
-                        {c.status === "Dispatched" && (
-                          <button onClick={() => resolveCase(c.id)} className="text-xs font-semibold text-ink-700 border border-ink-200 px-3 py-1.5 rounded-lg hover:bg-ink-100">
-                            Mark Resolved
-                          </button>
-                        )}
-                        {c.status === "Resolved" && <span className="text-xs text-ink-400">Archived</span>}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {!visibleCases.length && <p className="p-8 text-center text-sm text-ink-500">No cases match the current search and filter.</p>}
+          {/* Live incident queue. On phones each case becomes a card whose
+              dispatch/resolve buttons stay full-size — an operator triaging on
+              a handset must never chase a 12px control inside a scrolled table. */}
+          <div className="p-4 sm:p-5">
+            <DataTable
+              columns={[
+                {
+                  key: "case", header: "Case ID", primary: true,
+                  cell: (c) => (
+                    <span className="flex flex-wrap items-center gap-2">
+                      {c.id}
+                      {c.source === "customer-app" && (
+                        <span className="rounded-full border border-red-200 bg-red-100 px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-red-700">
+                          Customer App
+                        </span>
+                      )}
+                    </span>
+                  ),
+                },
+                {
+                  key: "where", header: "Location", secondary: true,
+                  cell: (c) => <span className="flex items-center gap-1"><MapPin className="w-3 h-3 shrink-0 text-ink-400" /> {c.area} · {c.age}s ago</span>,
+                },
+                { key: "severity", header: "Severity", cell: (c) => <Badge tone={c.severity === "High" ? "red" : "amber"}>{c.severity}</Badge> },
+                {
+                  key: "status", header: "Status",
+                  cell: (c) => <span className={`font-medium ${statusText[c.status]}`}>{c.status}{c.crew && ` (${c.crew})`}</span>,
+                },
+                {
+                  key: "action", header: "Action", align: "right",
+                  cell: (c) => (
+                    <span className="flex flex-wrap gap-2 md:justify-end">
+                      {c.status === "AI guiding" && (
+                        <button onClick={() => acknowledgeCase(c.id)} className="rounded-lg border border-ink-200 px-3 py-1.5 text-xs font-semibold hover:bg-ink-50">Acknowledge</button>
+                      )}
+                      {(c.status === "AI guiding" || c.status === "Acknowledged") && (
+                        <button onClick={() => dispatchCrew(c.id)} className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700">Dispatch Crew</button>
+                      )}
+                      {c.status === "Dispatched" && (
+                        <button onClick={() => resolveCase(c.id)} className="rounded-lg border border-ink-200 px-3 py-1.5 text-xs font-semibold text-ink-700 hover:bg-ink-100">Mark Resolved</button>
+                      )}
+                      {c.status === "Resolved" && <span className="text-xs text-ink-400">Archived</span>}
+                    </span>
+                  ),
+                },
+              ]}
+              rows={visibleCases}
+              getKey={(c) => c.id}
+              caption="Live gas emergency cases"
+              empty="No cases match the current search and filter."
+            />
           </div>
         </Card>
 
@@ -419,7 +411,7 @@ export default function EmergencyDashboard() {
               {cameras[workspace.activeCam]}
               <div className="text-xs text-white/20 mt-1">AI DETECTION ACTIVE · MONITORING FOR PPE & IGNITION EVENTS</div>
             </div>
-            <div className="flex items-center justify-between text-white/60 text-[10px] font-mono">
+            <div className="flex items-center justify-between text-white/60 text-xs font-mono">
               <span>CONF: 94.6%</span>
               <span>UTC: {timeStr}</span>
             </div>
@@ -428,7 +420,7 @@ export default function EmergencyDashboard() {
                 <button
                   key={cam}
                   onClick={() => setWorkspace((w) => ({ ...w, activeCam: index }))}
-                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-semibold ${
+                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
                     workspace.activeCam === index ? "bg-white text-ink-900" : "bg-white/10 text-white/70 hover:bg-white/20"
                   }`}
                 >
@@ -447,9 +439,9 @@ export default function EmergencyDashboard() {
                     <span className="text-xs font-bold text-ink-800">{a.type}</span>
                     <Badge tone={a.severity === "Critical" ? "red" : "amber"}>{a.severity}</Badge>
                   </div>
-                  <p className="text-[11px] text-ink-500 mt-1">{a.cam} · {a.ts}</p>
+                  <p className="text-xs text-ink-500 mt-1">{a.cam} · {a.ts}</p>
                   {a.status === "Open" && (
-                    <button onClick={() => acknowledgeCctv(a.id)} className="mt-2 text-[10px] font-semibold text-white bg-ink-900 px-2.5 py-1 rounded hover:bg-ink-800">
+                    <button onClick={() => acknowledgeCctv(a.id)} className="mt-2 text-xs font-semibold text-white bg-ink-900 px-2.5 py-1 rounded hover:bg-ink-800">
                       Acknowledge &amp; Clear
                     </button>
                   )}

@@ -67,7 +67,7 @@ export default function OperatorHandoff({ log, onComplete }: { log: HandoffEntry
       </button>
 
       <div className="mt-4 pt-4 border-t border-ink-100">
-        <p className="text-[11px] font-bold uppercase tracking-wide text-ink-500">Recent handoffs</p>
+        <p className="text-xs font-bold uppercase tracking-wide text-ink-500">Recent handoffs</p>
         {log.length === 0 ? (
           <p className="mt-2 text-xs text-ink-400">No handoff notes logged yet this session.</p>
         ) : (

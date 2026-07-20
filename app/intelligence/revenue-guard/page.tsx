@@ -74,7 +74,7 @@ export default function RevGuard() {
           <FingerprintChart normal={d.normal} actual={d.actual} />
 
           <div className="mt-4 rounded-xl bg-ink-50 border border-ink-100 p-3 text-xs space-y-1.5">
-            <p className="font-bold text-ink-800 uppercase tracking-wide text-[10px]">AI assessment</p>
+            <p className="font-bold text-ink-800 uppercase tracking-wide text-xs">AI assessment</p>
             <p className="text-ink-600 leading-relaxed">
               Consumption fingerprint deviates {d.drop}% from the account&apos;s seasonal baseline while similar households average {d.neighbourhood} SCM.
               Pattern matches <span className="font-semibold text-ink-800">{d.type.toLowerCase()}</span> signatures with <span className="font-semibold text-ink-800">{d.confidence}% confidence</span>.

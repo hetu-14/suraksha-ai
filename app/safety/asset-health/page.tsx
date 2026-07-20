@@ -31,7 +31,7 @@ export default function AssetHealth() {
       <div className="rounded-xl bg-ink-950 text-white p-6 relative overflow-hidden ">
         <div className="relative">
           <p className="text-amber-300 text-xs font-semibold uppercase tracking-widest">Safety &amp; Operations Suite</p>
-          <h1 className="text-2xl sm:text-3xl font-bold mt-1">
+          <h1 className="text-fluid-h1 font-bold mt-1">
             Asset Health
           </h1>
           <p className="text-ink-300 mt-2 text-sm max-w-2xl">
@@ -48,7 +48,7 @@ export default function AssetHealth() {
         <Kpi label="Critical Replacements" value={<CountUp to={4} />} accent="text-red-600" icon={<ShieldAlert className="w-4 h-4" />} />
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-3"><Card className="p-5 lg:col-span-2"><h2 className="font-bold text-ink-900">{selected.id} · health explanation & criticality</h2><div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">{[["Vibration",selected.health < 70 ? "45%":"78%"],["Temperature","71%"],["Pressure variation","66%"],["Inspection compliance","92%"]].map(([label,value]) => <div key={label} className="rounded-xl bg-ink-50 p-3"><p className="text-[10px] uppercase text-ink-500">{label}</p><p className="mt-1 text-lg font-bold">{value}</p></div>)}</div><p className="mt-4 rounded-xl bg-amber-50 p-3 text-xs text-amber-900">Why health is {selected.health}%: vibration increased 23%, operating temperature exceeded baseline, and bearing wear pattern was detected.</p></Card><Card className="p-5"><p className="text-xs font-bold uppercase text-red-700">Criticality matrix</p><p className="mt-2 text-2xl font-bold text-red-700">Very High</p><p className="mt-2 text-xs">Health {selected.health}% · business criticality {criticality}% · mother-station dependency high.</p></Card></div>
+      <div className="grid gap-5 lg:grid-cols-3"><Card className="p-5 lg:col-span-2"><h2 className="font-bold text-ink-900">{selected.id} · health explanation & criticality</h2><div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">{[["Vibration",selected.health < 70 ? "45%":"78%"],["Temperature","71%"],["Pressure variation","66%"],["Inspection compliance","92%"]].map(([label,value]) => <div key={label} className="rounded-xl bg-ink-50 p-3"><p className="text-xs uppercase text-ink-500">{label}</p><p className="mt-1 text-lg font-bold">{value}</p></div>)}</div><p className="mt-4 rounded-xl bg-amber-50 p-3 text-xs text-amber-900">Why health is {selected.health}%: vibration increased 23%, operating temperature exceeded baseline, and bearing wear pattern was detected.</p></Card><Card className="p-5"><p className="text-xs font-bold uppercase text-red-700">Criticality matrix</p><p className="mt-2 text-2xl font-bold text-red-700">Very High</p><p className="mt-2 text-xs">Health {selected.health}% · business criticality {criticality}% · mother-station dependency high.</p></Card></div>
       <div className="grid gap-5 lg:grid-cols-3"><Card className="p-5"><h2 className="font-bold">Next best action</h2><p className="mt-3 text-sm font-bold">Bearing replacement</p><p className="mt-1 text-xs text-ink-600">₹12,000 · within 7 days · expected health {selected.health}% → 88%</p><button onClick={scheduleMaintenance} className="mt-4 w-full rounded-lg bg-ink-900 py-2 text-xs font-bold text-white">Schedule 18 Jul · 2–4 PM</button></Card><Card className="p-5"><h2 className="font-bold">If asset fails</h2><div className="mt-3 space-y-2 text-xs"><p>Affected customers: <strong>5,200</strong></p><p>Expected downtime: <strong>8 hours</strong></p><p>Revenue impact: <strong>{money(150000)}</strong></p><p>Station readiness: <strong>−12 points</strong></p></div></Card><Card className="p-5"><h2 className="font-bold">Cost avoidance</h2><p className="mt-3 text-2xl font-bold text-brand-700">₹3.08L</p><p className="mt-1 text-xs text-ink-600">Preventive cost ₹12,000 vs potential failure cost ₹3.20L.</p></Card></div>
 
       <div className="grid lg:grid-cols-3 gap-6 anim-fade-up">
@@ -57,35 +57,26 @@ export default function AssetHealth() {
           <div className="p-5 border-b border-ink-100">
             <h3 className="font-bold text-ink-900">Asset Health Matrix</h3>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-ink-50 text-ink-500 text-xs uppercase tracking-wide">
-                <tr>
-                  <th className="text-left font-semibold px-5 py-3">Asset ID</th>
-                  <th className="text-right font-semibold px-3 py-3">Health score</th>
-                  <th className="text-right font-semibold px-5 py-3">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-ink-100">
-                {assets.map((a, idx) => {
-                  const tag = a.status === "Healthy" ? "brand" : a.status === "Attention" ? "amber" : "red";
-                  const pctColor = a.health >= 85 ? "text-brand-600" : a.health >= 60 ? "text-amber-600" : "text-red-600";
-                  return (
-                    <tr key={a.id} onClick={() => setSel(idx)}
-                      className={`cursor-pointer transition ${sel === idx ? "bg-amber-50/20" : "hover:bg-ink-50/40"}`}>
-                      <td className="px-5 py-3.5">
-                        <span className="font-bold text-ink-800 block">{a.id}</span>
-                        <span className="text-xs text-ink-500 block mt-0.5">{a.name}</span>
-                      </td>
-                      <td className={`px-3 py-3.5 text-right font-bold ${pctColor}`}>{a.health}%</td>
-                      <td className="px-5 py-3.5 text-right">
-                        <Badge tone={tag}>{a.status}</Badge>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div className="p-4 sm:p-5">
+            <DataTable
+              columns={[
+                { key: "asset", header: "Asset ID", primary: true, cell: (a) => <span className="font-bold text-ink-800">{a.id}</span> },
+                { key: "name", header: "Asset", secondary: true, cell: (a) => <span>{a.name}</span> },
+                {
+                  key: "health", header: "Health score", align: "right",
+                  cell: (a) => <span className={`font-bold tabular-nums ${a.health >= 85 ? "text-brand-600" : a.health >= 60 ? "text-amber-600" : "text-red-600"}`}>{a.health}%</span>,
+                },
+                {
+                  key: "status", header: "Status", align: "right",
+                  cell: (a) => <Badge tone={a.status === "Healthy" ? "brand" : a.status === "Attention" ? "amber" : "red"}>{a.status}</Badge>,
+                },
+              ]}
+              rows={assets}
+              getKey={(a) => a.id}
+              onRowClick={(a) => setSel(assets.findIndex((item) => item.id === a.id))}
+              isActive={(a) => assets[sel]?.id === a.id}
+              caption="Monitored asset health matrix"
+            />
           </div>
         </Card>
 

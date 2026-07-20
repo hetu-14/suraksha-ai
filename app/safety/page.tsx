@@ -33,7 +33,7 @@ export default function SafetyHome() {
           <p className="text-amber-300 text-sm font-medium">
             Safety &amp; Operations Console <span className="text-red-400 font-bold">· live</span>
           </p>
-          <h1 className="text-2xl sm:text-3xl font-bold mt-1">
+          <h1 className="text-fluid-h1 font-bold mt-1">
             The safety layer that <span className="text-amber-300">protects our pipeline grid</span>.
           </h1>
           <p className="text-ink-300 mt-2 text-sm max-w-2xl">
@@ -91,7 +91,7 @@ function Tile({ href, icon, title, sub, badge }: { href: string; icon: React.Rea
           {icon}
           <div className="flex items-center gap-2">
             {badge && (
-              <span className="flex items-center gap-1 text-[10px] font-bold text-red-600">
+              <span className="flex items-center gap-1 text-xs font-bold text-red-600">
                 <span className="relative flex h-1.5 w-1.5"><span className="animate-ping absolute h-1.5 w-1.5 rounded-full bg-red-400 opacity-75" /><span className="relative rounded-full h-1.5 w-1.5 bg-red-500" /></span>
                 {badge}
               </span>
@@ -100,7 +100,7 @@ function Tile({ href, icon, title, sub, badge }: { href: string; icon: React.Rea
           </div>
         </div>
         <div className="text-sm font-semibold text-ink-800 mt-3">{title}</div>
-        <div className="text-[11px] text-ink-500">{sub}</div>
+        <div className="text-xs text-ink-500">{sub}</div>
       </Card>
     </Link>
   );

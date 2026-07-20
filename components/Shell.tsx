@@ -365,7 +365,7 @@ export default function Shell({
                 >
                   <Bell className="w-5 h-5 text-ink-600" />
                   {unread > 0 && (
-                    <span className="absolute top-1 right-1 grid h-4 min-w-4 place-items-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                    <span className="absolute top-1 right-1 grid h-4 min-w-4 place-items-center rounded-full bg-red-500 px-1 text-xs font-bold text-white">
                       {unread > 9 ? "9+" : unread}
                     </span>
                   )}
@@ -417,7 +417,7 @@ export default function Shell({
                               <span className="flex items-center gap-1.5">
                                 <span className="text-xs font-bold text-ink-900 truncate">{n.title}</span>
                                 {n.priority === "critical" && !n.read && (
-                                  <span className="shrink-0 rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-700">CRITICAL</span>
+                                  <span className="shrink-0 rounded-full bg-red-100 px-1.5 py-0.5 text-xs font-bold text-red-700">CRITICAL</span>
                                 )}
                                 {n.read && <Check className="w-3 h-3 text-ink-400 shrink-0" />}
                               </span>
@@ -474,7 +474,7 @@ export default function Shell({
               key={item.href}
               href={item.href}
               aria-current={active ? "page" : undefined}
-              className={`relative flex min-h-[3.5rem] flex-1 flex-col items-center justify-center gap-0.5 px-1 py-2 text-[11px] font-semibold transition ${active ? cfg.tabActive : "text-ink-500"}`}
+              className={`relative flex min-w-0 min-h-[3.5rem] flex-1 flex-col items-center justify-center gap-0.5 px-1 py-2 text-xs font-semibold transition ${active ? cfg.tabActive : "text-ink-500"}`}
             >
               {active && <span className={`absolute top-0 h-0.5 w-8 rounded-full ${cfg.liveDot}`} />}
               <Icon className="w-[19px] h-[19px]" />
@@ -487,7 +487,7 @@ export default function Shell({
           onClick={() => setOpen(true)}
           aria-label="More destinations"
           aria-expanded={open}
-          className={`flex min-h-[3.5rem] flex-1 flex-col items-center justify-center gap-0.5 px-1 py-2 text-[11px] font-semibold transition ${inOverflow ? cfg.tabActive : "text-ink-500"}`}
+          className={`flex min-w-0 min-h-[3.5rem] flex-1 flex-col items-center justify-center gap-0.5 px-1 py-2 text-xs font-semibold transition ${inOverflow ? cfg.tabActive : "text-ink-500"}`}
         >
           {inOverflow && <span className={`absolute top-0 h-0.5 w-8 rounded-full ${cfg.liveDot}`} />}
           <MoreHorizontal className="w-[19px] h-[19px]" />

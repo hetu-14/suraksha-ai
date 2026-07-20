@@ -486,17 +486,31 @@ export default function EmergencyChat() {
             <div className="h-9 w-9 rounded-full bg-brand-500/20 grid place-items-center shrink-0"><Bot className="w-4 h-4 text-brand-300" /></div>
             <div className="min-w-0">
               <div className="font-semibold text-sm truncate">SuRaksha AI · Safety Assistant</div>
-              <div className="text-[11px] text-ink-400 flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-brand-400 animate-pulse" /> {muted ? ui.voiceOff : ui.voiceOn}</div>
+              <div className="text-xs text-ink-400 flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-brand-400 animate-pulse" /> {muted ? ui.voiceOff : ui.voiceOn}</div>
             </div>
           </div>
+          {/* Language and mute stay at full size and never collapse into an
+              overflow menu — a caller who cannot read English must be able to
+              switch script in one tap, without scrolling (design guide §20A). */}
           <div className="flex items-center gap-1.5 shrink-0">
-            <div className="flex rounded-lg overflow-hidden border border-white/15">
+            <div className="flex overflow-hidden rounded-lg border border-white/15" role="group" aria-label="Assistant language">
               {LANGS.map((l) => (
-                <button key={l.code} onClick={() => changeLang(l.code)}
-                  className={`px-2 py-1 text-[11px] font-semibold ${lang === l.code ? "bg-brand-500 text-white" : "bg-white/5 text-ink-300 hover:bg-white/10"}`}>{l.label}</button>
+                <button
+                  key={l.code}
+                  onClick={() => changeLang(l.code)}
+                  aria-pressed={lang === l.code}
+                  className={`min-h-tap px-2.5 text-xs font-semibold sm:px-3 ${lang === l.code ? "bg-brand-500 text-white" : "bg-white/5 text-ink-300 hover:bg-white/10"}`}
+                >
+                  {l.label}
+                </button>
               ))}
             </div>
-            <button onClick={toggleMute} title="mute" className="p-1.5 rounded-lg hover:bg-white/10 text-ink-300">
+            <button
+              onClick={toggleMute}
+              aria-label={muted ? "Unmute spoken guidance" : "Mute spoken guidance"}
+              aria-pressed={muted}
+              className="grid h-11 w-11 place-items-center rounded-lg text-ink-300 hover:bg-white/10"
+            >
               {muted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5 text-brand-300" />}
             </button>
           </div>
@@ -505,11 +519,11 @@ export default function EmergencyChat() {
         {langVoices.length > 0 && (
           <div className="px-3 py-1.5 bg-ink-900/95 border-b border-white/5">
             <select value={voiceName} onChange={(e) => changeVoice(e.target.value)} title="Assistant voice"
-              className="w-full text-[11px] bg-white/10 text-white rounded-lg px-2 py-1 outline-none border border-white/10">
+              className="w-full text-xs bg-white/10 text-white rounded-lg px-2 py-1 outline-none border border-white/10">
               {langVoices.map((v) => <option key={v.name} value={v.name} className="text-ink-900">{v.name.replace(/Microsoft |Google |Online.*|\(.*\)/g, "").trim() || v.name}</option>)}
             </select>
             {lang === "gu" && !hasGuVoice && (
-              <p className="text-[10px] text-ink-400 mt-1">ગુજરાતી અવાજ ઉપલબ્ધ નથી — હિન્દી અવાજ દ્વારા વાંચે છે.</p>
+              <p className="text-xs text-ink-400 mt-1">ગુજરાતી અવાજ ઉપલબ્ધ નથી — હિન્દી અવાજ દ્વારા વાંચે છે.</p>
             )}
           </div>
         )}
@@ -517,7 +531,7 @@ export default function EmergencyChat() {
         <div className="flex items-stretch gap-1.5 px-3 py-2 bg-red-50 border-b border-red-100">
           {ui.callbar.map(([n, label]) => (
             <button key={n} onClick={() => setCallPrompt(n)}
-              className={`flex-1 flex items-center justify-center gap-1 text-white rounded-lg py-1.5 text-[11px] font-semibold ${n === "1906" ? "bg-red-600 hover:bg-red-700" : n === "101" ? "bg-orange-500 hover:bg-orange-600" : "bg-sky-600 hover:bg-sky-700"}`}>
+              className={`flex-1 flex items-center justify-center gap-1 text-white rounded-lg py-1.5 text-xs font-semibold ${n === "1906" ? "bg-red-600 hover:bg-red-700" : n === "101" ? "bg-orange-500 hover:bg-orange-600" : "bg-sky-600 hover:bg-sky-700"}`}>
               {n === "101" ? <Flame className="w-3.5 h-3.5" /> : n === "108" ? <Ambulance className="w-3.5 h-3.5" /> : <Phone className="w-3.5 h-3.5" />} {label}
             </button>
           ))}
@@ -527,7 +541,7 @@ export default function EmergencyChat() {
           {msgs.map((m, i) => (
             <div key={i} className={`flex ${m.role === "bot" ? "justify-start" : "justify-end"}`}>
               <div className={`px-4 py-2.5 max-w-[86%] text-sm leading-relaxed shadow-sm rounded-xl ${m.role === "bot" ? "bg-white border border-ink-200 text-ink-800 rounded-tl-md" : "bg-brand-600 text-white rounded-tr-md"}`}>
-                {m.role === "bot" && <span className="text-[10px] uppercase tracking-wider text-brand-600 block mb-0.5">{ui.assistant}</span>}
+                {m.role === "bot" && <span className="text-xs uppercase tracking-wider text-brand-600 block mb-0.5">{ui.assistant}</span>}
                 {m.text}
                 {m.call && (
                   <button onClick={() => setCallPrompt(m.call!)} className="mt-2 flex items-center gap-2 text-white bg-red-600 hover:bg-red-700 rounded-lg px-3 py-1.5 text-xs font-semibold">
@@ -540,14 +554,14 @@ export default function EmergencyChat() {
         </div>
 
         {micMsg && (
-          <div className="mx-3 mb-1 flex items-start gap-2 text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1.5">
+          <div className="mx-3 mb-1 flex items-start gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1.5">
             <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" /> {micMsg}
           </div>
         )}
 
         <div className="px-3 pt-2 flex gap-1.5 flex-wrap border-t border-ink-100">
           {QUICK[lang].map((q) => (
-            <button key={q} onClick={() => respondTo(q)} className="text-[11px] font-medium px-2.5 py-1 rounded-full border border-ink-200 text-ink-600 hover:border-brand-300 hover:bg-brand-50 transition">{q}</button>
+            <button key={q} onClick={() => respondTo(q)} className="text-xs font-medium px-2.5 py-1 rounded-full border border-ink-200 text-ink-600 hover:border-brand-300 hover:bg-brand-50 transition">{q}</button>
           ))}
         </div>
 
@@ -562,7 +576,7 @@ export default function EmergencyChat() {
             className="flex-1 rounded-xl border border-ink-200 px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand-400" />
           <button type="submit" className="p-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white"><Send className="w-4 h-4" /></button>
         </form>
-        <div className="px-3 pb-2 -mt-1 flex items-center gap-1.5 text-[11px] text-ink-400">
+        <div className="px-3 pb-2 -mt-1 flex items-center gap-1.5 text-xs text-ink-400">
           <ShieldPlus className="w-3 h-3" /> {ui.guidance}
         </div>
       </Card>

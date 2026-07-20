@@ -255,14 +255,14 @@ function HUDOverlay() {
       ))}
 
       {/* TL */}
-      <div className="absolute top-5 left-12 font-mono text-[9px] text-brand-400/38 leading-[1.7]">
+      <div className="absolute top-5 left-12 font-mono text-xs text-brand-400/38 leading-[1.7]">
         <div className="hud-blink">◉ SYS::ONLINE</div>
         <div>{timeStr} UTC</div>
         <div>NODES 6/6</div>
       </div>
 
       {/* TR */}
-      <div className="absolute top-5 right-12 font-mono text-[9px] text-brand-400/38 text-right leading-[1.7]">
+      <div className="absolute top-5 right-12 font-mono text-xs text-brand-400/38 text-right leading-[1.7]">
         <div>CGD.AI v2.6.1</div>
         <div>CONF 99.7%</div>
         <div className={alertCycle > 0 ? "text-red-400/70 hud-blink" : "text-brand-400/38"}>
@@ -271,13 +271,13 @@ function HUDOverlay() {
       </div>
 
       {/* BL */}
-      <div className="absolute bottom-5 left-12 font-mono text-[9px] text-brand-400/25 leading-[1.7]">
+      <div className="absolute bottom-5 left-12 font-mono text-xs text-brand-400/25 leading-[1.7]">
         <div>LAT 23.02°N</div>
         <div>LON 72.57°E</div>
       </div>
 
       {/* BR */}
-      <div className="absolute bottom-5 right-12 font-mono text-[9px] text-brand-400/25 text-right leading-[1.7]">
+      <div className="absolute bottom-5 right-12 font-mono text-xs text-brand-400/25 text-right leading-[1.7]">
         <div>SCAN {scan.toString().padStart(3,"0")}%</div>
         <div>{"■".repeat(Math.floor(scan/10))}{"░".repeat(10-Math.floor(scan/10))}</div>
       </div>
@@ -605,6 +605,18 @@ function ecoFeatureGeo(d: EcoDomain, i: number) {
 function EcosystemRadar() {
   const [hovered, setHovered] = useState<string | null>(null);
   const [pinned, setPinned] = useState<string | null>(null);
+  // Below `sm` the radar renders at scale-[0.45], which would leave its 64px
+  // domain nodes as ~15px targets with ~5px labels. Rather than shrink a
+  // desktop control, phones get the radar as a pure visual plus a full-size
+  // domain picker below it (see the compact selector further down).
+  const [compact, setCompact] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 1023px)");
+    const sync = () => setCompact(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
   const [featHover, setFeatHover] = useState<{ d: string; i: number } | null>(null);
   const [coreHover, setCoreHover] = useState(false);
   const [attract, setAttract] = useState(false);
@@ -846,7 +858,7 @@ function EcosystemRadar() {
                       <div className="text-[13px] font-bold tracking-[0.18em] text-white/90">
                         SURAKSHA <span className="text-brand-300">AI CORE</span>
                       </div>
-                      <div className="text-[10px] font-mono text-brand-400/60 mt-0.5">
+                      <div className="text-xs font-mono text-brand-400/60 mt-0.5">
                         {totalFeatures} CAPABILITIES · ONLINE
                       </div>
                     </div>
@@ -863,13 +875,17 @@ function EcosystemRadar() {
                   <div key={d.id} className="absolute z-10 pointer-events-none" style={{ left: p.x, top: p.y }}>
                     <div className="-translate-x-1/2 -translate-y-1/2 w-max">
                       <div className="eco-entr-domain" data-dx={ECO_C - p.x} data-dy={ECO_C - p.y}>
+                        {/* On phones this is presentation only — the picker below
+                            carries the interaction at full touch size. */}
                         <button
                           type="button"
-                          aria-expanded={isActive} aria-label={`${d.label} — explore capabilities`}
+                          {...(compact
+                            ? { tabIndex: -1, "aria-hidden": true as const }
+                            : { "aria-expanded": isActive, "aria-label": `${d.label} — explore capabilities` })}
                           onMouseEnter={() => setHovered(d.id)}
                           onFocus={() => setHovered(d.id)}
                           onClick={() => setPinned(prev => (prev === d.id ? null : d.id))}
-                          className="pointer-events-auto flex flex-col items-center gap-2 cursor-pointer focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white/70 rounded-full"
+                          className={`${compact ? "pointer-events-none" : "pointer-events-auto cursor-pointer"} flex flex-col items-center gap-2 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white/70 rounded-full`}
                           style={{
                             transform: `scale(${dimmed ? 0.92 : isActive ? 1.06 : coreHover ? 1.03 : 1})`,
                             opacity: dimmed ? 0.3 : 1,
@@ -952,12 +968,42 @@ function EcosystemRadar() {
         </div>
 
         {/* ── Intel panel ── */}
+        {/* Phone-native domain picker: a horizontally snapping rail of full-size
+            targets that drives the same `pinned` state the radar nodes drive on
+            desktop, so both device classes reach the identical capability panel. */}
+        <div className="lg:hidden w-full px-4 mt-4">
+          <p className="text-xs uppercase tracking-widest text-ink-600 text-center">Choose an intelligence domain</p>
+          <div className="scroll-x snap-rail mt-2.5 flex gap-2 pb-1" role="tablist" aria-label="Intelligence domains">
+            {ECO_DOMAINS.map(d => {
+              const isActive = activeId === d.id;
+              return (
+                <button
+                  key={d.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={isActive}
+                  onClick={() => setPinned(prev => (prev === d.id ? null : d.id))}
+                  className="flex min-h-crisis shrink-0 items-center gap-2 rounded-full border px-4 text-xs font-semibold transition"
+                  style={{
+                    color: isActive ? `rgb(${d.rgb})` : "rgba(255,255,255,0.72)",
+                    borderColor: `rgba(${d.rgb},${isActive ? 0.75 : 0.28})`,
+                    background: `rgba(${d.rgb},${isActive ? 0.14 : 0.04})`,
+                  }}
+                >
+                  <span className="grid h-6 w-6 place-items-center" style={{ color: `rgb(${d.rgb})` }}>{d.icon}</span>
+                  {d.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         <div className="eco-entr-panel mt-2 sm:mt-5 min-h-[186px] sm:min-h-[158px] w-full max-w-xl mx-auto text-center px-4">
           {activeDomain ? (
             <div key={activeDomain.id} className="anim-fade-up" style={{ animationDuration: "0.35s" }}>
               <div className="flex items-center justify-center gap-2">
                 <span className="text-sm font-bold" style={{ color: `rgb(${activeDomain.rgb})` }}>{activeDomain.label}</span>
-                <span className="text-[10px] uppercase tracking-widest text-ink-500">
+                <span className="text-xs uppercase tracking-widest text-ink-500">
                   {activeDomain.features.length} capabilities
                 </span>
               </div>
@@ -968,16 +1014,16 @@ function EcosystemRadar() {
               </p>
               <div className="flex flex-wrap items-center justify-center gap-1.5 mt-2.5">
                 {activeDomain.chips.map(c => (
-                  <span key={c} className="text-[10px] font-medium text-ink-300 bg-white/[0.04] border border-white/[0.09] px-2.5 py-1 rounded-full tabular-nums">
+                  <span key={c} className="text-xs font-medium text-ink-300 bg-white/[0.04] border border-white/[0.09] px-2.5 py-1 rounded-full tabular-nums">
                     {c}
                   </span>
                 ))}
               </div>
               {/* Mobile: capabilities as tappable chips since orbit labels are scaled down */}
-              <div className="flex sm:hidden flex-wrap items-center justify-center gap-1.5 mt-2.5">
+              <div className="flex lg:hidden flex-wrap items-center justify-center gap-1.5 mt-2.5">
                 {activeDomain.features.map(f => (
                   <Link key={f.label} href={f.href}
-                    className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-1 rounded-full border"
+                    className="inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full border"
                     style={{ color: "rgba(255,255,255,0.8)", borderColor: `rgba(${f.sos ? "248,113,113" : activeDomain.rgb},0.35)`, background: "rgba(255,255,255,0.03)" }}>
                     <span className="w-1 h-1 rounded-full" style={{ background: `rgb(${f.sos ? "248,113,113" : activeDomain.rgb})` }} />
                     {f.label}
@@ -995,7 +1041,7 @@ function EcosystemRadar() {
               <p className="text-[13px] text-ink-300 font-medium">
                 One AI core · 5 intelligence domains · {totalFeatures} live capabilities
               </p>
-              <p className="text-[10px] text-ink-600 uppercase tracking-widest mt-2">
+              <p className="text-xs text-ink-600 uppercase tracking-widest mt-2">
                 <span className="hidden sm:inline">Hover a domain to explore · click to pin · Esc to release</span>
                 <span className="sm:hidden">Tap a domain to explore the platform</span>
               </p>
@@ -1157,12 +1203,12 @@ export default function Landing() {
               <div className="font-extrabold tracking-tight leading-none text-lg">
                 SuRaksha<span className="text-brand-400 animate-flicker">AI</span>
               </div>
-              <div className="text-[10px] uppercase tracking-widest text-ink-500 mt-0.5">The Intelligent Operating System for CGD</div>
+              <div className="text-xs uppercase tracking-widest text-ink-500 mt-0.5">The Intelligent Operating System for CGD</div>
             </div>
           </div>
           <div className="flex items-center gap-3">
             <span className="text-xs text-ink-400 hidden sm:block">Torrent Gas • Spark Tank 2026</span>
-            <span className="hidden sm:inline-flex items-center gap-1.5 text-[10px] font-semibold text-brand-300 bg-brand-500/10 border border-brand-400/20 px-3 py-1.5 rounded-full">
+            <span className="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold text-brand-300 bg-brand-500/10 border border-brand-400/20 px-3 py-1.5 rounded-full">
               <span className="w-1.5 h-1.5 rounded-full bg-brand-400 animate-pulse" />LIVE
             </span>
           </div>
@@ -1250,7 +1296,7 @@ export default function Landing() {
           {/* Scroll hint */}
           <div className="mt-12 flex flex-col items-center gap-1 anim-fade-up opacity-40" style={{ animationDelay:"900ms" }}>
             <div className="scroll-mouse" />
-            <span className="text-[10px] text-ink-500 uppercase tracking-widest">scroll</span>
+            <span className="text-xs text-ink-500 uppercase tracking-widest">scroll</span>
           </div>
         </div>
 
@@ -1263,7 +1309,7 @@ export default function Landing() {
 
         {/* ── TRUST STRIP ── */}
         <div className="text-center mb-20 anim-fade-up" style={{ animationDelay:"100ms" }}>
-          <div className="text-[10px] uppercase tracking-[0.3em] text-ink-600 mb-4">Designed For</div>
+          <div className="text-xs uppercase tracking-[0.3em] text-ink-600 mb-4">Designed For</div>
           <div className="flex flex-wrap items-center justify-center gap-2.5 max-w-2xl mx-auto">
             {["City Gas Distribution", "Operations Teams", "Emergency Response", "Customer Service", "Executive Leadership"].map((v) => (
               <span key={v} className="text-xs sm:text-[13px] text-ink-300 bg-white/[0.03] border border-white/[0.08] px-4 py-2 rounded-full hover:border-brand-400/35 hover:text-brand-300 hover:bg-white/[0.05] transition-all duration-200">
@@ -1284,7 +1330,7 @@ export default function Landing() {
                 <ArrowRight className="w-4 h-4 text-ink-500" />
               </div>
               <h2 className="text-lg font-bold mt-4 text-brand-300">Customer Suite</h2>
-              <p className="text-[11px] uppercase tracking-wider text-ink-500 mt-0.5">Customer Experience</p>
+              <p className="text-xs uppercase tracking-wider text-ink-500 mt-0.5">Customer Experience</p>
               <p className="text-xs text-ink-400 mt-2 leading-relaxed min-h-[48px]">
                 Clear billing explanations, guided connection journeys, and instant AI safety support — fewer complaints, faster resolution, stronger trust.
               </p>
@@ -1308,7 +1354,7 @@ export default function Landing() {
                 <ArrowRight className="w-4 h-4 text-ink-500" />
               </div>
               <h2 className="text-lg font-bold mt-4 text-amber-300">Safety Suite</h2>
-              <p className="text-[11px] uppercase tracking-wider text-ink-500 mt-0.5">Operational Safety</p>
+              <p className="text-xs uppercase tracking-wider text-ink-500 mt-0.5">Operational Safety</p>
               <p className="text-xs text-ink-400 mt-2 leading-relaxed min-h-[48px]">
                 Real-time pipeline health, CNG readiness scoring, and contractor audits — giving field and safety teams earlier warning on risk.
               </p>
@@ -1332,7 +1378,7 @@ export default function Landing() {
                 <ArrowRight className="w-4 h-4 text-ink-500" />
               </div>
               <h2 className="text-lg font-bold mt-4 text-indigo-300">Intelligence Suite</h2>
-              <p className="text-[11px] uppercase tracking-wider text-ink-500 mt-0.5">Executive Decision-Making</p>
+              <p className="text-xs uppercase tracking-wider text-ink-500 mt-0.5">Executive Decision-Making</p>
               <p className="text-xs text-ink-400 mt-2 leading-relaxed min-h-[48px]">
                 Revenue tamper detection, PNGRB compliance tracking, and a predictive command view — built for faster, evidence-based decisions.
               </p>
