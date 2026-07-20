@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { Card, Kpi } from "@/components/ui";
 import { buildHealthFactors, emptyHealthProfile, healthProfileStorageKey, normalizeHealthProfile, overallHealthScore, type HealthFactor, type HealthProfile } from "@/lib/healthScore";
-import { recordActivity } from "@/lib/activity";
+import { emitPlatformEvent } from "@/lib/platform";
 import { connectionStorageKey, emptyConnectionStatus, normalizeConnectionStatus, type ConnectionStatusRecord } from "@/lib/connectionStatus";
 
 const history = [
@@ -72,8 +72,8 @@ export default function CustomerHealthScore() {
 
   function updateProfile(update: Partial<HealthProfile>) {
     if (update.emergencyContactVerified && !profile.emergencyContactVerified) {
-      setNotice("Emergency contact verified. +3 to your safety readiness.");
-      recordActivity("customer", { module: "Health Score", title: "Emergency contact verified", detail: "Safety readiness +3 · TrustPoints mission will be verified in your ledger.", href: "/customer/health" });
+      const event = emitPlatformEvent({ type: "EmergencyContactVerified", module: "Health Score", summary: "Emergency contact verified", entities: [{ type: "customer", id: "GJ-559210" }] });
+      setNotice(`Emergency contact verified. +3 to your safety readiness · synced to ${event.impact.filter((module) => module !== "Notifications").slice(0, 3).join(", ")}.`);
     }
     setProfile((current) => ({ ...current, ...update }));
   }

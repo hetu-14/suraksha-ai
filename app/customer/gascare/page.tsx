@@ -4,8 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import EmergencyChat from "@/components/EmergencyChat";
 import { Badge, Card, Kpi } from "@/components/ui";
 import { healthProfileStorageKey, normalizeHealthProfile, type HealthProfile } from "@/lib/healthScore";
-import { writeLiveIncident } from "@/lib/ops";
-import { recordActivity } from "@/lib/activity";
+import { emitPlatformEvent } from "@/lib/platform";
 import {
   Ambulance, BellRing, Camera, Check, CheckCircle2, ChevronRight, CircleAlert, ClipboardCheck, Download,
   Flame, Gauge, HeartHandshake, House, Languages, LocateFixed, LogOut, MapPin, PhoneCall, Play,
@@ -126,9 +125,10 @@ export default function GasCarePage() {
     }
     setActive(true);
     setConfirmOpen(false);
-    writeLiveIncident({ id: "GG-2026-00125", source: "customer-app", area: "Maninagar · Sec 12", address: "A-402 Shreeji Residency", type: selectedType.label, risk: selectedType.risk, startedAt: Date.now(), status: "active" });
-    recordActivity("customer", { id: "sos-GG-2026-00125", module: "GasGuard", title: `Emergency session started · ${selectedType.label}`, detail: "GG-2026-00125 · location shared, crew dispatch in progress. Follow the safety steps.", href: "/customer/gascare", tone: "red", priority: "critical" });
-    recordActivity("safety", { id: "sos-GG-2026-00125", module: "Emergency", title: `Customer SOS · GG-2026-00125 · ${selectedType.label}`, detail: `A-402 Shreeji Residency, Maninagar Sec 12 · ${selectedType.risk} risk · triaged via customer app.`, href: "/safety/emergency", tone: "red", priority: "critical" });
+    // One emit: the effect engine opens the live-incident bridge to the control
+    // room, alerts both feeds, and puts a dispatch recommendation in front of
+    // the safety operator.
+    emitPlatformEvent({ type: "EmergencyStarted", id: "pev-sos-GG-2026-00125", module: "GasGuard", summary: `Customer SOS started · ${selectedType.label}`, entities: [{ type: "incident", id: "GG-2026-00125", label: selectedType.label }, { type: "customer", id: "GJ-559210" }], data: { incidentId: "GG-2026-00125", type: selectedType.label, risk: selectedType.risk, area: "Maninagar · Sec 12", address: "A-402 Shreeji Residency" } });
     setChecked([false, false, false, false, false]);
     setCrewStage(0);
     setLocationConfirmed(false);
@@ -144,9 +144,7 @@ export default function GasCarePage() {
     timers.current.forEach(clearTimeout);
     timers.current = [];
     if (typeof window !== "undefined") window.speechSynthesis?.cancel();
-    writeLiveIncident({ id: "GG-2026-00125", source: "customer-app", area: "Maninagar · Sec 12", address: "A-402 Shreeji Residency", type: selectedType.label, risk: selectedType.risk, startedAt: Date.now(), status: "resolved" });
-    recordActivity("customer", { id: "sos-GG-2026-00125", module: "GasGuard", title: "Emergency session closed", detail: "GG-2026-00125 · session ended. The incident report is available in GasGuard.", href: "/customer/gascare", tone: "brand" });
-    recordActivity("safety", { id: "sos-GG-2026-00125", module: "Emergency", title: "Customer SOS resolved · GG-2026-00125", detail: "Session closed from the customer app · incident record retained for review.", href: "/safety/emergency", tone: "brand" });
+    emitPlatformEvent({ type: "EmergencyClosed", id: "pev-sos-GG-2026-00125", module: "GasGuard", summary: `Customer SOS resolved · ${selectedType.label}`, entities: [{ type: "incident", id: "GG-2026-00125", label: selectedType.label }, { type: "customer", id: "GJ-559210" }], data: { incidentId: "GG-2026-00125", type: selectedType.label, risk: selectedType.risk, area: "Maninagar · Sec 12", address: "A-402 Shreeji Residency" } });
     setActive(false);
     setConfirmOpen(false);
     setSilentMode(false);
@@ -158,7 +156,7 @@ export default function GasCarePage() {
     setDrillComplete(true);
     setDrillOpen(false);
     persistProfile({ safetySurveyComplete: true });
-    recordActivity("customer", { module: "GasGuard", title: "Emergency drill completed", detail: "Household rehearsal finished · your leak-safety mission is verified in TrustPoints.", href: "/customer/trustpoints" });
+    emitPlatformEvent({ type: "DrillCompleted", module: "GasGuard", summary: "Household emergency drill completed", entities: [{ type: "customer", id: "GJ-559210" }] });
     setNotice("Emergency drill completed. Your leak-safety mission is now verified in TrustPoints.");
   }
 

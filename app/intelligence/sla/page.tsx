@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, SectionTitle, Kpi, Badge } from "@/components/ui";
+import { Card, SectionTitle, Kpi, Badge, DataTable, type Column } from "@/components/ui";
 import { slaTickets, ticketSecondsLeft, escalationCrew, slaMetrics, inrLakh, type SlaTicket } from "@/lib/ops";
 import { Toast, useToast } from "@/components/Toast";
 import { Timer, ShieldCheck, IndianRupee, AlertTriangle, Eye, Zap } from "lucide-react";
@@ -36,6 +36,55 @@ export default function SLA() {
     toast.show(`${id} placed under active watch — auto-escalates on any further breach-risk increase.`);
   };
 
+  // Column definitions drive both the desktop table and the mobile card list.
+  // The countdown and the action are the two things an operator needs at any
+  // width, so they are the card title and its footer respectively.
+  const columns: Column<Row>[] = [
+    {
+      key: "ticket", header: "Ticket", primary: true,
+      cell: (t) => <span className="font-semibold text-ink-800">{t.id} <span className="font-normal text-ink-500">· {t.type}</span></span>,
+    },
+    {
+      key: "where", header: "Location", secondary: true,
+      cell: (t) => (
+        <span>
+          {t.area} · {t.consumer}
+          {t.handling === "escalated" && (
+            <span className="mt-1 block text-xs font-semibold text-indigo-700">→ {escalationCrew[t.id] ?? "Priority crew"} en route</span>
+          )}
+        </span>
+      ),
+    },
+    { key: "cat", header: "Category", cell: (t) => <Badge tone={catTone[t.cat]}>{t.cat}</Badge> },
+    {
+      key: "left", header: "Time left",
+      cell: (t) => <span className={`tabular-nums ${t.left < 3600 ? "font-bold text-red-600" : "text-ink-700"}`}>{fmt(t.left)}</span>,
+    },
+    {
+      key: "risk", header: "Breach risk",
+      cell: (t) => (
+        <span className="flex items-center gap-2">
+          <span className="h-1.5 w-14 overflow-hidden rounded-full bg-ink-100">
+            <span className={`block h-full transition-all duration-700 ${t.risk >= 75 ? "bg-red-500" : t.risk >= 50 ? "bg-amber-500" : "bg-brand-500"}`} style={{ width: `${t.risk}%` }} />
+          </span>
+          <span className={`text-xs font-semibold tabular-nums ${t.risk >= 75 ? "text-red-600" : t.risk >= 50 ? "text-amber-600" : "text-brand-600"}`}>{t.risk}%</span>
+        </span>
+      ),
+    },
+    {
+      key: "action", header: "Action", align: "right",
+      cell: (t) => t.handling === "escalated" ? (
+        <span className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700"><ShieldCheck className="w-3.5 h-3.5" /> Escalated</span>
+      ) : t.handling === "monitoring" ? (
+        <span className="inline-flex items-center gap-1.5 rounded-lg border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-700"><Eye className="w-3.5 h-3.5" /> Watching</span>
+      ) : t.left < 3600 ? (
+        <button onClick={() => escalate(t.id)} className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-red-700">Escalate now</button>
+      ) : (
+        <button onClick={() => monitor(t.id)} className="rounded-lg border border-ink-200 px-3 py-1.5 text-xs font-semibold text-ink-600 transition-colors hover:bg-ink-50">Monitor</button>
+      ),
+    },
+  ];
+
   const sorted = [...rows].sort((a, b) => a.left - b.left);
   const atRisk = rows.filter((t) => t.risk >= 50 && t.left > 0).length;
   const breached = rows.filter((t) => t.left <= 0).length;
@@ -67,62 +116,14 @@ export default function SLA() {
             <Badge tone="sky">15-day routine</Badge>
           </div>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-ink-50 text-ink-500 text-xs uppercase tracking-wide">
-              <tr>
-                <th className="text-left font-semibold px-5 py-3">Ticket</th>
-                <th className="text-left font-semibold px-3 py-3">Category</th>
-                <th className="text-left font-semibold px-3 py-3">Time left</th>
-                <th className="text-left font-semibold px-3 py-3">Breach risk</th>
-                <th className="text-right font-semibold px-5 py-3">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-ink-100">
-              {sorted.map((t) => {
-                const danger = t.left < 3600;
-                const warn = t.left < 6 * 3600;
-                return (
-                  <tr key={t.id} className={danger && !t.handling ? "bg-red-50/60" : warn && !t.handling ? "bg-amber-50/40" : ""}>
-                    <td className="px-5 py-3">
-                      <div className="font-semibold text-ink-800">{t.id}</div>
-                      <div className="text-xs text-ink-500">{t.type} — {t.area} · {t.consumer}</div>
-                      {t.handling === "escalated" && (
-                        <div className="text-[11px] font-semibold text-indigo-700 mt-1">
-                          → {escalationCrew[t.id] ?? "Priority crew"} en route
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-3 py-3"><Badge tone={catTone[t.cat]}>{t.cat}</Badge></td>
-                    <td className={`px-3 py-3 font-mono ${danger ? "text-red-600 font-bold" : "text-ink-700"}`}>{fmt(t.left)}</td>
-                    <td className="px-3 py-3">
-                      <div className="flex items-center gap-2">
-                        <div className="w-16 h-1.5 rounded-full bg-ink-100 overflow-hidden">
-                          <div className={`h-full transition-all duration-700 ${t.risk >= 75 ? "bg-red-500" : t.risk >= 50 ? "bg-amber-500" : "bg-brand-500"}`} style={{ width: `${t.risk}%` }} />
-                        </div>
-                        <span className={`text-xs font-semibold ${t.risk >= 75 ? "text-red-600" : t.risk >= 50 ? "text-amber-600" : "text-brand-600"}`}>{t.risk}%</span>
-                      </div>
-                    </td>
-                    <td className="px-5 py-3 text-right">
-                      {t.handling === "escalated" ? (
-                        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 px-3 py-1.5 rounded-lg">
-                          <ShieldCheck className="w-3.5 h-3.5" /> Escalated
-                        </span>
-                      ) : t.handling === "monitoring" ? (
-                        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-700 bg-brand-50 border border-brand-200 px-3 py-1.5 rounded-lg">
-                          <Eye className="w-3.5 h-3.5" /> Watching
-                        </span>
-                      ) : danger ? (
-                        <button onClick={() => escalate(t.id)} className="text-xs font-semibold text-white bg-red-600 px-3 py-1.5 rounded-lg hover:bg-red-700 transition-colors">Escalate now</button>
-                      ) : (
-                        <button onClick={() => monitor(t.id)} className="text-xs font-semibold text-ink-600 border border-ink-200 px-3 py-1.5 rounded-lg hover:bg-ink-50 transition-colors">Monitor</button>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        <div className="p-4 sm:p-5">
+          <DataTable
+            columns={columns}
+            rows={sorted}
+            getKey={(t) => t.id}
+            caption="PNGRB SLA tickets ranked by time remaining"
+            empty="No tickets in the compliance queue."
+          />
         </div>
       </Card>
     </div>

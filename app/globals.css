@@ -6,14 +6,121 @@
   --background: #fafaf8;
   --font-inter: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
-html { scroll-behavior: smooth; }
-body { background: var(--background); color: #2b2a27; }
+html {
+  scroll-behavior: smooth;
+  /* Stop iOS from re-flowing type when the device is rotated to landscape. */
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  background: var(--background);
+  color: #2b2a27;
+  /* `clip` (not `hidden`) contains any stray wide child without creating a
+     scroll container — which would silently break every `position: sticky`
+     header and tab bar in the product. */
+  overflow-x: clip;
+}
 
 /* Visible focus for every interactive element (accessibility floor §21) */
 :focus-visible {
   outline: 2px solid #171614;
   outline-offset: 2px;
   border-radius: 4px;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   RESPONSIVE FOUNDATION
+   Device-class behaviour that every screen inherits, so individual
+   pages never have to re-solve touch, overflow, or safe areas.
+══════════════════════════════════════════════════════════════ */
+
+/* ─── Touch devices ─── */
+@media (pointer: coarse) {
+  /* Every control becomes a real touch target. `.tap-inline` opts out for
+     buttons that sit inside a sentence, where 44px would break the text flow. */
+  button:not(.tap-inline),
+  [role="button"]:not(.tap-inline),
+  select,
+  summary,
+  a.tap-target {
+    min-height: 44px;
+  }
+  /* Hover-only affordances must not be the sole way to reach an action, so on
+     touch they are always visible rather than revealed on hover. */
+  .group:hover .group-hover\:opacity-100,
+  .touch-always-visible {
+    opacity: 1 !important;
+  }
+  /* Lift/translate hovers read as jitter under a finger. */
+  .lift:hover { transform: none; box-shadow: none; }
+}
+
+/* iOS zooms the whole page when a focused input is under 16px. Raising the
+   floor on small screens keeps forms native-feeling instead of jumpy. */
+@media (max-width: 640px) {
+  input:not([type="range"]):not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+/* ─── Scroll containers ─── */
+/* Horizontal rails (tab bars, filter chips, wide tables) get momentum scroll,
+   no scroll chaining to the page, and no visible scrollbar on touch. */
+.scroll-x {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+.scroll-y {
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+}
+/* Snap rails so chips/cards land cleanly under a swipe. */
+.snap-rail { scroll-snap-type: x mandatory; }
+.snap-rail > * { scroll-snap-align: start; }
+@media (pointer: coarse) {
+  .scroll-x::-webkit-scrollbar, .scroll-y::-webkit-scrollbar { display: none; }
+}
+
+/* Long-form measure for explanatory screens (design guide §20C). */
+.measure { max-width: 72ch; }
+
+/* ─── Safe areas (notches, home indicator, landscape ears) ─── */
+.pad-safe-b { padding-bottom: env(safe-area-inset-bottom, 0px); }
+.pad-safe-x {
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+/* ─── Mobile bottom tab bar ─── */
+/* Content clears the bar; crisis mode hides it so the emergency call bar owns
+   the thumb zone entirely (set by the GasGuard page via body[data-crisis]). */
+.has-bottom-nav { padding-bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px) + 1rem); }
+body[data-crisis="1"] .app-bottom-nav { display: none; }
+body[data-crisis="1"] .has-bottom-nav { padding-bottom: 1.5rem; }
+
+/* ─── Media never overflows its column ─── */
+img, svg, video, canvas, audio, iframe { max-width: 100%; }
+
+/* Long ids, emails, and account numbers wrap instead of widening the layout. */
+.break-anywhere { overflow-wrap: anywhere; word-break: break-word; }
+
+/* ─── Landscape phones ─── */
+/* Short viewports: trim vertical chrome so content still fits between the
+   sticky header and the tab bar. */
+@media (max-height: 480px) and (orientation: landscape) {
+  .landscape-compact { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+  .landscape-hide { display: none; }
+}
+
+/* ─── Motion budget by device ─── */
+/* Entrance choreography is a desktop nicety; on touch it delays first paint of
+   real content, so cards appear immediately and only fade. */
+@media (max-width: 767px) {
+  .reveal > * { animation-duration: 0.28s; animation-delay: 0s !important; }
 }
 
 /* ─── custom cursor: hide native (only on devices with cursor) ─── */

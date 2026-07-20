@@ -6,7 +6,10 @@ import { Card, Kpi } from "@/components/ui";
 import { TrendChart, DonutChart } from "@/components/Charts";
 import CountUp from "@/components/CountUp";
 import { trend } from "@/lib/data";
-import { slaMetrics, revMetrics, inr } from "@/lib/ops";
+import { slaMetrics, inr, inrLakh } from "@/lib/ops";
+import { usePlatformKpis } from "@/lib/platform";
+import RecommendationsPanel from "@/components/RecommendationsPanel";
+import PlatformTimeline from "@/components/PlatformTimeline";
 import {
   TrendingUp, ShieldAlert, Timer, Monitor, ArrowRight, IndianRupee, ShieldCheck, Sparkles
 } from "lucide-react";
@@ -48,6 +51,9 @@ const BRIEFING = [
 ];
 
 export default function IntelligenceHome() {
+  // Live platform KPIs: a breach prevented or a recovery recorded anywhere in
+  // the safety console moves these numbers without a refresh.
+  const kpis = usePlatformKpis();
 
   // Business Intelligence Suite specific workload
   const intelWorkload = [
@@ -77,8 +83,8 @@ export default function IntelligenceHome() {
       <div className="space-y-6 anim-fade-up">
         {/* KPIs */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Kpi label="Revenue at Risk (flagged)" value={<CountUp to={27.3} prefix="₹" suffix="L" decimals={1} />} sub={`${inr(revMetrics.recoveredMTD)} recovered MTD`} icon={<IndianRupee className="w-4 h-4" />} />
-          <Kpi label="SLA Compliance (MTD)" value={`${slaMetrics.complianceMTD}%`} sub={`Target ${slaMetrics.complianceTarget}% · ${slaMetrics.breachesPreventedMTD} breaches prevented`} accent="text-amber-600" icon={<ShieldCheck className="w-4 h-4" />} />
+          <Kpi label="Revenue at Risk (flagged)" value={<CountUp to={27.3} prefix="₹" suffix="L" decimals={1} />} sub={`${inr(kpis.recoveredMTD)} recovered MTD${kpis.deltas.revenueRecovered ? ` · ${inr(kpis.deltas.revenueRecovered)} live` : ""}`} icon={<IndianRupee className="w-4 h-4" />} />
+          <Kpi label="SLA Compliance (MTD)" value={`${kpis.complianceMTD}%`} sub={`Target ${slaMetrics.complianceTarget}% · ${kpis.breachesPreventedMTD} breaches prevented · ${inrLakh(kpis.compensationAvoidedMTD)} avoided`} accent="text-amber-600" icon={<ShieldCheck className="w-4 h-4" />} />
           <Kpi label="AI Insights Logged" value={<CountUp to={47} />} icon={<TrendingUp className="w-4 h-4 text-indigo-500" />} />
           <Kpi label="Downtime Cost Avoided (YTD)" value="₹18.6L" icon={<ShieldAlert className="w-4 h-4 text-indigo-500 animate-pulse" />} />
         </div>
@@ -130,6 +136,12 @@ export default function IntelligenceHome() {
             ))}
           </div>
         </Card>
+
+        {/* Cross-module intelligence: live recommendations + the unified platform timeline */}
+        <div className="grid lg:grid-cols-2 gap-4">
+          <RecommendationsPanel role="intelligence" />
+          <PlatformTimeline limit={8} />
+        </div>
 
         {/* 4 Grid Modules */}
         <h3 className="font-bold text-sm text-ink-500 uppercase tracking-wider mt-4">Business Intelligence Modules</h3>

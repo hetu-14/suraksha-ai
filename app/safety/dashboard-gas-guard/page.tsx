@@ -5,7 +5,7 @@ import { Card, Kpi, Badge } from "@/components/ui";
 import CountUp from "@/components/CountUp";
 import { DonutChart, TrendChart } from "@/components/Charts";
 import { useLocalWorkspaceState } from "@/lib/useLocalWorkspaceState";
-import { recordActivity } from "@/lib/activity";
+import { emitPlatformEvent } from "@/lib/platform";
 import OperatorHandoff, { type HandoffEntry } from "@/components/OperatorHandoff";
 import {
   Activity, AlertTriangle, CheckCircle2, Clock3, Download,
@@ -165,15 +165,15 @@ export default function DashboardGasGuard() {
     setIncidents((previous) => previous.map((incident) => incident.id === id ? {
       ...incident, status, ...(status === "Dispatched" ? { crew: crews[Math.floor(Math.random() * crews.length)] } : {}),
     } : incident));
-    if (status === "Dispatched") recordActivity("safety", { module: "Gas-Guard", title: `Field crew dispatched · ${id}`, detail: "Crew en route to the affected zone; incident remains open until closure.", href: "/safety/dashboard-gas-guard", tone: "amber", priority: "high" });
-    if (status === "Resolved") recordActivity("safety", { module: "Gas-Guard", title: `Incident ${id} resolved`, detail: "Zone telemetry back in range; closure recorded in the incident history.", href: "/safety/dashboard-gas-guard", tone: "brand" });
+    if (status === "Dispatched") emitPlatformEvent({ type: "CrewDispatched", module: "Gas-Guard", summary: `Field crew dispatched to ${id}`, entities: [{ type: "incident", id }], data: { caseId: id, source: "gas-guard" } });
+    if (status === "Resolved") emitPlatformEvent({ type: "IncidentResolved", module: "Gas-Guard", summary: `Grid incident ${id} resolved`, entities: [{ type: "incident", id }], data: { caseId: id, source: "gas-guard" } });
     setNotice(status === "Acknowledged" ? "Alert acknowledged and recorded." : status === "Dispatched" ? "Field crew dispatched to the zone." : "Incident marked resolved and added to history.");
   }
 
   function toggleIsolation(zone: Zone) {
     const goingOffline = !zone.isolated;
     setZones((previous) => previous.map((item) => item.id === zone.id ? { ...item, isolated: goingOffline, flow: goingOffline ? 0 : Math.max(60, item.flow) } : item));
-    recordActivity("safety", { module: "Gas-Guard", title: goingOffline ? `${zone.name} isolated` : `${zone.name} restored`, detail: goingOffline ? "Emergency isolation valve closed — gas flow stopped and field action flagged." : "Isolation lifted; the zone has returned to monitored operation.", href: "/safety/dashboard-gas-guard", tone: goingOffline ? "red" : "brand", priority: goingOffline ? "critical" : "normal" });
+    emitPlatformEvent({ type: goingOffline ? "ZoneIsolated" : "ZoneRestored", module: "Gas-Guard", summary: goingOffline ? `${zone.name} isolated — supply stopped` : `${zone.name} restored to monitored operation`, entities: [{ type: "zone", id: zone.id, label: zone.name }], data: { zone: zone.name, zoneId: zone.id } });
     setNotice(goingOffline ? `${zone.name} has been isolated; flow has been stopped.` : `${zone.name} has been restored to monitored operation.`);
   }
 

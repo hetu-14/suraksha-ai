@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { Card, Kpi } from "@/components/ui";
 import { connectionForecast, connectionStorageKey, emptyConnectionStatus, normalizeConnectionStatus, type ConnectionStatusRecord } from "@/lib/connectionStatus";
-import { recordActivity } from "@/lib/activity";
+import { emitPlatformEvent } from "@/lib/platform";
 
 type Stage = {
   name: string;
@@ -100,18 +100,18 @@ export default function ConnectionJourney() {
     }
     setUploadError(null);
     updateStatus({ layout: { name: file.name, size: file.size, uploadedAt: new Date().toISOString() } });
-    recordActivity("customer", { module: "My PNG Status", title: "Layout approval uploaded", detail: `${file.name} received for verification · meter installation can now be scheduled and the completion forecast improved to 26 July.`, href: "/customer/connection" });
+    emitPlatformEvent({ type: "DocumentUploaded", module: "My PNG Status", summary: "Layout approval uploaded — installation blocker cleared", entities: [{ type: "document", id: file.name }, { type: "connection", id: "CONN-GJ-559210" }], data: { fileName: file.name } });
     setNotice("Layout approval received. Your installation blocker is cleared and the forecast has been updated.");
   }
 
   function verifyMobile() {
     updateStatus({ mobileVerified: true });
-    recordActivity("customer", { module: "My PNG Status", title: "Mobile number verified", detail: "Installation updates will reach you by SMS at every stage.", href: "/customer/connection" });
+    emitPlatformEvent({ type: "MobileVerified", module: "My PNG Status", summary: "Mobile number verified for installation updates", entities: [{ type: "connection", id: "CONN-GJ-559210" }] });
   }
 
   function scheduleSiteAccess() {
     updateStatus({ siteAccess: siteAccessSlot });
-    recordActivity("customer", { module: "My PNG Status", title: "Site access scheduled", detail: `Access confirmed for ${new Date(siteAccessSlot).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })} · the installation team has been informed.`, href: "/customer/connection" });
+    emitPlatformEvent({ type: "SiteAccessScheduled", module: "My PNG Status", summary: "Site access slot confirmed for installation", entities: [{ type: "connection", id: "CONN-GJ-559210" }], data: { slot: new Date(siteAccessSlot).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) } });
   }
 
   function toggleAlerts() {
@@ -121,7 +121,7 @@ export default function ConnectionJourney() {
   }
 
   function requestHelp(kind: "callback" | "query") {
-    recordActivity("customer", { module: "My PNG Status", title: kind === "callback" ? "Callback requested" : "Connection query raised", detail: kind === "callback" ? "A connection coordinator will contact you within one business day." : "Your query is tracked here and answered by SMS.", href: "/customer/connection", tone: "amber" });
+    emitPlatformEvent({ type: "ConnectionQueryRaised", module: "My PNG Status", summary: kind === "callback" ? "Connection callback requested" : "Connection query raised", entities: [{ type: "connection", id: "CONN-GJ-559210" }], data: { kind } });
     setNotice(kind === "callback" ? "Callback requested. A connection coordinator will contact you within one business day." : "Connection query raised. You will receive an update in this dashboard and by SMS.");
   }
 

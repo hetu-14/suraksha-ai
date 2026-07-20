@@ -1,11 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Badge, Card, Kpi } from "@/components/ui";
+import { Badge, Card, Kpi, DataTable } from "@/components/ui";
 import { Toast, useToast } from "@/components/Toast";
 import { useLocalWorkspaceState } from "@/lib/useLocalWorkspaceState";
 import { slaTickets, slaMetrics, escalationCrew, inrLakh, type SlaTicket, type SlaStatus } from "@/lib/ops";
-import { recordActivity } from "@/lib/activity";
+import { emitPlatformEvent } from "@/lib/platform";
 import { Activity, Check, CheckCircle2, ChevronRight, Download, MapPin, Search, ShieldAlert, Timer } from "lucide-react";
 
 const tone: Record<SlaStatus, "brand" | "amber" | "red" | "sky"> = { Met: "brand", "At Risk": "amber", Breached: "red", Resolved: "sky" };
@@ -37,7 +37,7 @@ export default function SLASentinel() {
     setTickets((current) => current.map((item) => item.id === selected.id
       ? { ...item, assigned: recommendedCrew, status: item.status === "Breached" ? "Breached" : "At Risk", risk: Math.min(item.risk, 22), reasons: ["Priority crew assigned", "Expected closure within 2.5 hours"] }
       : item));
-    recordActivity("safety", { module: "SLA Sentinel", title: `${selected.id} escalated to ${recommendedCrew}`, detail: `${selected.type} · ${selected.area} · breach risk reduced to 22% after priority routing.`, href: "/safety/sla-sentinel", tone: "amber" });
+    emitPlatformEvent({ type: "SlaEscalated", module: "SLA Sentinel", summary: `${selected.id} escalated to ${recommendedCrew}`, entities: [{ type: "slaTicket", id: selected.id, label: selected.type }], data: { ticketId: selected.id, type: selected.type, area: selected.area, crew: recommendedCrew } });
     toast.show(`${selected.id} assigned to ${recommendedCrew}. Breach risk reduced to 22%.`);
   }
 
@@ -45,8 +45,9 @@ export default function SLASentinel() {
     setTickets((current) => current.map((item) => item.id === selected.id
       ? { ...item, status: "Resolved", risk: 0, assigned: item.assigned === "Unassigned" ? recommendedCrew : item.assigned }
       : item));
-    recordActivity("safety", { module: "SLA Sentinel", title: `${selected.id} resolved within SLA`, detail: `${selected.type} · ${selected.area} · outcome recorded for PNGRB compliance.`, href: "/safety/sla-sentinel", tone: "brand" });
-    recordActivity("intelligence", { module: "SLA Sentinel", title: `Breach prevented · ${selected.id}`, detail: `${selected.type} in ${selected.area} closed before the ${selected.cat} deadline${compensationRisk ? ` — ₹${compensationRisk.toLocaleString("en-IN")} compensation avoided` : ""}.`, href: "/intelligence/sla", tone: "brand" });
+    // Effect engine: safety + intelligence feeds, compensation-avoided KPI,
+    // and the open recommendation for this ticket all update from one emit.
+    emitPlatformEvent({ type: "SlaResolved", module: "SLA Sentinel", summary: `${selected.id} resolved within the ${selected.cat} SLA`, entities: [{ type: "slaTicket", id: selected.id, label: selected.type }], data: { ticketId: selected.id, type: selected.type, area: selected.area, cat: selected.cat, compensation: compensationRisk } });
     toast.show(`${selected.id} marked resolved and SLA outcome recorded.`);
   }
 
@@ -229,30 +230,23 @@ export default function SLASentinel() {
             </select>
           </div>
         </div>
-        <div className="mt-4 overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-ink-100 text-left text-[10px] font-bold uppercase tracking-wider text-ink-500">
-                {["Ticket", "Consumer", "SLA", "Risk", "Status", "Assigned"].map((item) => <th key={item} className="px-3 pb-3 first:pl-0">{item}</th>)}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-ink-50">
-              {filtered.map((item) => (
-                <tr key={item.id} onClick={() => setSelectedId(item.id)} className={`cursor-pointer ${item.id === selected.id ? "bg-violet-50" : "hover:bg-ink-50"}`}>
-                  <td className="px-3 py-3 first:pl-0">
-                    <strong>{item.id}</strong>
-                    <p className="text-[10px] text-ink-500">{item.type}</p>
-                  </td>
-                  <td className="px-3 py-3 text-xs">{item.consumer}<p className="text-[10px] text-ink-500">{item.area}</p></td>
-                  <td className="px-3 py-3 text-xs tabular-nums">{item.elapsedHours}h / {item.slaHours}h</td>
-                  <td className="px-3 py-3"><Badge tone={item.risk >= 90 ? "red" : item.risk >= 60 ? "amber" : "brand"}>{item.risk}%</Badge></td>
-                  <td className="px-3 py-3"><Badge tone={tone[item.status]}>{item.status}</Badge></td>
-                  <td className="px-3 py-3 text-xs">{item.assigned}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {filtered.length === 0 && <p className="py-8 text-center text-sm text-ink-400">No tickets match this search and filter.</p>}
+        <div className="mt-4">
+          <DataTable
+            columns={[
+              { key: "ticket", header: "Ticket", primary: true, cell: (item) => <span><strong>{item.id}</strong> <span className="font-normal text-ink-500">· {item.type}</span></span> },
+              { key: "consumer", header: "Consumer", secondary: true, cell: (item) => <span>{item.consumer} · {item.area}</span> },
+              { key: "sla", header: "SLA", cell: (item) => <span className="text-xs tabular-nums">{item.elapsedHours}h / {item.slaHours}h</span> },
+              { key: "risk", header: "Risk", cell: (item) => <Badge tone={item.risk >= 90 ? "red" : item.risk >= 60 ? "amber" : "brand"}>{item.risk}%</Badge> },
+              { key: "status", header: "Status", cell: (item) => <Badge tone={tone[item.status]}>{item.status}</Badge> },
+              { key: "assigned", header: "Assigned", hideBelow: "lg", cell: (item) => <span className="text-xs">{item.assigned}</span> },
+            ]}
+            rows={filtered}
+            getKey={(item) => item.id}
+            onRowClick={(item) => setSelectedId(item.id)}
+            isActive={(item) => item.id === selected.id}
+            caption="PNGRB SLA ticket queue"
+            empty="No tickets match this search and filter."
+          />
         </div>
       </Card>
 

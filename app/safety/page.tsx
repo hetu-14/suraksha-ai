@@ -6,6 +6,7 @@ import { Card, Kpi } from "@/components/ui";
 import { TrendChart, DonutChart } from "@/components/Charts";
 import CountUp from "@/components/CountUp";
 import { trend, workload } from "@/lib/data";
+import RecommendationsPanel from "@/components/RecommendationsPanel";
 import {
   Siren, BadgeCheck, Megaphone, Wrench, HardHat, Building2, Video, ArrowRight,
   Flame, ShieldAlert, Timer,
@@ -61,6 +62,9 @@ export default function SafetyHome() {
             <DonutChart data={safetyWorkload} />
           </Card>
         </div>
+
+        {/* Cross-module intelligence: live SOS, breached tickets, and safety-flagged feedback surface here */}
+        <RecommendationsPanel role="safety" />
 
         {/* 7 Grid Modules */}
         <h3 className="font-bold text-sm text-ink-500 uppercase tracking-wider mt-4">Safety &amp; Operations Modules</h3>

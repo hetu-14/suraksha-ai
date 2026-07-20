@@ -9,19 +9,11 @@ import {
 } from "lucide-react";
 import { Card, Kpi } from "@/components/ui";
 import { healthProfileStorageKey, normalizeHealthProfile, type HealthProfile } from "@/lib/healthScore";
-import { computeTier, ledgerPoints, storageKey, type Ledger } from "@/lib/trustPoints";
-import { recordActivity } from "@/lib/activity";
+import { computeTier, ledgerPoints, startingLedger, storageKey, type Ledger } from "@/lib/trustPoints";
+import { emitPlatformEvent } from "@/lib/platform";
 
 type Redemption = { rewardId: string; requestId: string; requestedAt: string; status: "Requested" | "Fulfilment in progress" };
 type Profile = { completedMissions: string[]; redeemed: string[]; riskRewarded: boolean; gasGuardActive: boolean; redemptions: Redemption[]; ledger: Ledger[] };
-
-const startingLedger: Ledger[] = [
-  { id: "pay", date: "Jul 14", action: "Timely bill payments", points: 620, category: "Timely payments" },
-  { id: "safe", date: "Jul 10", action: "Safety compliance", points: 480, category: "Safety compliance" },
-  { id: "refer", date: "Jun 25", action: "Referred a new PNG customer", points: 350, category: "Referrals" },
-  { id: "inspection", date: "Jun 30", action: "Annual equipment inspections", points: 290, category: "Inspections" },
-  { id: "training", date: "Jun 15", action: "Leak safety awareness training", points: 100, category: "Training" },
-];
 
 const missions = [
   { id: "contact", title: "Verify emergency contact", reward: 50, icon: HeartPulse, href: "/customer/health", source: "Health Score" },
@@ -96,7 +88,7 @@ export default function TrustPoints() {
     }));
     const rewardTotal = missing.map((mission) => mission.reward).reduce((sum, reward) => sum + reward, 0);
     for (const mission of missing) {
-      recordActivity("customer", { id: `trust-${mission.id}`, module: "TrustPoints", title: `+${mission.reward} points · ${mission.title}`, detail: `Verified from ${mission.source} and added to your safety ledger.`, href: "/customer/trustpoints" });
+      emitPlatformEvent({ type: "TrustPointsAwarded", module: "TrustPoints", summary: `+${mission.reward} TrustPoints · ${mission.title}`, entities: [{ type: "customer", id: "GJ-559210" }], data: { points: mission.reward, action: mission.title, detail: `Verified from ${mission.source} and added to your safety ledger.`, notifyId: `trust-${mission.id}` } });
     }
     setNotice(`${rewardTotal} verified mission points added.`);
   }, [billAlerts, health, loaded, profile.completedMissions, profile.gasGuardActive]);
@@ -114,7 +106,7 @@ export default function TrustPoints() {
   function rewardRiskReduction() {
     if (profile.riskRewarded) return;
     setProfile((current) => ({ ...current, riskRewarded: true, ledger: [{ id: "risk-reduction", date: "Today", action: "Reduced leak risk from 62% to 18%", points: 150, category: "Risk reduction" }, ...current.ledger] }));
-    recordActivity("customer", { module: "TrustPoints", title: "+150 points · leak risk reduced", detail: "Your household leak risk dropped from 62% to 18% — rewarded for safer behaviour.", href: "/customer/trustpoints" });
+    emitPlatformEvent({ type: "TrustPointsAwarded", module: "TrustPoints", summary: "+150 TrustPoints · leak risk reduced", entities: [{ type: "customer", id: "GJ-559210" }], data: { points: 150, action: "leak risk reduced", detail: "Your household leak risk dropped from 62% to 18% — rewarded for safer behaviour." } });
     setNotice("150 points added for reducing your gas safety risk.");
   }
 
@@ -124,7 +116,7 @@ export default function TrustPoints() {
     if (points < reward.points) { setNotice(`You need ${reward.points - points} more points for ${reward.title}.`); return; }
     const requestId = `TP-${Math.floor(10000 + Math.random() * 89999)}`;
     setProfile((current) => ({ ...current, redeemed: [...current.redeemed, id], redemptions: [{ rewardId: id, requestId, requestedAt: "Today", status: "Requested" }, ...current.redemptions], ledger: [{ id: `redeem-${id}`, date: "Today", action: `Redeemed: ${reward.title}`, points: -reward.points, category: "Redemptions" }, ...current.ledger] }));
-    recordActivity("customer", { module: "TrustPoints", title: `Reward requested · ${reward.title}`, detail: `${requestId} · ${reward.points} points redeemed. Our team will confirm fulfilment.`, href: "/customer/trustpoints" });
+    emitPlatformEvent({ type: "RewardRedeemed", module: "TrustPoints", summary: `Reward requested · ${reward.title}`, entities: [{ type: "reward", id: requestId, label: reward.title }], data: { reward: reward.title, rewardId: reward.id, requestId, points: reward.points } });
     setNotice(`${reward.title} has been requested as ${requestId}. Our team will contact you with the next step.`);
   }
 

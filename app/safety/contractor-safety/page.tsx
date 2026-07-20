@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Card, Kpi, SectionTitle, Badge } from "@/components/ui";
+import { Card, Kpi, SectionTitle, Badge, DataTable } from "@/components/ui";
 import CountUp from "@/components/CountUp";
 import { useLocalWorkspaceState } from "@/lib/useLocalWorkspaceState";
 import { HardHat, ShieldCheck, Activity, Users, AlertOctagon, CheckCircle2 } from "lucide-react";

@@ -5,6 +5,7 @@ import { Card, Kpi, Badge } from "@/components/ui";
 import CountUp from "@/components/CountUp";
 import { Toast, useToast } from "@/components/Toast";
 import { useLocalWorkspaceState } from "@/lib/useLocalWorkspaceState";
+import { emitPlatformEvent } from "@/lib/platform";
 import { TrendingUp, CheckCircle2, Award, Zap, ClipboardList, Check, Clock } from "lucide-react";
 import { TrendChart } from "@/components/Charts";
 
@@ -67,6 +68,7 @@ export default function OperationalInsights() {
   function decide(insight: Insight, status: Decision["status"]) {
     const at = new Date().toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
     setDecisions((d) => ({ ...d, [insight.id]: { status, at } }));
+    emitPlatformEvent({ type: "InsightActioned", module: "Operational Insights", summary: `${insight.id} ${status} · ${insight.cat}`, entities: [{ type: "insight", id: insight.id, label: insight.cat }], data: { insightId: insight.id, status, owner: insight.owner } });
     toast.show(
       status === "approved"
         ? `${insight.id} approved — work order routed to ${insight.owner} for execution.`

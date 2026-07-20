@@ -5,6 +5,7 @@ import { Card } from "@/components/ui";
 import { Bot, Send, Mic, Volume2, VolumeX, X, Sparkles } from "lucide-react";
 import { Bill, BillExplanation, Customer, ExplanationFactor } from "@/lib/types";
 import { inr } from "@/lib/billExplain";
+import { readPlatformContext } from "@/lib/platform";
 
 type Lang = "en" | "hi" | "gu";
 const LANGS: { code: Lang; label: string; stt: string }[] = [
@@ -135,7 +136,32 @@ function answer(intent: string, f: Facts, lg: Lang): string {
   }
 }
 
+// Answers grounded in the whole platform, not just this bill: appointments,
+// health score, TrustPoints, and pending actions all come from the shared
+// platform context so the assistant never contradicts another module.
+function platformAnswer(lg: Lang): string {
+  const c = readPlatformContext();
+  const visit = c.nextVisit;
+  const contact = c.healthProfile.emergencyContactVerified;
+  return t(lg,
+    `Looking across your SuRaksha account: health score ${c.healthScore}/100, ${c.trustPoints.toLocaleString("en-IN")} TrustPoints (${c.tierName}), emergency contact ${contact ? "verified" : "not verified yet"}, ${visit ? `and your ${visit.service} is ${visit.status.toLowerCase()} for ${visit.date} · ${visit.slot} with ${visit.engineer}` : "and no engineer visit is scheduled right now"}.${c.billDue ? ` Your ${c.billDue.cycle} bill of ${inr(c.billDue.amount)} is still due.` : ""}`,
+    `आपके SuRaksha खाते के अनुसार: हेल्थ स्कोर ${c.healthScore}/100, ${c.trustPoints.toLocaleString("en-IN")} TrustPoints (${c.tierName}), आपातकालीन संपर्क ${contact ? "सत्यापित" : "अभी सत्यापित नहीं"}, ${visit ? `और आपकी ${visit.service} विज़िट ${visit.date} को तय है` : "और अभी कोई इंजीनियर विज़िट तय नहीं है"}।${c.billDue ? ` आपका ${c.billDue.cycle} का ${inr(c.billDue.amount)} बिल बकाया है।` : ""}`,
+    `તમારા SuRaksha ખાતા મુજબ: હેલ્થ સ્કોર ${c.healthScore}/100, ${c.trustPoints.toLocaleString("en-IN")} TrustPoints (${c.tierName}), ઇમરજન્સી સંપર્ક ${contact ? "ચકાસાયેલ" : "હજી ચકાસાયેલ નથી"}, ${visit ? `અને તમારી ${visit.service} મુલાકાત ${visit.date} ના રોજ નક્કી છે` : "અને હમણાં કોઈ એન્જિનિયર મુલાકાત નક્કી નથી"}.${c.billDue ? ` તમારું ${c.billDue.cycle} નું ${inr(c.billDue.amount)} બિલ બાકી છે.` : ""}`);
+}
+
+/** Extra line for leak answers when a safety visit is already on the books. */
+function leakVisitNote(lg: Lang): string {
+  const c = readPlatformContext();
+  const visit = c.appointments.find((item) => (item.serviceId === "leak" || item.serviceId === "inspection") && item.status !== "Cancelled" && item.status !== "Completed");
+  if (!visit) return "";
+  return t(lg,
+    ` Good news — your ${visit.service} is already ${visit.status.toLowerCase()} for ${visit.date} · ${visit.slot}.`,
+    ` अच्छी बात — आपकी ${visit.service} विज़िट पहले से ${visit.date} को तय है।`,
+    ` સારી વાત — તમારી ${visit.service} મુલાકાત પહેલેથી ${visit.date} ના રોજ નક્કી છે.`);
+}
+
 const KEYS: { id: string; keys: string[] }[] = [
+  { id: "account", keys: ["inspection", "appointment", "visit", "engineer", "health score", "trustpoints", "points", "my account", "my status", "booked", "अपॉइंटमेंट", "विज़िट", "इंजीनियर", "स्कोर", "खाता", "મુલાકાત", "એન્જિનિયર", "સ્કોર", "ખાતું"] },
   { id: "leak", keys: ["leak", "leakage", "safe", "danger", "रिसाव", "लीक", "सुरक्षित", "લીક", "સલામત", "જોખમ"] },
   { id: "normal", keys: ["normal", "okay", "fine", "correct", "right", "सामान्य", "ठीक", "सही", "નોર્મલ", "બરાબર", "સાચું"] },
   { id: "why", keys: ["why", "high", "increase", "increased", "more", "expensive", "cause", "reason", "क्यों", "ज़्यादा", "बढ़", "महंगा", "कारण", "કેમ", "વધ", "મોંઘું", "કારણ"] },
@@ -218,7 +244,8 @@ export default function BillAssistant({ explanation, bill, onClose }: { explanat
     const msg = norm(text);
     let id = "default";
     for (const k of KEYS) { if (k.keys.some((kk) => msg.includes(kk))) { id = k.id; break; } }
-    const rep = answer(id, fRef.current, lg);
+    let rep = id === "account" ? platformAnswer(lg) : answer(id, fRef.current, lg);
+    if (id === "leak" && fRef.current.leakLevel !== "none") rep += leakVisitNote(lg);
     setTimeout(() => pushBot(rep), 240);
   }, [pushBot]);
 

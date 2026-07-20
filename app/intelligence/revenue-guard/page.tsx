@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Card, SectionTitle, Kpi } from "@/components/ui";
+import { Card, SectionTitle, Kpi, DataTable } from "@/components/ui";
 import { FingerprintChart } from "@/components/Charts";
 import { Toast, useToast } from "@/components/Toast";
 import { revCases, revMetrics, inr } from "@/lib/ops";
@@ -41,36 +41,25 @@ export default function RevGuard() {
             </div>
             <span className="text-xs text-ink-500">Ranked by anomaly score</span>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-ink-50 text-ink-500 text-xs uppercase tracking-wide">
-                <tr>
-                  <th className="text-left font-semibold px-5 py-3">Case</th>
-                  <th className="text-left font-semibold px-3 py-3">Area</th>
-                  <th className="text-left font-semibold px-3 py-3">Pattern</th>
-                  <th className="text-right font-semibold px-3 py-3">At risk</th>
-                  <th className="text-right font-semibold px-5 py-3">Score</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-ink-100">
-                {revCases.map((a, i) => {
-                  const sc = a.score >= 90 ? "bg-red-100 text-red-700" : a.score >= 80 ? "bg-amber-100 text-amber-700" : "bg-sky-100 text-sky-700";
-                  return (
-                    <tr key={a.id} onClick={() => setSel(i)}
-                      className={`cursor-pointer transition ${sel === i ? "bg-brand-50" : "hover:bg-brand-50/40"}`}>
-                      <td className="px-5 py-3">
-                        <span className="font-semibold text-ink-800">{a.id}</span>
-                        <p className="text-[10px] text-ink-500">{a.consumer} · {a.account}</p>
-                      </td>
-                      <td className="px-3 py-3 text-ink-600">{a.area}</td>
-                      <td className="px-3 py-3 text-ink-600">{a.type}</td>
-                      <td className="px-3 py-3 text-right font-medium">{inr(a.loss)}/mo</td>
-                      <td className="px-5 py-3 text-right"><span className={`px-2 py-1 rounded-full text-xs font-bold ${sc}`}>{a.score}</span></td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div className="p-4 sm:p-5">
+            <DataTable
+              columns={[
+                { key: "case", header: "Case", primary: true, cell: (a) => <span className="font-semibold text-ink-800">{a.id}</span> },
+                { key: "who", header: "Consumer", secondary: true, cell: (a) => <span>{a.consumer} · {a.account}</span> },
+                { key: "area", header: "Area", cell: (a) => <span className="text-ink-600">{a.area}</span> },
+                { key: "type", header: "Pattern", cell: (a) => <span className="text-ink-600">{a.type}</span> },
+                { key: "loss", header: "At risk", align: "right", cell: (a) => <span className="font-medium tabular-nums">{inr(a.loss)}/mo</span> },
+                {
+                  key: "score", header: "Score", align: "right",
+                  cell: (a) => <span className={`rounded-full px-2 py-1 text-xs font-bold ${a.score >= 90 ? "bg-red-100 text-red-700" : a.score >= 80 ? "bg-amber-100 text-amber-700" : "bg-sky-100 text-sky-700"}`}>{a.score}</span>,
+                },
+              ]}
+              rows={revCases}
+              getKey={(a) => a.id}
+              onRowClick={(a) => setSel(revCases.findIndex((item) => item.id === a.id))}
+              isActive={(a) => revCases[sel]?.id === a.id}
+              caption="Flagged revenue cases ranked by anomaly score"
+            />
           </div>
           <div className="p-4 border-t border-ink-100">
             <Link href="/safety/rev-guard" className="text-xs font-bold text-indigo-700 hover:text-indigo-900 inline-flex items-center gap-1">

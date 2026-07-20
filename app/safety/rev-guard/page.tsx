@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Badge, Card, Kpi } from "@/components/ui";
+import { Badge, Card, Kpi, DataTable } from "@/components/ui";
 import { DonutChart, TrendChart } from "@/components/Charts";
 import { revCases, revMetrics, revLifecycle as lifecycle, type RevCase as Case, type RevLifecycle, type RevSeverity as Severity } from "@/lib/ops";
-import { recordActivity } from "@/lib/activity";
+import { emitPlatformEvent } from "@/lib/platform";
 import { Activity, Camera, Check, CheckCircle2, ChevronRight, ClipboardCheck, Download, FileSearch, FileText, IndianRupee, MapPin, Network, Search, ShieldAlert } from "lucide-react";
 
 const TREND = [
@@ -62,11 +62,10 @@ export default function RevGuard() {
   function advanceCase() {
     if (!nextStage) return;
     setCases((current) => current.map((item) => item.id === selected.id ? { ...item, stage: nextStage } : item));
-    if (nextStage === "Recovered") {
-      setRecoveredRevenue((current) => Math.min(detectedRevenue, current + selected.loss));
-      recordActivity("intelligence", { module: "Revenue Guard", title: `${currency(selected.loss)} recovered · ${selected.id}`, detail: `${selected.type} case in ${selected.area} closed with recovery recorded — monthly recovered total updated.`, href: "/intelligence/revenue-guard", tone: "brand" });
-    }
-    recordActivity("safety", { module: "Rev-Guard", title: `${selected.id} moved to ${nextStage}`, detail: `${selected.consumer} · ${selected.area} · ${selected.type} · exposure ${currency(selected.loss)}.`, href: "/safety/rev-guard", tone: nextStage === "Recovered" ? "brand" : "amber" });
+    if (nextStage === "Recovered") setRecoveredRevenue((current) => Math.min(detectedRevenue, current + selected.loss));
+    // One emit — the effect engine notifies the ops feed, and on recovery also
+    // the intelligence feed plus the revenue-recovered executive KPI.
+    emitPlatformEvent({ type: "RevenueCaseAdvanced", module: "Rev-Guard", summary: `${selected.id} moved to ${nextStage}`, entities: [{ type: "revenueCase", id: selected.id, label: selected.type }], data: { caseId: selected.id, stage: nextStage, consumer: selected.consumer, area: selected.area, type: selected.type, loss: selected.loss } });
     setNotice(`${selected.id} moved to ${nextStage}.`);
   }
 

@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Card } from "@/components/ui";
 import { Bot, Send, Mic, Volume2, VolumeX, ShieldPlus, AlertCircle, Phone, PhoneCall, Flame, Ambulance, X } from "lucide-react";
+import { readPlatformContext } from "@/lib/platform";
 
 /* ==================================================================
  *  Multilingual gas-emergency assistant (English / हिंदी / ગુજરાતી).
@@ -338,6 +339,22 @@ export default function EmergencyChat() {
 
     if (/all safety|full checklist|all steps|everything|सभी सुरक्षा|सभी कदम|पूरी सूची|બધા સલામતી|બધા પગલાં|પૂરી યાદી/i.test(t)) {
       setTimeout(() => pushBot(FULL_STEPS[lg]), 220);
+      return;
+    }
+
+    // Situational answers come from the shared platform context, so the
+    // assistant knows about the live incident, the address on file, and the
+    // household's readiness — never answering in isolation.
+    if (/my (status|info|details)|crew status|where.*crew|help coming|is help|status of|मदद कब|टीम कहाँ|मेरी जानकारी|स्थिति|ટીમ ક્યાં|મદદ ક્યારે|મારી માહિતી/i.test(t)) {
+      const c = readPlatformContext();
+      const live = c.liveIncident?.status === "active" ? c.liveIncident : null;
+      const verified = c.healthProfile.emergencyContactVerified;
+      const reply = lg === "hi"
+        ? `${live ? `आपका आपातकाल ${live.id} (${live.type}) कंट्रोल रूम में लाइव है — टीम ${live.address} के लिए रवाना है।` : "अभी कोई आपातकालीन सत्र सक्रिय नहीं है।"} आपका आपातकालीन संपर्क ${verified ? "सत्यापित है, परिवार को सूचना तैयार है" : "अभी सत्यापित नहीं है — फिर भी मैं आपके साथ हूँ"}। सुरक्षा कदमों का पालन करते रहें।`
+        : lg === "gu"
+        ? `${live ? `તમારી ઇમરજન્સી ${live.id} (${live.type}) કંટ્રોલ રૂમમાં લાઇવ છે — ટીમ ${live.address} તરફ રવાના છે.` : "હમણાં કોઈ ઇમરજન્સી સત્ર સક્રિય નથી."} તમારો ઇમરજન્સી સંપર્ક ${verified ? "ચકાસાયેલ છે, કુટુંબને જાણ તૈયાર છે" : "હજી ચકાસાયેલ નથી — છતાં હું તમારી સાથે છું"}. સલામતી પગલાં અનુસરતા રહો.`
+        : `${live ? `Your emergency ${live.id} (${live.type}) is live with the control room — a crew is en route to ${live.address}.` : "No emergency session is active right now."} Your emergency contact is ${verified ? "verified, so your family alert is ready" : "not verified yet — I can still help you"}. Keep following the safety steps.`;
+      setTimeout(() => pushBot(reply), 220);
       return;
     }
 

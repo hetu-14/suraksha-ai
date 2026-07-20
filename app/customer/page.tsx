@@ -5,8 +5,10 @@ import Link from "next/link";
 import { Badge, Card, Kpi } from "@/components/ui";
 import CountUp from "@/components/CountUp";
 import { currentCustomer, inr } from "@/lib/data";
-import { recordActivity, timeAgo, useActivityFeed } from "@/lib/activity";
+import { timeAgo, useActivityFeed } from "@/lib/activity";
 import { ensureInspectionBooked } from "@/lib/appointments";
+import { emitPlatformEvent } from "@/lib/platform";
+import RecommendationsPanel from "@/components/RecommendationsPanel";
 import { emptyHealthProfile, healthProfileStorageKey, normalizeHealthProfile, type HealthProfile } from "@/lib/healthScore";
 import { ledgerPoints, storageKey as trustPointsKey, type Ledger } from "@/lib/trustPoints";
 import {
@@ -15,7 +17,7 @@ import {
   RotateCcw, ShieldCheck, Siren, Sparkles, TriangleAlert, X,
 } from "lucide-react";
 
-type Toast = { message: string } | null;
+type Toast = { message: string; impact?: string[] } | null;
 type AttentionAction = "contact" | "inspection" | "bill";
 
 const STORAGE_KEY = "suraksha-customer-dashboard";
@@ -88,19 +90,19 @@ export default function CustomerHome() {
   function completeAction(action: AttentionAction) {
     if (action === "contact") {
       persistProfile({ emergencyContactVerified: true });
-      recordActivity("customer", { module: "Health Score", title: "Emergency contact verified", detail: "Safety readiness +3 · your emergency profile is now complete.", href: "/customer/health" });
-      setToast({ message: "Emergency contact verified. Your Safety Readiness increased by 3 points." });
+      const event = emitPlatformEvent({ type: "EmergencyContactVerified", module: "Health Score", summary: "Emergency contact verified", entities: [{ type: "customer", id: currentCustomer.id }] });
+      setToast({ message: "Emergency contact verified. Your Safety Readiness increased by 3 points.", impact: event.impact });
     }
     if (action === "inspection") {
       const { created, appointment } = ensureInspectionBooked();
       persistProfile({ preventiveInspectionBooked: true });
-      recordActivity("customer", { module: "Appointments", title: created ? "Safety inspection booked" : "Safety inspection confirmed", detail: `${appointment.id} · ${appointment.date} · ${appointment.slot} · ${appointment.engineer}. Equipment health score will rise once completed.`, href: "/customer/appointment" });
-      setToast({ message: `Inspection visit ${created ? "booked" : "confirmed"} for ${appointment.date} · ${appointment.slot}. Track it in Appointments.` });
+      const event = emitPlatformEvent({ type: "AppointmentBooked", module: "Appointments", summary: created ? "Safety inspection booked" : "Safety inspection confirmed", entities: [{ type: "appointment", id: appointment.id, label: appointment.service }], data: { appointmentId: appointment.id, service: appointment.service, serviceId: appointment.serviceId, date: appointment.date, slot: appointment.slot, engineer: appointment.engineer } });
+      setToast({ message: `Inspection visit ${created ? "booked" : "confirmed"} for ${appointment.date} · ${appointment.slot}. Track it in Appointments.`, impact: event.impact });
     }
     if (action === "bill") {
       setBillCleared(true);
-      recordActivity("customer", { module: "Billing", title: `Payment of ${inr(dueBill?.amount ?? 0)} recorded`, detail: "Jan–Feb 2026 bill settled on time · payment reliability stays at 12 on-time bills.", href: "/customer/explainbill" });
-      setToast({ message: `Payment of ${inr(dueBill?.amount ?? 0)} recorded. Your payment reliability score stays on track.` });
+      const event = emitPlatformEvent({ type: "PaymentCompleted", module: "Billing", summary: `Payment of ${inr(dueBill?.amount ?? 0)} recorded`, entities: [{ type: "payment", id: "PAY-JanFeb-2026" }, { type: "bill", id: "BILL-JanFeb-2026", label: dueBill?.cycle }], data: { amount: dueBill?.amount ?? 0, cycle: dueBill?.cycle ?? "Jan–Feb 2026" } });
+      setToast({ message: `Payment of ${inr(dueBill?.amount ?? 0)} recorded. Your payment reliability score stays on track.`, impact: event.impact });
     }
   }
 
@@ -111,7 +113,7 @@ export default function CustomerHome() {
   }
 
   return <div className="space-y-6 pb-4 reveal">
-    {toast && <div className="fixed z-50 bottom-5 right-5 max-w-sm rounded-xl bg-ink-900 text-white px-4 py-3 text-sm shadow-2xl flex items-start gap-2.5"><CheckCircle2 className="w-4 h-4 text-brand-400 shrink-0 mt-0.5" /><span>{toast.message}</span><button onClick={() => setToast(null)} className="ml-auto text-ink-300 hover:text-white" aria-label="Close notification">×</button></div>}
+    {toast && <div className="fixed z-50 bottom-5 right-5 max-w-sm rounded-xl bg-ink-900 text-white px-4 py-3 text-sm shadow-2xl"><div className="flex items-start gap-2.5"><CheckCircle2 className="w-4 h-4 text-brand-400 shrink-0 mt-0.5" /><span>{toast.message}</span><button onClick={() => setToast(null)} className="ml-auto text-ink-300 hover:text-white" aria-label="Close notification">×</button></div>{toast.impact && toast.impact.length > 0 && <p className="mt-2 border-t border-white/10 pt-2 text-[11px] text-ink-300">Also updated: {toast.impact.filter((module) => module !== "Notifications").slice(0, 4).join(" · ")}</p>}</div>}
 
     <section className="relative overflow-hidden rounded-xl bg-ink-950 px-6 py-7 sm:px-8 sm:py-9 text-white ">
       <div className="absolute bottom-0 right-1/4 h-px w-1/2 bg-white/10" />
@@ -137,6 +139,8 @@ export default function CustomerHome() {
       <div className={`h-1 w-full ${attention.length ? "bg-amber-400" : "bg-brand-500"}`} />
       <div className="p-5 sm:p-6">{attention.length ? <><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-start gap-3"><div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-amber-100 text-amber-700"><CircleAlert className="w-5 h-5" /></div><div><p className="text-xs font-bold uppercase tracking-wider text-amber-700">Today&apos;s attention required</p><h2 className="mt-0.5 text-lg font-bold text-ink-900">Three quick actions will keep everything on track.</h2></div></div><Badge tone="amber">{attention.length} pending</Badge></div><div className="mt-5 grid gap-3 lg:grid-cols-3">{attention.map((item, index) => <button key={item.key} onClick={() => completeAction(item.key)} className="group flex items-center gap-3 rounded-xl border border-ink-100 bg-ink-50/70 p-4 text-left transition hover:-translate-y-0.5 hover:border-amber-300 hover:bg-amber-50"><span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-amber-100 text-amber-700">{item.icon}</span><span className="min-w-0 flex-1"><span className="block text-sm font-semibold text-ink-800">{item.title}</span><span className="mt-0.5 block text-xs text-ink-500">{item.detail}</span></span><ChevronRight className="h-4 w-4 text-ink-300 transition group-hover:text-amber-600" /><span className="sr-only">Complete action {index + 1}</span></button>)}</div></> : <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-center gap-3"><div className="grid h-11 w-11 place-items-center rounded-xl bg-brand-100 text-brand-700"><CheckCircle2 className="w-6 h-6" /></div><div><p className="text-xs font-bold uppercase tracking-wider text-brand-700">All caught up</p><h2 className="mt-0.5 text-lg font-bold text-ink-900">No action required today</h2><p className="mt-1 text-sm text-ink-600">Your household is safe, compliant, and up to date.</p></div></div><button onClick={resetDashboard} className="inline-flex items-center justify-center gap-2 rounded-xl border border-ink-200 px-3 py-2 text-xs font-bold text-ink-600 hover:bg-ink-50"><RotateCcw className="w-3.5 h-3.5" />Restore demo actions</button></div>}</div>
     </Card>
+
+    <RecommendationsPanel role="customer" />
 
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 sm:gap-4">
       <Kpi label="Safety status" value="Safe" sub="No leak indicators" icon={<ShieldCheck className="w-4 h-4" />} />

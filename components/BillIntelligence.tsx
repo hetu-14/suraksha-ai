@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { Bill, BillExplanation, Customer } from "@/lib/types";
 import { inr } from "@/lib/billExplain";
-import { recordActivity } from "@/lib/activity";
+import { emitPlatformEvent, readFacts } from "@/lib/platform";
 
 type Props = {
   bill: Bill;
@@ -46,6 +46,22 @@ export default function BillIntelligence({ bill, previousBill, customer, explana
   const [planSaved, setPlanSaved] = useState(false);
   const [timelineStep, setTimelineStep] = useState(0);
   const preferenceKey = `suraksha:why-my-bill:${customer.id}`;
+
+  // Publish this bill's analysis into the platform: Health Score, GasGuard,
+  // the recommendation engine, and the safety console all read the leak
+  // verdict from the shared fact store. Emitted once per bill + verdict.
+  useEffect(() => {
+    const last = readFacts().lastBillAnalysis;
+    if (last && last.billId === bill.id && last.leakLevel === explanation.leakLevel && last.verdict === explanation.verdict) return;
+    emitPlatformEvent({
+      type: "BillAnalyzed",
+      id: `pev-bill-${bill.id}`,
+      module: "WhyMyBill",
+      summary: `Bill ${bill.cycleLabel} analyzed · ${explanation.verdict === "normal" ? "normal" : explanation.verdict === "leak" ? "possible leak" : "meter under-reading"} · leak risk ${explanation.leakPct}%`,
+      entities: [{ type: "bill", id: bill.id, label: bill.cycleLabel }, { type: "customer", id: customer.id }],
+      data: { billId: bill.id, cycle: bill.cycleLabel, verdict: explanation.verdict, leakLevel: explanation.leakLevel, leakPct: explanation.leakPct, amount: bill.amount },
+    });
+  }, [bill.id, bill.cycleLabel, bill.amount, customer.id, explanation.verdict, explanation.leakLevel, explanation.leakPct]);
 
   useEffect(() => {
     try {
@@ -166,13 +182,13 @@ export default function BillIntelligence({ bill, previousBill, customer, explana
   ].join("\n");
 
   function enableAlert() {
-    if (!alertEnabled) recordActivity("customer", { module: "WhyMyBill", title: "Bill increase alerts enabled", detail: "You will be notified when a cycle deviates from your normal range · TrustPoints mission verified.", href: "/customer/explainbill" });
+    if (!alertEnabled) emitPlatformEvent({ type: "BillAlertsEnabled", module: "WhyMyBill", summary: "Bill increase alerts enabled", entities: [{ type: "customer", id: customer.id }] });
     setAlertEnabled(true);
     if ("Notification" in window && Notification.permission === "default") void Notification.requestPermission();
   }
 
   function savePlan() {
-    if (!planSaved) recordActivity("customer", { module: "WhyMyBill", title: "Savings plan saved", detail: `Target: reduce next-cycle usage by ${usageReduction}% · projected saving ${inr(saving)}.`, href: "/customer/explainbill" });
+    if (!planSaved) emitPlatformEvent({ type: "SavingsPlanSaved", module: "WhyMyBill", summary: `Savings plan saved · reduce usage ${usageReduction}%`, entities: [{ type: "customer", id: customer.id }], data: { detail: `Target: reduce next-cycle usage by ${usageReduction}% · projected saving ${inr(saving)}.` } });
     setPlanSaved(true);
   }
 

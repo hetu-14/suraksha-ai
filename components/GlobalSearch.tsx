@@ -84,41 +84,58 @@ export default function GlobalSearch({ open, onClose }: { open: boolean; onClose
   }, []);
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-start justify-center bg-ink-950/50 p-4 pt-[9vh]" onMouseDown={onClose} role="dialog" aria-modal="true" aria-label="Global search">
-      <div className="flex w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-ink-200 bg-white shadow-float" onMouseDown={(event) => event.stopPropagation()}>
+    // Phones get a true fullscreen search surface (no dialog inset, no rounded
+    // card floating on a backdrop); tablets and desktop keep the command palette.
+    <div
+      className="fixed inset-0 z-[60] flex items-stretch justify-center bg-ink-950/50 sm:items-start sm:p-4 sm:pt-[9vh]"
+      onMouseDown={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Global search"
+    >
+      <div
+        className="flex w-full max-w-3xl flex-col overflow-hidden border-ink-200 bg-white sm:rounded-xl sm:border sm:shadow-float"
+        onMouseDown={(event) => event.stopPropagation()}
+      >
         {/* Input */}
-        <div className="flex items-center gap-3 border-b border-ink-100 px-4">
+        <div className="flex items-center gap-2 border-b border-ink-100 px-3 pt-[env(safe-area-inset-top)] sm:gap-3 sm:px-4 sm:pt-0">
           <Search className="h-4 w-4 shrink-0 text-ink-400" />
           <input
             ref={inputRef}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             onKeyDown={onKeyDown}
-            placeholder="Search anything — customers, tickets, zones, bills… or type what you need"
-            className="h-12 w-full bg-transparent text-sm text-ink-900 outline-none placeholder:text-ink-400"
+            placeholder="Search anything — customers, tickets, zones, bills…"
+            enterKeyHint="search"
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck={false}
+            className="h-14 w-full bg-transparent text-base text-ink-900 outline-none placeholder:text-ink-400 sm:h-12 sm:text-sm"
             aria-label="Search everything"
           />
-          <button onClick={onClose} className="rounded-md p-1 text-ink-400 hover:bg-ink-50 hover:text-ink-700" aria-label="Close search">
-            <X className="h-4 w-4" />
+          <button onClick={onClose} className="grid h-11 w-11 shrink-0 place-items-center rounded-lg text-ink-400 hover:bg-ink-50 hover:text-ink-700 sm:h-9 sm:w-9" aria-label="Close search">
+            <X className="h-5 w-5 sm:h-4 sm:w-4" />
           </button>
         </div>
 
         {/* Filters */}
-        <div className="flex gap-1 overflow-x-auto border-b border-ink-100 px-3 py-2">
+        <div className="scroll-x snap-rail flex gap-1 border-b border-ink-100 px-3 py-2">
           {FILTERS.map((f) => (
             <button
               key={f}
               onClick={() => { setFilter(f); inputRef.current?.focus(); }}
-              className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${filter === f ? "bg-ink-900 text-white" : "text-ink-500 hover:bg-ink-50"}`}
+              className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition ${filter === f ? "bg-ink-900 text-white" : "text-ink-500 hover:bg-ink-50"}`}
             >
               {f}
             </button>
           ))}
         </div>
 
-        <div className="grid sm:grid-cols-[1.05fr_.95fr]" style={{ minHeight: 320 }}>
+        {/* Below `sm` the preview pane is dropped entirely: on a phone the result
+            list should own the full height, and tapping a result navigates. */}
+        <div className="grid min-h-0 flex-1 sm:min-h-[320px] sm:flex-none sm:grid-cols-[1.05fr_.95fr]">
           {/* Results */}
-          <div ref={listRef} className="max-h-[52vh] overflow-y-auto border-r border-ink-100">
+          <div ref={listRef} className="scroll-y min-h-0 flex-1 border-r border-ink-100 sm:max-h-[52vh]">
             {query.trim().length < 2 ? (
               <EmptyState pinned={pinned} recents={recents} frequent={frequent} quickActions={quickActions} onPick={go} onPin={(id) => setHistory(togglePin(id))} onQuery={(q) => { setQuery(q); inputRef.current?.focus(); }} />
             ) : results.length === 0 ? (
@@ -133,13 +150,13 @@ export default function GlobalSearch({ open, onClose }: { open: boolean; onClose
                       data-highlighted={highlighted === index}
                       onClick={() => go(entry)}
                       onMouseEnter={() => setHighlighted(index)}
-                      className={`flex w-full items-center gap-2.5 px-4 py-2.5 text-left ${highlighted === index ? "bg-ink-50" : ""}`}
+                      className={`flex min-h-tap-lg w-full items-center gap-2.5 px-4 py-3 text-left sm:py-2.5 ${highlighted === index ? "bg-ink-50" : ""}`}
                     >
                       {entry.isAction && <Zap className="h-3.5 w-3.5 shrink-0 text-amber-500" />}
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center gap-2">
                           <span className="truncate text-sm font-semibold text-ink-800">{entry.title}</span>
-                          {entry.priority && <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${PRIORITY_STYLES[entry.priority]}`}>{entry.priority.toUpperCase()}</span>}
+                          {entry.priority && <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold ${PRIORITY_STYLES[entry.priority]}`}>{entry.priority.toUpperCase()}</span>}
                         </span>
                         <span className="block truncate text-xs text-ink-500">{entry.description}</span>
                       </span>
@@ -152,7 +169,7 @@ export default function GlobalSearch({ open, onClose }: { open: boolean; onClose
           </div>
 
           {/* Preview */}
-          <div className="hidden max-h-[52vh] overflow-y-auto p-4 sm:block">
+          <div className="hidden max-h-[52vh] scroll-y p-4 sm:block">
             {selected ? (
               <Preview entry={selected} onNavigate={go} onPin={() => { recordVisit(selected); setHistory(togglePin(selected.id)); }} pinnedIds={new Set(history.filter((h) => h.pinned).map((h) => h.id))} />
             ) : (
@@ -166,9 +183,9 @@ export default function GlobalSearch({ open, onClose }: { open: boolean; onClose
           </div>
         </div>
 
-        <div className="flex items-center justify-between border-t border-ink-100 bg-ink-50/60 px-4 py-2 text-[11px] text-ink-400">
+        <div className="flex items-center justify-between border-t border-ink-100 bg-ink-50/60 px-4 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] text-xs text-ink-400 sm:pb-2">
           <span className="hidden sm:inline">↑↓ navigate · Enter open · Tab filter · Esc close</span>
-          <span className="sm:hidden">Enter to open · Esc to close</span>
+          <span className="sm:hidden">Tap a result to open</span>
           <span className="font-semibold">{query.trim().length >= 2 ? `${results.length} results` : "SuRaksha search"}</span>
         </div>
       </div>

@@ -6,7 +6,7 @@ import { Badge, Card, Kpi } from "@/components/ui";
 import { connectionStorageKey, normalizeConnectionStatus } from "@/lib/connectionStatus";
 import { healthProfileStorageKey, normalizeHealthProfile } from "@/lib/healthScore";
 import { downloadServiceReportPdf } from "@/lib/serviceReportPdf";
-import { recordActivity } from "@/lib/activity";
+import { emitPlatformEvent } from "@/lib/platform";
 import { appointmentsStorageKey as storageKey, appointmentStatusFlow as statusFlow, starterAppointments, type Appointment, type AppointmentStatus, type ServiceId } from "@/lib/appointments";
 import { AlertTriangle, BarChart3, Calendar, Check, CheckCircle2, ChevronRight, Clock3, CookingPot, Download, FileText, Link2, MessageCircle, Navigation, Phone, RefreshCw, Settings2, ShieldAlert, ShieldCheck, ShowerHead, Star, Truck, UserRound, Waves, X, type LucideIcon } from "lucide-react";
 
@@ -146,16 +146,18 @@ export default function AppointmentBooking() {
     if (selectedService === "connection") {
       try { const connection = normalizeConnectionStatus(JSON.parse(window.localStorage.getItem(connectionStorageKey) ?? "null")); window.localStorage.setItem(connectionStorageKey, JSON.stringify({ ...connection, appointment: `${selectedDay} · ${selectedSlot}` })); } catch { /* Booking is still confirmed. */ }
     }
-    if (selectedService === "inspection" || selectedService === "regulator") {
-      try { const health = normalizeHealthProfile(JSON.parse(window.localStorage.getItem(healthProfileStorageKey) ?? "null")); window.localStorage.setItem(healthProfileStorageKey, JSON.stringify({ ...health, preventiveInspectionBooked: true })); setHealthNeedsInspection(false); } catch { /* The appointment remains confirmed. */ }
-    }
-    recordActivity("customer", {
+    if (selectedService === "inspection" || selectedService === "regulator") setHealthNeedsInspection(false);
+    // The platform effect engine owns the fan-out: health profile, TrustPoints
+    // mission, KPIs, feeds, and the safety console all update from this emit.
+    const event = emitPlatformEvent({
+      type: reschedulingId ? "AppointmentRescheduled" : "AppointmentBooked",
       module: "Appointments",
-      title: reschedulingId ? `${service.label} rescheduled` : `${service.label} booked`,
-      detail: `${booking.id} · ${selectedDay} · ${selectedSlot} · ${assignedEngineer.name}`,
-      href: "/customer/appointment",
+      summary: reschedulingId ? `${service.label} rescheduled` : `${service.label} booked`,
+      entities: [{ type: "appointment", id: booking.id, label: service.label }, { type: "engineer", id: assignedEngineer.initials, label: assignedEngineer.name }],
+      data: { appointmentId: booking.id, service: service.label, serviceId: service.id, date: selectedDay, slot: selectedSlot, engineer: assignedEngineer.name },
     });
-    setNotice(reschedulingId ? "Your appointment has been rescheduled and the engineer has been notified." : "Appointment booked. You will receive confirmation and engineer updates here.");
+    const synced = event.impact.filter((module) => module !== "Notifications").slice(0, 3).join(", ");
+    setNotice(reschedulingId ? "Your appointment has been rescheduled and the engineer has been notified." : `Appointment booked. Updated across ${synced}.`);
     setReschedulingId(null); setSelectedSlot(null); setStep(1); setActiveTab("visits");
   }
 
@@ -164,7 +166,7 @@ export default function AppointmentBooking() {
     if (!cancelTarget) return;
     const target = appointments.find((item) => item.id === cancelTarget);
     setAppointments((current) => current.map((item) => item.id === cancelTarget ? { ...item, status: "Cancelled", cancellationReason: cancelReason } : item));
-    if (target) recordActivity("customer", { module: "Appointments", title: `${target.service} cancelled`, detail: `${target.id} · ${cancelReason}. Book a new slot whenever you need one.`, href: "/customer/appointment", tone: "amber" });
+    if (target) emitPlatformEvent({ type: "AppointmentCancelled", module: "Appointments", summary: `${target.service} cancelled`, entities: [{ type: "appointment", id: target.id, label: target.service }], data: { appointmentId: target.id, service: target.service, serviceId: target.serviceId, reason: cancelReason } });
     setNotice("Appointment cancelled. You can book a new slot whenever you need one.");
     setCancelTarget(null);
   }
@@ -173,7 +175,7 @@ export default function AppointmentBooking() {
       const at = statusFlow.indexOf(item.status);
       if (item.id !== id || at < 0 || at >= statusFlow.length - 1) return item;
       const next = statusFlow[at + 1];
-      if (next === "Completed") recordActivity("customer", { module: "Appointments", title: `${item.service} completed`, detail: `${item.id} · ${item.engineer} finished the visit. Your service report is ready in History.`, href: "/customer/appointment", tone: "brand" });
+      if (next === "Completed") emitPlatformEvent({ type: "AppointmentCompleted", module: "Appointments", summary: `${item.service} completed`, entities: [{ type: "appointment", id: item.id, label: item.service }], data: { appointmentId: item.id, service: item.service, serviceId: item.serviceId, engineer: item.engineer } });
       return { ...item, status: next };
     }));
   }
